@@ -8,6 +8,10 @@ struct FullScreenPlayerView: View {
     @State private var showingOptions = false
     @State private var showingPlaylists = false
     
+    @State private var showingLyrics = false
+    @State private var isLoadingLyrics = false
+    @State private var currentLyrics: LyricsResponse?
+    
     var body: some View {
         ZStack {
             Theme.SpiderBackground()
@@ -105,6 +109,21 @@ struct FullScreenPlayerView: View {
                         Spacer()
                         
                         Button(action: {
+                            if !showingLyrics {
+                                showingLyrics = true
+                                isLoadingLyrics = true
+                                networkManager.fetchLyrics(videoId: song.id) { lyrics in
+                                    self.currentLyrics = lyrics
+                                    self.isLoadingLyrics = false
+                                }
+                            }
+                        }) {
+                            Image(systemName: "quote.bubble")
+                                .font(.title)
+                                .foregroundColor(Theme.spiderDarkGrey)
+                        }
+                        
+                        Button(action: {
                             networkManager.addToFavorites(songId: song.id)
                         }) {
                             Image(systemName: networkManager.favorites.contains(where: { $0.id == song.id }) ? "heart.fill" : "heart")
@@ -176,10 +195,64 @@ struct FullScreenPlayerView: View {
                     Spacer()
                 }
             }
+            
+            // Lyrics Overlay
+            if showingLyrics {
+                ZStack {
+                    Theme.SpiderBackground()
+                        .opacity(0.95)
+                        .edgesIgnoringSafeArea(.all)
+                    
+                    VStack {
+                        HStack {
+                            Spacer()
+                            Button(action: {
+                                showingLyrics = false
+                            }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.title)
+                                    .foregroundColor(.white)
+                                    .padding()
+                            }
+                        }
+                        
+                        if isLoadingLyrics {
+                            Spacer()
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: Theme.spiderNeonRed))
+                                .scaleEffect(1.5)
+                            Spacer()
+                        } else if let lyrics = currentLyrics {
+                            ScrollView {
+                                Text(lyrics.lyrics)
+                                    .font(.title3)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.white)
+                                    .multilineTextAlignment(.center)
+                                    .padding()
+                                    .lineSpacing(10)
+                                
+                                Text("Source: \(lyrics.source)")
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                                    .padding(.top, 20)
+                                    .padding(.bottom, 40)
+                            }
+                        } else {
+                            Spacer()
+                            Text("No lyrics found for this song.")
+                                .foregroundColor(.gray)
+                            Spacer()
+                        }
+                    }
+                }
+                .transition(.move(edge: .bottom))
+                .zIndex(2)
+            }
         }
         // Allow swiping down to dismiss
         .gesture(DragGesture().onEnded { value in
-            if value.translation.height > 100 {
+            if value.translation.height > 100 && !showingLyrics {
                 isShowing = false
             }
         })

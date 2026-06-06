@@ -181,4 +181,69 @@ class NetworkManager: ObservableObject {
     func getStreamURL(for songId: String) -> URL? {
         return URL(string: "\(baseURL)/stream/yt/\(songId)")
     }
+    
+    // MARK: - New Features
+    
+    func fetchSearchSuggestions(query: String, completion: @escaping ([String]) -> Void) {
+        guard let encodedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let url = URL(string: "\(baseURL)/search/suggestions?query=\(encodedQuery)") else { return }
+        
+        URLSession.shared.dataTask(with: url) { data, _, _ in
+            if let data = data, let suggestions = try? JSONDecoder().decode([String].self, from: data) {
+                DispatchQueue.main.async { completion(suggestions) }
+            }
+        }.resume()
+    }
+    
+    func fetchLyrics(videoId: String, completion: @escaping (LyricsResponse?) -> Void) {
+        guard let url = URL(string: "\(baseURL)/lyrics/\(videoId)") else { return }
+        URLSession.shared.dataTask(with: url) { data, _, _ in
+            if let data = data, let lyrics = try? JSONDecoder().decode(LyricsResponse.self, from: data) {
+                DispatchQueue.main.async { completion(lyrics) }
+            } else {
+                DispatchQueue.main.async { completion(nil) }
+            }
+        }.resume()
+    }
+    
+    func fetchArtist(channelId: String, completion: @escaping (ArtistDetail?) -> Void) {
+        guard let url = URL(string: "\(baseURL)/artist/\(channelId)") else { return }
+        URLSession.shared.dataTask(with: url) { data, _, _ in
+            if let data = data {
+                do {
+                    let artist = try JSONDecoder().decode(ArtistDetail.self, from: data)
+                    DispatchQueue.main.async { completion(artist) }
+                } catch {
+                    print("Error decoding artist: \(error)")
+                    DispatchQueue.main.async { completion(nil) }
+                }
+            }
+        }.resume()
+    }
+    
+    func fetchAlbum(browseId: String, completion: @escaping (AlbumDetail?) -> Void) {
+        guard let url = URL(string: "\(baseURL)/album/\(browseId)") else { return }
+        URLSession.shared.dataTask(with: url) { data, _, _ in
+            if let data = data {
+                do {
+                    let album = try JSONDecoder().decode(AlbumDetail.self, from: data)
+                    DispatchQueue.main.async { completion(album) }
+                } catch {
+                    print("Error decoding album: \(error)")
+                    DispatchQueue.main.async { completion(nil) }
+                }
+            }
+        }.resume()
+    }
+    
+    func fetchMoodPlaylists(params: String, completion: @escaping ([DashboardItem]) -> Void) {
+        guard let url = URL(string: "\(baseURL)/moods/\(params)") else { return }
+        URLSession.shared.dataTask(with: url) { data, _, _ in
+            if let data = data, let items = try? JSONDecoder().decode([DashboardItem].self, from: data) {
+                DispatchQueue.main.async { completion(items) }
+            } else {
+                DispatchQueue.main.async { completion([]) }
+            }
+        }.resume()
+    }
 }

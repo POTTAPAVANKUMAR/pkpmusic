@@ -103,3 +103,23 @@ class DashboardItem(BaseModel):
 class DashboardSection(BaseModel):
     title: str
     items: List[DashboardItem]
+
+class LyricsResponse(BaseModel):
+    lyrics: str
+    source: str
+
+class ArtistDetail(BaseModel):
+    name: str
+    description: Optional[str] = None
+    views: Optional[str] = None
+    subscribers: Optional[str] = None
+    thumbnails: List[dict] = []
+    songs: List[SongBase] = []
+    albums: List[dict] = []
+
+class AlbumDetail(BaseModel):
+    title: str
+    description: Optional[str] = None
+    trackCount: int
+    thumbnails: List[dict] = []
+    songs: List[SongBase] = []

@@ -7,6 +7,7 @@ struct HomeView: View {
     @State private var searchQuery = ""
     @State private var isSearching = false
     @State private var showFullScreenPlayer = false
+    @State private var searchSuggestions: [String] = []
     
     var body: some View {
         NavigationView {
@@ -21,37 +22,78 @@ struct HomeView: View {
                             .bold()
                             .foregroundColor(.white)
                         
-                        HStack {
-                            Image(systemName: "magnifyingglass")
-                                .foregroundColor(.gray)
-                            TextField("Search songs, artists...", text: $searchQuery, onCommit: {
-                                if !searchQuery.isEmpty {
-                                    isSearching = true
-                                    networkManager.searchYouTube(query: searchQuery)
+                        VStack(spacing: 0) {
+                            HStack {
+                                Image(systemName: "magnifyingglass")
+                                    .foregroundColor(.gray)
+                                TextField("Search songs, artists...", text: $searchQuery, onCommit: {
+                                    if !searchQuery.isEmpty {
+                                        searchSuggestions = []
+                                        isSearching = true
+                                        networkManager.searchYouTube(query: searchQuery)
+                                    }
+                                })
+                                .onChange(of: searchQuery) { newValue in
+                                    if newValue.count > 2 && !isSearching {
+                                        networkManager.fetchSearchSuggestions(query: newValue) { suggestions in
+                                            self.searchSuggestions = suggestions
+                                        }
+                                    } else {
+                                        self.searchSuggestions = []
+                                    }
                                 }
-                            })
-                            .foregroundColor(.white)
-                            .accentColor(Theme.spiderNeonRed)
-                            
-                            if !searchQuery.isEmpty {
-                                Button(action: {
-                                    searchQuery = ""
-                                    isSearching = false
-                                }) {
-                                    Image(systemName: "xmark.circle.fill")
-                                        .foregroundColor(.gray)
+                                .foregroundColor(.white)
+                                .accentColor(Theme.spiderNeonRed)
+                                
+                                if !searchQuery.isEmpty {
+                                    Button(action: {
+                                        searchQuery = ""
+                                        isSearching = false
+                                        searchSuggestions = []
+                                    }) {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .foregroundColor(.gray)
+                                    }
                                 }
                             }
+                            .padding(12)
+                            .background(Color.white.opacity(0.1))
+                            .cornerRadius(searchSuggestions.isEmpty ? 15 : 0)
+                            
+                            if !searchSuggestions.isEmpty {
+                                VStack(alignment: .leading, spacing: 0) {
+                                    ForEach(searchSuggestions, id: \.self) { suggestion in
+                                        Button(action: {
+                                            searchQuery = suggestion
+                                            searchSuggestions = []
+                                            isSearching = true
+                                            networkManager.searchYouTube(query: suggestion)
+                                        }) {
+                                            HStack {
+                                                Image(systemName: "magnifyingglass")
+                                                    .foregroundColor(.gray)
+                                                Text(suggestion)
+                                                    .foregroundColor(.white)
+                                                    .lineLimit(1)
+                                                Spacer()
+                                            }
+                                            .padding()
+                                            .background(Color.black.opacity(0.8))
+                                        }
+                                        Divider().background(Color.gray.opacity(0.3))
+                                    }
+                                }
+                                .cornerRadius(15)
+                                .shadow(radius: 10)
+                            }
                         }
-                        .padding(12)
-                        .background(Color.white.opacity(0.1))
-                        .cornerRadius(15)
                         .overlay(
                             RoundedRectangle(cornerRadius: 15)
                                 .stroke(Theme.spiderDarkGrey, lineWidth: 1)
                         )
                     }
                     .padding()
+                    .zIndex(10)
                     
                     if isSearching {
                         // Search Results List
@@ -87,7 +129,7 @@ struct HomeView: View {
                             Spacer()
                         } else {
                             ScrollView {
-                                LazyVStack(spacing: 25, alignment: .leading) {
+                                LazyVStack(alignment: .leading, spacing: 25) {
                                     ForEach(networkManager.dashboardSections, id: \.title) { section in
                                         VStack(alignment: .leading, spacing: 15) {
                                             Text(section.title)
@@ -99,10 +141,18 @@ struct HomeView: View {
                                             ScrollView(.horizontal, showsIndicators: false) {
                                                 LazyHStack(spacing: 15) {
                                                     ForEach(section.items, id: \.id) { item in
-                                                        DashboardCardView(item: item)
-                                                            .onTapGesture {
-                                                                if item.type == "song" {
-                                                                    // Play the song
+                                                        if item.type == "mood" {
+                                                            NavigationLink(destination: MoodPlaylistsView(params: item.id, moodTitle: item.title)) {
+                                                                DashboardCardView(item: item)
+                                                            }
+                                                        } else if item.type == "playlist" || item.type == "album" {
+                                                            NavigationLink(destination: AlbumDetailView(albumId: item.id)) {
+                                                                DashboardCardView(item: item)
+                                                            }
+                                                        } else {
+                                                            // Song
+                                                            DashboardCardView(item: item)
+                                                                .onTapGesture {
                                                                     let song = Song(
                                                                         id: item.id,
                                                                         title: item.title,
@@ -115,7 +165,7 @@ struct HomeView: View {
                                                                     showFullScreenPlayer = true
                                                                     networkManager.recordHistory(songId: song.id)
                                                                 }
-                                                            }
+                                                        }
                                                     }
                                                 }
                                                 .padding(.horizontal)

@@ -326,4 +326,104 @@ def add_favorite(favorite: schemas.FavoriteCreate, user_id: int = 1, db: Session
 
 @app.get("/favorites/", response_model=List[schemas.Favorite])
 def get_favorites(user_id: int = 1, db: Session = Depends(get_db)):
-    return crud.get_favorites(db, user_id=user_id)
+    return crud.get_favorites(db, user_id)
+
+# NEW ENDPOINTS FOR ALL FEATURES
+
+@app.get("/search/suggestions")
+def get_search_suggestions(query: str):
+    try:
+        results = yt.get_search_suggestions(query)
+        # return list of strings
+        return [res.get('text', res) if isinstance(res, dict) else res for res in results]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/lyrics/{video_id}", response_model=schemas.LyricsResponse)
+def get_lyrics(video_id: str):
+    try:
+        watch_playlist = yt.get_watch_playlist(videoId=video_id)
+        lyrics_id = watch_playlist.get('lyrics')
+        if not lyrics_id:
+            raise HTTPException(status_code=404, detail="Lyrics not found for this song")
+        
+        lyrics = yt.get_lyrics(lyrics_id)
+        return schemas.LyricsResponse(
+            lyrics=lyrics.get('lyrics', ''),
+            source=lyrics.get('source', 'Unknown')
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/artist/{channel_id}", response_model=schemas.ArtistDetail)
+def get_artist(channel_id: str):
+    try:
+        artist = yt.get_artist(channel_id)
+        songs = []
+        if 'songs' in artist and 'results' in artist['songs']:
+            for s in artist['songs']['results']:
+                songs.append(schemas.SongBase(
+                    id=s['videoId'],
+                    title=s.get('title', 'Unknown'),
+                    artist=artist.get('name', 'Unknown'),
+                    album=s.get('album', {}).get('name') if s.get('album') else None,
+                    duration_ms=0,
+                    cover_art_url=s.get('thumbnails', [{}])[-1].get('url')
+                ))
+        return schemas.ArtistDetail(
+            name=artist.get('name', 'Unknown'),
+            description=artist.get('description'),
+            views=artist.get('views'),
+            subscribers=artist.get('subscribers'),
+            thumbnails=artist.get('thumbnails', []),
+            songs=songs,
+            albums=artist.get('albums', {}).get('results', [])
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/album/{browse_id}", response_model=schemas.AlbumDetail)
+def get_album(browse_id: str):
+    try:
+        album = yt.get_album(browse_id)
+        songs = []
+        for track in album.get('tracks', []):
+            if track.get('videoId'):
+                songs.append(schemas.SongBase(
+                    id=track['videoId'],
+                    title=track.get('title', 'Unknown'),
+                    artist=", ".join([a['name'] for a in track.get('artists', [])]),
+                    album=album.get('title'),
+                    duration_ms=track.get('duration_seconds', 0) * 1000 if track.get('duration_seconds') else 0,
+                    cover_art_url=album.get('thumbnails', [{}])[-1].get('url')
+                ))
+        return schemas.AlbumDetail(
+            title=album.get('title', 'Unknown'),
+            description=album.get('description'),
+            trackCount=album.get('trackCount', len(songs)),
+            thumbnails=album.get('thumbnails', []),
+            songs=songs
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/moods/{params}", response_model=List[schemas.DashboardItem])
+def get_mood_playlists(params: str):
+    try:
+        # It's actually yt.get_mood_playlists(params) or yt.get_mood_categories() -> then use params.
+        # But wait, get_mood_categories returns categories which HAVE params.
+        # So we use yt.get_mood_playlists(params) to get playlists for a mood!
+        playlists = yt.get_mood_playlists(params)
+        items = []
+        for p in playlists:
+            if 'videoId' in p or 'playlistId' in p:
+                items.append(schemas.DashboardItem(
+                    id=p.get('playlistId') or p.get('videoId'),
+                    title=p.get('title', 'Unknown'),
+                    subtitle=p.get('description') or p.get('subtitle', ''),
+                    image_url=p.get('thumbnails', [{}])[-1].get('url'),
+                    type="playlist"
+                ))
+        return items
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
