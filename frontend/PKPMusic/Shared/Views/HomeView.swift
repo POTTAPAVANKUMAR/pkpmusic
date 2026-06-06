@@ -3,11 +3,10 @@ import SwiftUI
 struct HomeView: View {
     @StateObject private var networkManager = NetworkManager.shared
     @StateObject private var audioManager = AudioPlayerManager.shared
-    
-    @State private var searchQuery = ""
+    @State private var searchText = ""
     @State private var isSearching = false
+    @State private var searchResults: [Song] = []
     @State private var showFullScreenPlayer = false
-    @State private var searchSuggestions: [String] = []
     
     var body: some View {
         NavigationView {
@@ -15,285 +14,190 @@ struct HomeView: View {
                 Theme.SpiderBackground()
                 
                 VStack(spacing: 0) {
-                    // Header & Search
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Discover")
-                            .font(.largeTitle)
-                            .bold()
+                    // Modern Header (Search Bar)
+                    HStack {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(.gray)
+                        TextField("Find music, playlists, and more...", text: $searchText, onCommit: performSearch)
                             .foregroundColor(.white)
+                            .disableAutocorrection(true)
+                            .autocapitalization(.none)
                         
-                        VStack(spacing: 0) {
-                            HStack {
-                                Image(systemName: "magnifyingglass")
+                        if !searchText.isEmpty {
+                            Button(action: {
+                                searchText = ""
+                                isSearching = false
+                                searchResults.removeAll()
+                            }) {
+                                Image(systemName: "xmark.circle.fill")
                                     .foregroundColor(.gray)
-                                TextField("Search songs, artists...", text: $searchQuery, onCommit: {
-                                    if !searchQuery.isEmpty {
-                                        searchSuggestions = []
-                                        isSearching = true
-                                        networkManager.searchYouTube(query: searchQuery)
-                                    }
-                                })
-                                .onChange(of: searchQuery) { newValue in
-                                    if newValue.count > 2 && !isSearching {
-                                        networkManager.fetchSearchSuggestions(query: newValue) { suggestions in
-                                            self.searchSuggestions = suggestions
-                                        }
-                                    } else {
-                                        self.searchSuggestions = []
-                                    }
-                                }
-                                .foregroundColor(.white)
-                                .accentColor(Theme.spiderNeonRed)
-                                
-                                if !searchQuery.isEmpty {
-                                    Button(action: {
-                                        searchQuery = ""
-                                        isSearching = false
-                                        searchSuggestions = []
-                                    }) {
-                                        Image(systemName: "xmark.circle.fill")
-                                            .foregroundColor(.gray)
-                                    }
-                                }
-                            }
-                            .padding(12)
-                            .background(Color.white.opacity(0.1))
-                            .cornerRadius(searchSuggestions.isEmpty ? 15 : 0)
-                            
-                            if !searchSuggestions.isEmpty {
-                                VStack(alignment: .leading, spacing: 0) {
-                                    ForEach(searchSuggestions, id: \.self) { suggestion in
-                                        Button(action: {
-                                            searchQuery = suggestion
-                                            searchSuggestions = []
-                                            isSearching = true
-                                            networkManager.searchYouTube(query: suggestion)
-                                        }) {
-                                            HStack {
-                                                Image(systemName: "magnifyingglass")
-                                                    .foregroundColor(.gray)
-                                                Text(suggestion)
-                                                    .foregroundColor(.white)
-                                                    .lineLimit(1)
-                                                Spacer()
-                                            }
-                                            .padding()
-                                            .background(Color.black.opacity(0.8))
-                                        }
-                                        Divider().background(Color.gray.opacity(0.3))
-                                    }
-                                }
-                                .cornerRadius(15)
-                                .shadow(radius: 10)
                             }
                         }
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 15)
-                                .stroke(Theme.spiderDarkGrey, lineWidth: 1)
-                        )
                     }
-                    .padding()
-                    .zIndex(10)
+                    .padding(12)
+                    .background(Theme.spiderDarkGrey.opacity(0.8))
+                    .cornerRadius(10)
+                    .padding(.horizontal)
+                    .padding(.top, 10)
                     
                     if isSearching {
-                        // Search Results List
-                        if networkManager.isLoading {
-                            Spacer()
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: Theme.spiderNeonRed))
-                                .scaleEffect(1.5)
-                            Spacer()
-                        } else {
-                            ScrollView {
-                                LazyVStack(spacing: 12) {
-                                    ForEach(networkManager.searchResults.indices, id: \.self) { index in
-                                        let song = networkManager.searchResults[index]
-                                        SongRowView(song: song, isPlaying: audioManager.currentSong?.id == song.id)
-                                            .onTapGesture {
-                                                audioManager.play(song: song, in: networkManager.searchResults, at: index)
-                                                showFullScreenPlayer = true
-                                                networkManager.recordHistory(songId: song.id)
-                                            }
-                                    }
-                                }
+                        searchResultsView
+                    } else if let error = networkManager.dashboardError {
+                        Spacer()
+                        VStack(spacing: 15) {
+                            Image(systemName: "exclamationmark.triangle")
+                                .font(.system(size: 40))
+                                .foregroundColor(Theme.spiderRed)
+                            Text(error)
+                                .foregroundColor(.white)
+                                .multilineTextAlignment(.center)
                                 .padding()
+                            Button("Try Again") {
+                                networkManager.fetchDashboard()
                             }
+                            .padding()
+                            .background(Theme.spiderRed)
+                            .foregroundColor(.white)
+                            .cornerRadius(8)
                         }
+                        Spacer()
+                    } else if networkManager.dashboardSections.isEmpty {
+                        Spacer()
+                        ProgressView("Loading your music...")
+                            .progressViewStyle(CircularProgressViewStyle(tint: Theme.spiderNeonRed))
+                            .foregroundColor(.gray)
+                        Spacer()
                     } else {
-                        // Dashboard View
-                        if networkManager.dashboardSections.isEmpty {
-                            Spacer()
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: Theme.spiderNeonRed))
-                                .scaleEffect(1.5)
-                            Spacer()
-                        } else {
-                            ScrollView {
-                                LazyVStack(alignment: .leading, spacing: 25) {
-                                    ForEach(networkManager.dashboardSections, id: \.title) { section in
-                                        VStack(alignment: .leading, spacing: 15) {
-                                            Text(section.title)
-                                                .font(.title2)
-                                                .bold()
-                                                .foregroundColor(.white)
-                                                .padding(.horizontal)
-                                            
-                                            ScrollView(.horizontal, showsIndicators: false) {
-                                                LazyHStack(spacing: 15) {
-                                                    ForEach(section.items, id: \.id) { item in
-                                                        if item.type == "mood" {
-                                                            NavigationLink(destination: MoodPlaylistsView(params: item.id, moodTitle: item.title)) {
-                                                                DashboardCardView(item: item)
-                                                            }
-                                                        } else if item.type == "playlist" || item.type == "album" {
-                                                            NavigationLink(destination: AlbumDetailView(albumId: item.id)) {
-                                                                DashboardCardView(item: item)
-                                                            }
-                                                        } else {
-                                                            // Song
-                                                            DashboardCardView(item: item)
-                                                                .onTapGesture {
-                                                                    let song = Song(
-                                                                        id: item.id,
-                                                                        title: item.title,
-                                                                        artist: item.subtitle ?? "Unknown",
-                                                                        album: nil,
-                                                                        durationMs: 0,
-                                                                        coverArtUrl: item.imageUrl
-                                                                    )
-                                                                    audioManager.play(song: song)
-                                                                    showFullScreenPlayer = true
-                                                                    networkManager.recordHistory(songId: song.id)
-                                                                }
-                                                        }
-                                                    }
-                                                }
-                                                .padding(.horizontal)
-                                            }
-                                        }
-                                    }
+                        ScrollView {
+                            VStack(spacing: 30) {
+                                ForEach(networkManager.dashboardSections) { section in
+                                    DashboardSectionView(section: section)
                                 }
-                                .padding(.vertical)
                             }
+                            .padding(.top, 20)
+                            .padding(.bottom, 100) // Space for mini player
                         }
                     }
                 }
             }
             .navigationBarHidden(true)
             .onAppear {
-                networkManager.fetchDashboard()
+                if networkManager.dashboardSections.isEmpty {
+                    networkManager.fetchDashboard()
+                }
             }
             .fullScreenCover(isPresented: $showFullScreenPlayer) {
                 FullScreenPlayerView(isShowing: $showFullScreenPlayer)
             }
         }
     }
+    
+    private var searchResultsView: some View {
+        ScrollView {
+            LazyVStack(spacing: 12) {
+                ForEach(searchResults) { song in
+                    SongRowView(song: song, isPlaying: audioManager.currentSong?.id == song.id)
+                        .onTapGesture {
+                            audioManager.play(song: song, in: searchResults, at: searchResults.firstIndex(where: { $0.id == song.id }) ?? 0)
+                            showFullScreenPlayer = true
+                            
+                            // Hide keyboard
+                            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                        }
+                        .padding(.horizontal)
+                }
+            }
+            .padding(.top)
+        }
+    }
+    
+    private func performSearch() {
+        guard !searchText.isEmpty else { return }
+        isSearching = true
+        
+        networkManager.search(query: searchText) { results in
+            DispatchQueue.main.async {
+                self.searchResults = results
+            }
+        }
+    }
 }
 
-struct DashboardCardView: View {
+struct DashboardSectionView: View {
+    let section: DashboardSection
+    @StateObject private var audioManager = AudioPlayerManager.shared
+    @State private var showFullScreenPlayer = false
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 15) {
+            Text(section.title)
+                .font(.title2)
+                .bold()
+                .foregroundColor(.white)
+                .padding(.horizontal)
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 16) {
+                    ForEach(section.items) { item in
+                        DashboardItemCard(item: item)
+                            .onTapGesture {
+                                if item.type == "song" {
+                                    // Convert to Song model and play
+                                    let song = Song(id: item.id, title: item.title, artist: item.subtitle ?? "Unknown", album: nil, durationMs: nil, coverArtUrl: item.imageUrl)
+                                    audioManager.play(song: song)
+                                    showFullScreenPlayer = true
+                                }
+                            }
+                    }
+                }
+                .padding(.horizontal)
+            }
+        }
+        .fullScreenCover(isPresented: $showFullScreenPlayer) {
+            FullScreenPlayerView(isShowing: $showFullScreenPlayer)
+        }
+    }
+}
+
+struct DashboardItemCard: View {
     let item: DashboardItem
     
     var body: some View {
-        VStack(alignment: .leading) {
-            if item.type == "mood" {
-                // Pill shape for moods
-                Text(item.title)
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 12)
-                    .background(LinearGradient(gradient: Gradient(colors: [Theme.spiderRed, Theme.spiderNeonRed]), startPoint: .topLeading, endPoint: .bottomTrailing))
-                    .cornerRadius(20)
-                    .shadow(color: Theme.spiderNeonRed.opacity(0.4), radius: 5, x: 0, y: 3)
-            } else {
-                // Square card for songs/playlists
-                ZStack(alignment: .bottomLeading) {
-                    AsyncImage(url: URL(string: item.imageUrl ?? "")) { image in
-                        image.resizable()
-                            .aspectRatio(contentMode: .fill)
-                    } placeholder: {
-                        Rectangle().fill(Theme.spiderDarkGrey)
-                    }
-                    .frame(width: 140, height: 140)
-                    .cornerRadius(12)
-                    
-                    // Dark gradient overlay for text readability
-                    LinearGradient(gradient: Gradient(colors: [.clear, .black.opacity(0.8)]), startPoint: .top, endPoint: .bottom)
-                        .cornerRadius(12)
-                    
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(item.title)
-                            .font(.subheadline)
-                            .bold()
-                            .foregroundColor(.white)
-                            .lineLimit(1)
-                        
-                        if let subtitle = item.subtitle {
-                            Text(subtitle)
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                                .lineLimit(1)
+        VStack(alignment: .leading, spacing: 8) {
+            // Image container
+            ZStack {
+                if let urlString = item.imageUrl, let url = URL(string: urlString) {
+                    AsyncImage(url: url) { phase in
+                        if let image = phase.image {
+                            image.resizable().aspectRatio(contentMode: .fill)
+                        } else {
+                            Color(Theme.spiderDarkGrey)
                         }
                     }
-                    .padding(8)
+                } else {
+                    Color(Theme.spiderDarkGrey)
+                    Image(systemName: item.type == "song" ? "music.note" : "square.stack.fill")
+                        .foregroundColor(.gray)
+                        .font(.largeTitle)
                 }
-                .frame(width: 140, height: 140)
-                .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: 5)
             }
-        }
-    }
-}
-
-struct SongRowView: View {
-    let song: Song
-    let isPlaying: Bool
-    
-    var body: some View {
-        HStack(spacing: 15) {
-            AsyncImage(url: URL(string: song.coverArtUrl ?? "")) { image in
-                image.resizable().aspectRatio(contentMode: .fill)
-            } placeholder: {
-                Color.gray.opacity(0.3)
-            }
-            .frame(width: 60, height: 60)
-            .cornerRadius(8)
-            .shadow(color: isPlaying ? Theme.spiderNeonRed.opacity(0.5) : .clear, radius: 5, x: 0, y: 0)
+            .frame(width: 150, height: 150)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: 3)
             
-            VStack(alignment: .leading, spacing: 4) {
-                Text(song.title)
-                    .font(.headline)
-                    .foregroundColor(isPlaying ? Theme.spiderNeonRed : .white)
-                    .lineLimit(1)
-                Text(song.artist)
-                    .font(.subheadline)
+            // Text
+            Text(item.title)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(.white)
+                .lineLimit(1)
+            
+            if let subtitle = item.subtitle {
+                Text(subtitle)
+                    .font(.system(size: 12))
                     .foregroundColor(.gray)
                     .lineLimit(1)
             }
-            Spacer()
-            
-            if isPlaying {
-                Image(systemName: "waveform")
-                    .foregroundColor(Theme.spiderNeonRed)
-            } else {
-                Text(formatTime(song.durationMs))
-                    .font(.caption)
-                    .foregroundColor(.gray)
-            }
         }
-        .padding(10)
-        .background(Color.white.opacity(0.05))
-        .cornerRadius(12)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(isPlaying ? Theme.spiderNeonRed.opacity(0.5) : Theme.spiderDarkGrey, lineWidth: 1)
-        )
-    }
-    
-    private func formatTime(_ ms: Int?) -> String {
-        guard let ms = ms else { return "0:00" }
-        let totalSeconds = ms / 1000
-        let minutes = totalSeconds / 60
-        let seconds = totalSeconds % 60
-        return String(format: "%d:%02d", minutes, seconds)
+        .frame(width: 150)
     }
 }

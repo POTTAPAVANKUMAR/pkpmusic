@@ -154,12 +154,21 @@ struct FullScreenPlayerView: View {
                     .padding(.top, 20)
                     
                     // Playback Controls
-                    HStack(spacing: 40) {
+                    HStack(spacing: 30) {
+                        // Shuffle Button
+                        Button(action: {
+                            audioManager.toggleShuffle()
+                        }) {
+                            Image(systemName: audioManager.isShuffled ? "shuffle" : "shuffle")
+                                .font(.system(size: 24))
+                                .foregroundColor(audioManager.isShuffled ? Theme.spiderNeonRed : .white.opacity(0.5))
+                        }
+                        
                         Button(action: {
                             audioManager.playPrevious()
                         }) {
                             Image(systemName: "backward.fill")
-                                .font(.system(size: 35))
+                                .font(.system(size: 30))
                                 .foregroundColor(.white)
                         }
                         
@@ -171,17 +180,25 @@ struct FullScreenPlayerView: View {
                             }
                         }) {
                             Image(systemName: audioManager.isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                                .font(.system(size: 80))
-                                .foregroundColor(Theme.spiderRed)
-                                .shadow(color: Theme.spiderNeonRed.opacity(0.5), radius: 10, x: 0, y: 0)
+                                .font(.system(size: 70))
+                                .foregroundColor(Theme.spiderNeonRed)
                         }
                         
                         Button(action: {
                             audioManager.playNext()
                         }) {
                             Image(systemName: "forward.fill")
-                                .font(.system(size: 35))
+                                .font(.system(size: 30))
                                 .foregroundColor(.white)
+                        }
+                        
+                        // Repeat Button
+                        Button(action: {
+                            audioManager.toggleRepeat()
+                        }) {
+                            Image(systemName: audioManager.repeatMode == .one ? "repeat.1" : "repeat")
+                                .font(.system(size: 24))
+                                .foregroundColor(audioManager.repeatMode == .off ? .white.opacity(0.5) : Theme.spiderNeonRed)
                         }
                     }
                     .padding(.top, 30)

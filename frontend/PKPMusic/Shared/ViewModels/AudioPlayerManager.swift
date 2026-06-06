@@ -13,6 +13,14 @@ class AudioPlayerManager: ObservableObject {
     @Published var progress: Double = 0.0
     @Published var duration: Double = 0.0
     
+    @Published var isShuffled = false
+    
+    enum RepeatMode {
+        case off, all, one
+    }
+    @Published var repeatMode: RepeatMode = .off
+    
+    private var originalQueue: [Song] = []
     private var queue: [Song] = []
     private var currentIndex: Int = 0
     
@@ -20,11 +28,22 @@ class AudioPlayerManager: ObservableObject {
         setupRemoteTransportControls()
     }
     
-    func play(song: Song, in queue: [Song] = [], at index: Int = 0) {
+    func play(song: Song, in newQueue: [Song] = [], at index: Int = 0) {
         guard let url = NetworkManager.shared.getStreamURL(for: song.id) else { return }
         
-        self.queue = queue.isEmpty ? [song] : queue
-        self.currentIndex = queue.isEmpty ? 0 : index
+        if !newQueue.isEmpty {
+            self.originalQueue = newQueue
+            if isShuffled {
+                shuffleQueue(startingWith: song)
+            } else {
+                self.queue = newQueue
+                self.currentIndex = index
+            }
+        } else if self.queue.isEmpty {
+            self.originalQueue = [song]
+            self.queue = [song]
+            self.currentIndex = 0
+        }
         
         do {
             try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
@@ -53,6 +72,31 @@ class AudioPlayerManager: ObservableObject {
         setupTimeObserver()
     }
     
+    func toggleShuffle() {
+        isShuffled.toggle()
+        if isShuffled, let current = currentSong {
+            shuffleQueue(startingWith: current)
+        } else if let current = currentSong, let idx = originalQueue.firstIndex(where: { $0.id == current.id }) {
+            queue = originalQueue
+            currentIndex = idx
+        }
+    }
+    
+    func toggleRepeat() {
+        switch repeatMode {
+        case .off: repeatMode = .all
+        case .all: repeatMode = .one
+        case .one: repeatMode = .off
+        }
+    }
+    
+    private func shuffleQueue(startingWith song: Song) {
+        var remaining = originalQueue.filter { $0.id != song.id }
+        remaining.shuffle() // Fisher-Yates built-in to Swift
+        queue = [song] + remaining
+        currentIndex = 0
+    }
+    
     private func setupTimeObserver() {
         let interval = CMTime(seconds: 0.5, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
         timeObserver = player?.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
@@ -69,22 +113,36 @@ class AudioPlayerManager: ObservableObject {
     }
     
     @objc private func playerDidFinishPlaying(note: NSNotification) {
-        playNext()
+        if repeatMode == .one {
+            seek(to: 0)
+            resume()
+        } else {
+            playNext(isAutoPlay: true)
+        }
     }
     
-    func playNext() {
-        guard !queue.isEmpty, currentIndex < queue.count - 1 else { return }
-        currentIndex += 1
-        play(song: queue[currentIndex], in: queue, at: currentIndex)
+    func playNext(isAutoPlay: Bool = false) {
+        guard !queue.isEmpty else { return }
+        if currentIndex < queue.count - 1 {
+            currentIndex += 1
+            play(song: queue[currentIndex])
+        } else if repeatMode == .all || (!isAutoPlay && isShuffled) {
+            currentIndex = 0
+            play(song: queue[currentIndex])
+        } else {
+            pause()
+            seek(to: 0)
+        }
     }
     
     func playPrevious() {
-        guard !queue.isEmpty, currentIndex > 0 else {
+        guard !queue.isEmpty else { return }
+        if progress > 3.0 || currentIndex == 0 {
             seek(to: 0)
-            return
+        } else {
+            currentIndex -= 1
+            play(song: queue[currentIndex])
         }
-        currentIndex -= 1
-        play(song: queue[currentIndex], in: queue, at: currentIndex)
     }
     
     func pause() {

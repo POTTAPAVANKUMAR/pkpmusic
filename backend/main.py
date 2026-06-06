@@ -42,44 +42,78 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     return crud.create_user(db=db, user=user)
 
 @app.post("/playlists/import/csv")
-async def import_playlist_csv(file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def import_playlist_csv(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
     content = await file.read()
-    text = content.decode("utf-8")
-    reader = csv.DictReader(io.StringIO(text))
+    text = content.decode("utf-8-sig")
+    
+    # Run the heavy processing in the background
+    background_tasks.add_task(process_csv_import, text, user_id=1)
+    
+    return {"message": "Import process started in the background. Songs and playlists will gradually appear in your library."}
+
+def process_csv_import(csv_text: str, user_id: int):
+    # We need a new DB session for the background task
+    db = SessionLocal()
+    yt = YTMusic()
+    reader = csv.DictReader(io.StringIO(csv_text))
+    
+    existing_playlists = crud.get_playlists(db, limit=1000)
+    playlist_map = {p.name: p.id for p in existing_playlists}
     
     imported_count = 0
-    yt = YTMusic()
-
     for row in reader:
-        title = row.get("Track Name", row.get("Title", row.get("title", "")))
-        artist = row.get("Artist Name", row.get("Artist", row.get("artist", "")))
+        title = row.get("Track name", row.get("Track Name", row.get("Title", row.get("title", ""))))
+        artist = row.get("Artist name", row.get("Artist Name", row.get("Artist", row.get("artist", ""))))
+        playlist_name = row.get("Playlist name", "")
         
-        if title:
+        if not title:
+            continue
+            
+        try:
             query = f"{title} {artist}"
             results = yt.search(query, filter="songs")
             if results:
                 top_hit = results[0]
                 video_id = top_hit['videoId']
+                if not video_id:
+                    continue
+                    
                 db_song = crud.get_song(db, video_id)
                 if not db_song:
                     song_data = schemas.SongCreate(
                         id=video_id,
-                        title=top_hit['title'],
-                        artist=top_hit['artists'][0]['name'] if top_hit.get('artists') else "Unknown",
+                        title=top_hit.get('title', title),
+                        artist=top_hit['artists'][0]['name'] if top_hit.get('artists') else artist,
                         album=top_hit['album']['name'] if top_hit.get('album') else None,
                         duration_ms=top_hit.get('duration_seconds', 0) * 1000 if top_hit.get('duration_seconds') else None,
                         cover_art_url=top_hit['thumbnails'][-1]['url'] if top_hit.get('thumbnails') else None
                     )
                     crud.create_song(db, song_data)
                 
-                # Check if it's already in favorites to prevent duplicates
-                existing_favs = crud.get_favorites(db, user_id=1)
-                if not any(f.song_id == video_id for f in existing_favs):
-                    fav = schemas.FavoriteCreate(song_id=video_id)
-                    crud.add_favorite(db, fav, user_id=1)
+                # Check where it should go
+                if playlist_name in ["Library Songs", "My Likes", "Library Albums", ""]:
+                    existing_favs = crud.get_favorites(db, user_id=user_id)
+                    if not any(f.song_id == video_id for f in existing_favs):
+                        fav = schemas.FavoriteCreate(song_id=video_id)
+                        crud.add_favorite(db, fav, user_id=user_id)
+                else:
+                    if playlist_name not in playlist_map:
+                        p_create = schemas.PlaylistCreate(name=playlist_name)
+                        new_p = crud.create_user_playlist(db, p_create, user_id=user_id)
+                        playlist_map[playlist_name] = new_p.id
+                        
+                    pid = playlist_map[playlist_name]
+                    db_playlist = db.query(models.Playlist).filter(models.Playlist.id == pid).first()
+                    if db_playlist and not any(i.song_id == video_id for i in db_playlist.items):
+                        item = schemas.PlaylistItemCreate(song_id=video_id, position=0)
+                        crud.add_song_to_playlist(db, playlist_id=pid, item=item)
+                        
                 imported_count += 1
-
-    return {"message": f"Successfully imported {imported_count} songs to favorites"}
+        except Exception as e:
+            print(f"Error importing {title}: {e}")
+            
+    db.close()
+    print(f"Background CSV Import Complete: {imported_count} songs imported.")
 
 @app.get("/search/yt", response_model=List[schemas.SongBase])
 def search_youtube(query: str = Query(..., min_length=1)):
@@ -250,14 +284,27 @@ dashboard_cache = {
 }
 CACHE_TTL = 3600 # 1 hour
 
-@app.get("/dashboard/", response_model=List[schemas.DashboardSection])
-def get_dashboard(user_id: int = 1, db: Session = Depends(get_db)):
-    global dashboard_cache
-    
-    # Check cache
-    if dashboard_cache["data"] and (time.time() - dashboard_cache["timestamp"]) < CACHE_TTL:
-        return dashboard_cache["data"]
+import asyncio
+from fastapi import BackgroundTasks
 
+@app.on_event("startup")
+async def startup_event():
+    # Pre-warm the cache in the background
+    asyncio.create_task(prewarm_dashboard_cache())
+
+async def prewarm_dashboard_cache():
+    try:
+        # Give the server a few seconds to fully boot
+        await asyncio.sleep(5)
+        # We need a db session to fetch history
+        db = SessionLocal()
+        get_dashboard_sync(user_id=1, db=db)
+        db.close()
+    except Exception as e:
+        print(f"Error pre-warming cache: {e}")
+
+def get_dashboard_sync(user_id: int, db: Session):
+    global dashboard_cache
     sections = []
     
     # 1. Trending Songs (Charts)
@@ -332,15 +379,32 @@ def get_dashboard(user_id: int = 1, db: Session = Depends(get_db)):
                         image_url=content.get('thumbnails', [{}])[-1].get('url'),
                         type="song"
                     ))
+                elif content.get('playlistId'):
+                    items.append(schemas.DashboardItem(
+                        id=content['playlistId'],
+                        title=content.get('title', 'Unknown'),
+                        subtitle=content.get('description'),
+                        image_url=content.get('thumbnails', [{}])[-1].get('url'),
+                        type="playlist"
+                    ))
             if items:
                 sections.append(schemas.DashboardSection(title=title, items=items))
     except Exception as e:
-        print(f"Error fetching home: {e}")
+        print(f"Error fetching home features: {e}")
 
     dashboard_cache["data"] = sections
     dashboard_cache["timestamp"] = time.time()
-    
     return sections
+
+@app.get("/dashboard/", response_model=List[schemas.DashboardSection])
+def get_dashboard(user_id: int = 1, db: Session = Depends(get_db)):
+    global dashboard_cache
+    
+    # Check cache
+    if dashboard_cache["data"] and (time.time() - dashboard_cache["timestamp"]) < CACHE_TTL:
+        return dashboard_cache["data"]
+
+    return get_dashboard_sync(user_id, db)
 
 @app.post("/favorites/", response_model=schemas.Favorite)
 def add_favorite(favorite: schemas.FavoriteCreate, user_id: int = 1, db: Session = Depends(get_db)):

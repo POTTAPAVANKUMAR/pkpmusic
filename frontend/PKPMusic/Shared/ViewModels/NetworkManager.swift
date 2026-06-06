@@ -246,4 +246,33 @@ class NetworkManager: ObservableObject {
             }
         }.resume()
     }
+    func uploadCSV(fileURL: URL, completion: @escaping (Bool) -> Void) {
+        guard let url = URL(string: "\(baseURL)/playlists/import/csv") else { return }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        
+        let boundary = UUID().uuidString
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        
+        guard let fileData = try? Data(contentsOf: fileURL) else {
+            completion(false)
+            return
+        }
+        
+        var body = Data()
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"file\"; filename=\"import.csv\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: text/csv\r\n\r\n".data(using: .utf8)!)
+        body.append(fileData)
+        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+        
+        request.httpBody = body
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                completion(error == nil)
+            }
+        }.resume()
+    }
 }

@@ -31,17 +31,12 @@ struct ContentView: View {
             TabView {
                 HomeView()
                     .tabItem {
-                        Label("Listen Now", systemImage: "play.circle.fill")
+                        Label("Home", systemImage: "music.note.house.fill")
                     }
                 
-                FavoritesView()
+                LibraryView()
                     .tabItem {
-                        Label("Favorites", systemImage: "heart.fill")
-                    }
-                
-                PlaylistsView()
-                    .tabItem {
-                        Label("Playlists", systemImage: "music.note.list")
+                        Label("Library", systemImage: "play.square.stack.fill")
                     }
             }
             .accentColor(Theme.spiderRed)
