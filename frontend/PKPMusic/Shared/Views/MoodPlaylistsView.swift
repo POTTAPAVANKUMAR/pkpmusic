@@ -21,7 +21,7 @@ struct MoodPlaylistsView: View {
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 20) {
                         ForEach(playlists, id: \.id) { playlist in
                             NavigationLink(destination: AlbumDetailView(albumId: playlist.id)) { // We can use AlbumDetailView for playlists too since it just fetches a browseId/playlistId
-                                DashboardCardView(item: playlist)
+                                DashboardItemCard(item: playlist)
                             }
                         }
                     }
