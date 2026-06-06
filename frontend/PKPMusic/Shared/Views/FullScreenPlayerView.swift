@@ -40,43 +40,41 @@ struct FullScreenPlayerView: View {
                             .font(.title2)
                             .foregroundColor(.white)
                     }
-                    .actionSheet(isPresented: $showingOptions) {
-                        ActionSheet(title: Text("Options"), buttons: [
-                            .default(Text("Add to Playlist")) {
-                                networkManager.fetchPlaylists()
-                                showingPlaylists = true
-                            },
-                            .cancel()
-                        ])
-                    }
-                    .sheet(isPresented: $showingPlaylists) {
-                        NavigationView {
-                            List {
-                                if networkManager.playlists.isEmpty {
-                                    Text("No playlists found. Create one in the Playlists tab!")
-                                        .foregroundColor(.gray)
-                                } else {
-                                    ForEach(networkManager.playlists, id: \.id) { playlist in
-                                        Button(action: {
-                                            if let song = audioManager.currentSong {
-                                                networkManager.addSongToPlaylist(songId: song.id, playlistId: playlist.id)
-                                            }
-                                            showingPlaylists = false
-                                        }) {
-                                            Text(playlist.name)
-                                                .foregroundColor(.white)
-                                        }
-                                    }
-                                }
-                            }
-                            .navigationTitle("Select Playlist")
-                            .navigationBarItems(trailing: Button("Cancel") {
-                                showingPlaylists = false
-                            })
+                    .confirmationDialog("Options", isPresented: $showingOptions, titleVisibility: .visible) {
+                        Button("Add to Playlist") {
+                            networkManager.fetchPlaylists()
+                            showingPlaylists = true
                         }
+                        Button("Cancel", role: .cancel) {}
                     }
                 }
                 .padding()
+                .sheet(isPresented: $showingPlaylists) {
+                    NavigationView {
+                        List {
+                            if networkManager.playlists.isEmpty {
+                                Text("No playlists found. Create one in the Playlists tab!")
+                                    .foregroundColor(.gray)
+                            } else {
+                                ForEach(networkManager.playlists, id: \.id) { playlist in
+                                    Button(action: {
+                                        if let song = audioManager.currentSong {
+                                            networkManager.addSongToPlaylist(songId: song.id, playlistId: playlist.id)
+                                        }
+                                        showingPlaylists = false
+                                    }) {
+                                        Text(playlist.name)
+                                            .foregroundColor(.white)
+                                    }
+                                }
+                            }
+                        }
+                        .navigationTitle("Select Playlist")
+                        .navigationBarItems(trailing: Button("Cancel") {
+                            showingPlaylists = false
+                        })
+                    }
+                }
                 
                 Spacer()
                 
