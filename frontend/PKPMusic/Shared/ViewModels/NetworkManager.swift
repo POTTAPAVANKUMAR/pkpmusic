@@ -4,7 +4,7 @@ class NetworkManager: ObservableObject {
     static let shared = NetworkManager()
     
     // Cloudflare Tunnel URL for your Raspberry Pi
-    private let baseURL = "https://pkpmusic.pottapk.win" 
+    let baseURL = "https://pkpmusic.pottapk.win" 
     
     @Published var songs: [Song] = []
     @Published var searchResults: [Song] = []
@@ -14,13 +14,19 @@ class NetworkManager: ObservableObject {
     @Published var dashboardError: String?
     @Published var isLoading: Bool = false
     
-    // Add dummy auth user for now
-    let userId = 1
+    private func createRequest(for urlString: String, method: String = "GET") -> URLRequest? {
+        guard let url = URL(string: urlString) else { return nil }
+        var request = URLRequest(url: url)
+        request.httpMethod = method
+        if let token = AuthManager.shared.token {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        return request
+    }
     
     func fetchDashboard() {
-        guard let url = URL(string: "\(baseURL)/dashboard/?user_id=\(userId)") else { return }
-        
-        URLSession.shared.dataTask(with: url) { data, response, error in
+        guard let request = createRequest(for: "\(baseURL)/dashboard/") else { return }
+        URLSession.shared.dataTask(with: request) { data, response, error in
             if let data = data {
                 do {
                     let decodedSections = try JSONDecoder().decode([DashboardSection].self, from: data)
@@ -35,10 +41,8 @@ class NetworkManager: ObservableObject {
     }
     
     func fetchSongs() {
-        // Now fetching from history to simulate Home View
-        guard let url = URL(string: "\(baseURL)/history/?user_id=\(userId)") else { return }
-        
-        URLSession.shared.dataTask(with: url) { data, response, error in
+        guard let request = createRequest(for: "\(baseURL)/history/") else { return }
+        URLSession.shared.dataTask(with: request) { data, response, error in
             if let data = data {
                 do {
                     struct HistoryItem: Codable {
@@ -56,9 +60,8 @@ class NetworkManager: ObservableObject {
     }
     
     func fetchFavorites() {
-        guard let url = URL(string: "\(baseURL)/favorites/?user_id=\(userId)") else { return }
-        
-        URLSession.shared.dataTask(with: url) { data, response, error in
+        guard let request = createRequest(for: "\(baseURL)/favorites/") else { return }
+        URLSession.shared.dataTask(with: request) { data, response, error in
             if let data = data {
                 do {
                     struct FavoriteItem: Codable {
@@ -76,9 +79,8 @@ class NetworkManager: ObservableObject {
     }
     
     func fetchPlaylists() {
-        guard let url = URL(string: "\(baseURL)/playlists/?user_id=\(userId)") else { return }
-        
-        URLSession.shared.dataTask(with: url) { data, response, error in
+        guard let request = createRequest(for: "\(baseURL)/playlists/") else { return }
+        URLSession.shared.dataTask(with: request) { data, response, error in
             if let data = data {
                 do {
                     let decodedPlaylists = try JSONDecoder().decode([Playlist].self, from: data)
@@ -93,9 +95,7 @@ class NetworkManager: ObservableObject {
     }
     
     func createPlaylist(name: String) {
-        guard let url = URL(string: "\(baseURL)/playlists/?user_id=\(userId)") else { return }
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
+        guard var request = createRequest(for: "\(baseURL)/playlists/", method: "POST") else { return }
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
         let body: [String: Any] = ["name": name]
@@ -109,9 +109,7 @@ class NetworkManager: ObservableObject {
     }
     
     func addSongToPlaylist(songId: String, playlistId: Int) {
-        guard let url = URL(string: "\(baseURL)/playlists/\(playlistId)/items") else { return }
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
+        guard var request = createRequest(for: "\(baseURL)/playlists/\(playlistId)/items", method: "POST") else { return }
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
         let body: [String: Any] = ["song_id": songId, "position": 0]
@@ -119,23 +117,19 @@ class NetworkManager: ObservableObject {
         
         URLSession.shared.dataTask(with: request) { data, response, error in
             if error == nil {
-                self.fetchPlaylists() // Refresh to get updated items
+                self.fetchPlaylists()
             }
         }.resume()
     }
     
     func searchYouTube(query: String) {
         guard let escapedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-              let url = URL(string: "\(baseURL)/search/yt?query=\(escapedQuery)") else { return }
+              let request = createRequest(for: "\(baseURL)/search/yt?query=\(escapedQuery)") else { return }
               
-        DispatchQueue.main.async {
-            self.isLoading = true
-        }
+        DispatchQueue.main.async { self.isLoading = true }
         
-        URLSession.shared.dataTask(with: url) { data, response, error in
-            DispatchQueue.main.async {
-                self.isLoading = false
-            }
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async { self.isLoading = false }
             if let data = data {
                 do {
                     let results = try JSONDecoder().decode([Song].self, from: data)
@@ -150,9 +144,7 @@ class NetworkManager: ObservableObject {
     }
     
     func recordHistory(songId: String) {
-        guard let url = URL(string: "\(baseURL)/history/?user_id=\(userId)") else { return }
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
+        guard var request = createRequest(for: "\(baseURL)/history/", method: "POST") else { return }
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
         let formatter = ISO8601DateFormatter()
@@ -164,9 +156,7 @@ class NetworkManager: ObservableObject {
     }
     
     func addToFavorites(songId: String) {
-        guard let url = URL(string: "\(baseURL)/favorites/?user_id=\(userId)") else { return }
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
+        guard var request = createRequest(for: "\(baseURL)/favorites/", method: "POST") else { return }
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
         let body: [String: Any] = ["song_id": songId]
@@ -174,7 +164,7 @@ class NetworkManager: ObservableObject {
         
         URLSession.shared.dataTask(with: request) { data, response, error in
             if error == nil {
-                self.fetchFavorites() // Refresh
+                self.fetchFavorites()
             }
         }.resume()
     }
@@ -183,13 +173,11 @@ class NetworkManager: ObservableObject {
         return URL(string: "\(baseURL)/stream/yt/\(songId)")
     }
     
-    // MARK: - New Features
-    
     func fetchSearchSuggestions(query: String, completion: @escaping ([String]) -> Void) {
         guard let encodedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-              let url = URL(string: "\(baseURL)/search/suggestions?query=\(encodedQuery)") else { return }
+              let request = createRequest(for: "\(baseURL)/search/suggestions?query=\(encodedQuery)") else { return }
         
-        URLSession.shared.dataTask(with: url) { data, _, _ in
+        URLSession.shared.dataTask(with: request) { data, _, _ in
             if let data = data, let suggestions = try? JSONDecoder().decode([String].self, from: data) {
                 DispatchQueue.main.async { completion(suggestions) }
             }
@@ -197,8 +185,8 @@ class NetworkManager: ObservableObject {
     }
     
     func fetchLyrics(videoId: String, completion: @escaping (LyricsResponse?) -> Void) {
-        guard let url = URL(string: "\(baseURL)/lyrics/\(videoId)") else { return }
-        URLSession.shared.dataTask(with: url) { data, _, _ in
+        guard let request = createRequest(for: "\(baseURL)/lyrics/\(videoId)") else { return }
+        URLSession.shared.dataTask(with: request) { data, _, _ in
             if let data = data, let lyrics = try? JSONDecoder().decode(LyricsResponse.self, from: data) {
                 DispatchQueue.main.async { completion(lyrics) }
             } else {
@@ -208,8 +196,8 @@ class NetworkManager: ObservableObject {
     }
     
     func fetchArtist(channelId: String, completion: @escaping (ArtistDetail?) -> Void) {
-        guard let url = URL(string: "\(baseURL)/artist/\(channelId)") else { return }
-        URLSession.shared.dataTask(with: url) { data, _, _ in
+        guard let request = createRequest(for: "\(baseURL)/artist/\(channelId)") else { return }
+        URLSession.shared.dataTask(with: request) { data, _, _ in
             if let data = data {
                 do {
                     let artist = try JSONDecoder().decode(ArtistDetail.self, from: data)
@@ -223,8 +211,8 @@ class NetworkManager: ObservableObject {
     }
     
     func fetchAlbum(browseId: String, completion: @escaping (AlbumDetail?) -> Void) {
-        guard let url = URL(string: "\(baseURL)/album/\(browseId)") else { return }
-        URLSession.shared.dataTask(with: url) { data, _, _ in
+        guard let request = createRequest(for: "\(baseURL)/album/\(browseId)") else { return }
+        URLSession.shared.dataTask(with: request) { data, _, _ in
             if let data = data {
                 do {
                     let album = try JSONDecoder().decode(AlbumDetail.self, from: data)
@@ -238,8 +226,8 @@ class NetworkManager: ObservableObject {
     }
     
     func fetchMoodPlaylists(params: String, completion: @escaping ([DashboardItem]) -> Void) {
-        guard let url = URL(string: "\(baseURL)/moods/\(params)") else { return }
-        URLSession.shared.dataTask(with: url) { data, _, _ in
+        guard let request = createRequest(for: "\(baseURL)/moods/\(params)") else { return }
+        URLSession.shared.dataTask(with: request) { data, _, _ in
             if let data = data, let items = try? JSONDecoder().decode([DashboardItem].self, from: data) {
                 DispatchQueue.main.async { completion(items) }
             } else {
@@ -247,11 +235,9 @@ class NetworkManager: ObservableObject {
             }
         }.resume()
     }
+    
     func uploadCSV(fileURL: URL, completion: @escaping (Bool) -> Void) {
-        guard let url = URL(string: "\(baseURL)/playlists/import/csv") else { return }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
+        guard var request = createRequest(for: "\(baseURL)/playlists/import/csv", method: "POST") else { return }
         
         let boundary = UUID().uuidString
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")

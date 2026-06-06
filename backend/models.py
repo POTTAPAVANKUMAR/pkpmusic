@@ -10,6 +10,8 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     is_active = Column(Boolean, default=True)
+    otp_code = Column(String, nullable=True)
+    otp_expires_at = Column(Float, nullable=True) # Epoch timestamp
 
     playlists = relationship("Playlist", back_populates="owner")
 

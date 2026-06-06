@@ -11,7 +11,7 @@ import httpx
 from fastapi.responses import RedirectResponse, StreamingResponse
 from starlette.requests import Request
 
-import models, schemas, crud
+import models, schemas, crud, auth
 from database import SessionLocal, engine
 
 # Create the database tables
@@ -34,20 +34,66 @@ yt = YTMusic()
 def read_root():
     return {"message": "Welcome to the PKP Music API"}
 
-@app.post("/users/", response_model=schemas.User)
+@app.post("/auth/register", response_model=schemas.User)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_user = crud.get_user_by_email(db, email=user.email)
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
     return crud.create_user(db=db, user=user)
 
+@app.post("/auth/login", response_model=schemas.Token)
+def login_for_access_token(user: schemas.UserLogin, db: Session = Depends(get_db)):
+    db_user = crud.get_user_by_email(db, email=user.email)
+    if not db_user or not auth.verify_password(user.password, db_user.hashed_password):
+        raise HTTPException(
+            status_code=401,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token_expires = auth.timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = auth.create_access_token(
+        data={"sub": db_user.email}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@app.post("/auth/forgot-password")
+def forgot_password(req: schemas.ForgotPassword, db: Session = Depends(get_db)):
+    db_user = crud.get_user_by_email(db, email=req.email)
+    if not db_user:
+        # Prevent email enumeration by returning success anyway
+        return {"message": "If that email is in our system, an OTP has been sent."}
+    
+    otp = auth.generate_otp()
+    expires_at = time.time() + (15 * 60) # 15 mins from now
+    crud.update_user_otp(db, db_user, otp, expires_at)
+    
+    # Mock Email Sending
+    auth.send_otp_email(db_user.email, otp)
+    
+    return {"message": "If that email is in our system, an OTP has been sent."}
+
+@app.post("/auth/verify-otp")
+def verify_otp(req: schemas.VerifyOTP, db: Session = Depends(get_db)):
+    db_user = crud.get_user_by_email(db, email=req.email)
+    if not db_user or not db_user.otp_code:
+        raise HTTPException(status_code=400, detail="Invalid request")
+        
+    if db_user.otp_code != req.otp:
+        raise HTTPException(status_code=400, detail="Invalid OTP")
+        
+    if time.time() > db_user.otp_expires_at:
+        raise HTTPException(status_code=400, detail="OTP has expired")
+        
+    crud.update_user_password(db, db_user, req.new_password)
+    return {"message": "Password updated successfully"}
+
 @app.post("/playlists/import/csv")
-async def import_playlist_csv(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
+async def import_playlist_csv(background_tasks: BackgroundTasks, file: UploadFile = File(...), current_user: models.User = Depends(auth.get_current_user)):
     content = await file.read()
     text = content.decode("utf-8-sig")
     
     # Run the heavy processing in the background
-    background_tasks.add_task(process_csv_import, text, user_id=1)
+    background_tasks.add_task(process_csv_import, text, user_id=current_user.id)
     
     return {"message": "Import process started in the background. Songs and playlists will gradually appear in your library."}
 
@@ -208,16 +254,16 @@ async def stream_youtube(video_id: str, request: Request):
 
 # Playlists API
 @app.post("/playlists/", response_model=schemas.Playlist)
-def create_playlist(playlist: schemas.PlaylistCreate, user_id: int = 1, db: Session = Depends(get_db)):
-    return crud.create_user_playlist(db, playlist, user_id)
+def create_playlist(playlist: schemas.PlaylistCreate, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(get_db)):
+    return crud.create_user_playlist(db, playlist, current_user.id)
 
 @app.get("/playlists/", response_model=List[schemas.Playlist])
-def get_playlists(user_id: int = 1, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def get_playlists(skip: int = 0, limit: int = 100, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(get_db)):
     # Assuming crud.get_playlists can be modified or we just query by owner
-    return db.query(models.Playlist).filter(models.Playlist.owner_id == user_id).offset(skip).limit(limit).all()
+    return db.query(models.Playlist).filter(models.Playlist.owner_id == current_user.id).offset(skip).limit(limit).all()
 
 @app.post("/playlists/{playlist_id}/items", response_model=schemas.PlaylistItem)
-def add_song_to_playlist(playlist_id: int, item: schemas.PlaylistItemCreate, db: Session = Depends(get_db)):
+def add_song_to_playlist(playlist_id: int, item: schemas.PlaylistItemCreate, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(get_db)):
     # Ensure song exists
     db_song = crud.get_song(db, song_id=item.song_id)
     if not db_song:
@@ -241,12 +287,12 @@ def add_song_to_playlist(playlist_id: int, item: schemas.PlaylistItemCreate, db:
     return crud.add_song_to_playlist(db, playlist_id=playlist_id, item=item)
 
 @app.get("/songs/", response_model=List[schemas.Song])
-def read_songs(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def read_songs(skip: int = 0, limit: int = 100, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(get_db)):
     songs = crud.get_songs(db, skip=skip, limit=limit)
     return songs
 
 @app.post("/history/", response_model=schemas.History)
-def add_to_history(history: schemas.HistoryCreate, user_id: int = 1, db: Session = Depends(get_db)):
+def add_to_history(history: schemas.HistoryCreate, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(get_db)):
     # Ensure the song exists in our local DB first so we can reference it
     db_song = crud.get_song(db, song_id=history.song_id)
     if not db_song:
@@ -269,11 +315,11 @@ def add_to_history(history: schemas.HistoryCreate, user_id: int = 1, db: Session
         except Exception as e:
             raise HTTPException(status_code=404, detail="Song not found and could not be fetched from YT")
     
-    return crud.add_to_history(db, history, user_id)
+    return crud.add_to_history(db, history, current_user.id)
 
 @app.get("/history/", response_model=List[schemas.History])
-def get_history(user_id: int = 1, db: Session = Depends(get_db)):
-    return crud.get_history(db, user_id=user_id)
+def get_history(current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(get_db)):
+    return crud.get_history(db, user_id=current_user.id)
 
 import time
 
@@ -397,22 +443,22 @@ def get_dashboard_sync(user_id: int, db: Session):
     return sections
 
 @app.get("/dashboard/", response_model=List[schemas.DashboardSection])
-def get_dashboard(user_id: int = 1, db: Session = Depends(get_db)):
+def get_dashboard(current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(get_db)):
     global dashboard_cache
     
     # Check cache
     if dashboard_cache["data"] and (time.time() - dashboard_cache["timestamp"]) < CACHE_TTL:
         return dashboard_cache["data"]
 
-    return get_dashboard_sync(user_id, db)
+    return get_dashboard_sync(current_user.id, db)
 
 @app.post("/favorites/", response_model=schemas.Favorite)
-def add_favorite(favorite: schemas.FavoriteCreate, user_id: int = 1, db: Session = Depends(get_db)):
-    return crud.add_favorite(db, favorite, user_id)
+def add_favorite(favorite: schemas.FavoriteCreate, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(get_db)):
+    return crud.add_favorite(db, favorite, current_user.id)
 
 @app.get("/favorites/", response_model=List[schemas.Favorite])
-def get_favorites(user_id: int = 1, db: Session = Depends(get_db)):
-    return crud.get_favorites(db, user_id)
+def get_favorites(current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(get_db)):
+    return crud.get_favorites(db, current_user.id)
 
 # NEW ENDPOINTS FOR ALL FEATURES
 

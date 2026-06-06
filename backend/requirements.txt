@@ -10,3 +10,5 @@ python-dotenv==1.0.0
 scikit-learn==1.3.2
 pandas==2.1.3
 httpx
+passlib[bcrypt]==1.7.4
+python-jose[cryptography]==3.3.0

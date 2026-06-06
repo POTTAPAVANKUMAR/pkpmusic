@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var audioManager = AudioPlayerManager.shared
+    @StateObject private var authManager = AuthManager.shared
     
     init() {
         // Customize the TabBar appearance for the Spiderman theme
@@ -27,23 +28,29 @@ struct ContentView: View {
     }
     
     var body: some View {
-        ZStack(alignment: .bottom) {
-            TabView {
-                HomeView()
-                    .tabItem {
-                        Label("Home", systemImage: "music.note.house.fill")
+        Group {
+            if authManager.isAuthenticated {
+                ZStack(alignment: .bottom) {
+                    TabView {
+                        HomeView()
+                            .tabItem {
+                                Label("Home", systemImage: "music.note.house.fill")
+                            }
+                        
+                        LibraryView()
+                            .tabItem {
+                                Label("Library", systemImage: "play.square.stack.fill")
+                            }
                     }
-                
-                LibraryView()
-                    .tabItem {
-                        Label("Library", systemImage: "play.square.stack.fill")
+                    .accentColor(Theme.spiderRed)
+                    
+                    if audioManager.isPlaying || audioManager.currentSong != nil {
+                        MiniPlayerView()
+                            .padding(.bottom, 50) // Adjust for TabBar height
                     }
-            }
-            .accentColor(Theme.spiderRed)
-            
-            if audioManager.isPlaying || audioManager.currentSong != nil {
-                MiniPlayerView()
-                    .padding(.bottom, 50) // Adjust for TabBar height
+                }
+            } else {
+                LoginView()
             }
         }
         .preferredColorScheme(.dark)

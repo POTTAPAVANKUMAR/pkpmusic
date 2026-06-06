@@ -123,3 +123,22 @@ class AlbumDetail(BaseModel):
     trackCount: int
     thumbnails: List[dict] = []
     songs: List[SongBase] = []
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    email: Optional[str] = None
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+class ForgotPassword(BaseModel):
+    email: str
+
+class VerifyOTP(BaseModel):
+    email: str
+    otp: str
+    new_password: str
