@@ -171,15 +171,26 @@ struct DashboardSectionView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 16) {
                     ForEach(section.items) { item in
-                        DashboardItemCard(item: item)
-                            .onTapGesture {
-                                if item.type == "song" {
-                                    // Convert to Song model and play
-                                    let song = Song(id: item.id, title: item.title, artist: item.subtitle ?? "Unknown", album: nil, durationMs: nil, coverArtUrl: item.imageUrl)
-                                    audioManager.play(song: song)
-                                    showFullScreenPlayer = true
-                                }
+                        if item.type == "song" {
+                            Button(action: {
+                                let song = Song(id: item.id, title: item.title, artist: item.subtitle ?? "Unknown", album: nil, durationMs: nil, coverArtUrl: item.imageUrl)
+                                audioManager.play(song: song)
+                                showFullScreenPlayer = true
+                            }) {
+                                DashboardItemCard(item: item)
                             }
+                            .buttonStyle(PlainButtonStyle())
+                        } else if item.type == "mood" {
+                            NavigationLink(destination: MoodPlaylistsView(params: item.id, moodTitle: item.title)) {
+                                DashboardItemCard(item: item)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        } else {
+                            NavigationLink(destination: AlbumDetailView(albumId: item.id)) {
+                                DashboardItemCard(item: item)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
                     }
                 }
                 .padding(.horizontal)

@@ -12,7 +12,7 @@ struct LibraryView: View {
     
     // Segmented control state
     @State private var selectedTab = 0
-    let tabs = ["Songs", "Playlists"]
+    let tabs = ["Songs", "Playlists", "Albums"]
     
     @State private var showingCreateAlert = false
     @State private var newPlaylistName = ""
@@ -25,6 +25,17 @@ struct LibraryView: View {
     var filteredPlaylists: [Playlist] {
         if localSearchText.isEmpty { return networkManager.playlists }
         return networkManager.playlists.filter { $0.name.lowercased().contains(localSearchText.lowercased()) }
+    }
+    
+    var groupedAlbums: [(name: String, songs: [Song])] {
+        let grouped = Dictionary(grouping: networkManager.favorites) { $0.album ?? "Unknown Album" }
+        return grouped.map { (name: $0.key, songs: $0.value) }.sorted { $0.name < $1.name }
+    }
+    
+    var filteredAlbums: [(name: String, songs: [Song])] {
+        let allAlbums = groupedAlbums
+        if localSearchText.isEmpty { return allAlbums }
+        return allAlbums.filter { $0.name.lowercased().contains(localSearchText.lowercased()) }
     }
     
     var body: some View {
@@ -112,8 +123,10 @@ struct LibraryView: View {
                     // Content
                     if selectedTab == 0 {
                         songsList
-                    } else {
+                    } else if selectedTab == 1 {
                         playlistsList
+                    } else {
+                        albumsList
                     }
                 }
             }
@@ -238,6 +251,83 @@ struct LibraryView: View {
                                             .font(.headline)
                                             .foregroundColor(.white)
                                         Text("\(songCount) songs")
+                                            .font(.caption)
+                                            .foregroundColor(.gray)
+                                    }
+                                    
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .foregroundColor(.gray)
+                                }
+                                .padding(10)
+                                .background(Color.white.opacity(0.05))
+                                .cornerRadius(12)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Theme.spiderDarkGrey, lineWidth: 1)
+                                )
+                                .padding(.horizontal)
+                            }
+                        }
+                    }
+                    .padding(.top)
+                }
+            }
+        }
+    }
+    
+    private var albumsList: some View {
+        Group {
+            if filteredAlbums.isEmpty {
+                Spacer()
+                VStack(spacing: 20) {
+                    Image(systemName: "opticaldisc")
+                        .font(.system(size: 60))
+                        .foregroundColor(Theme.spiderRed)
+                    
+                    Text(localSearchText.isEmpty ? "No Albums Yet" : "No Results")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                    
+                    Text(localSearchText.isEmpty ? "Your liked songs grouped by album will appear here." : "Try searching for something else.")
+                        .multilineTextAlignment(.center)
+                        .foregroundColor(.gray)
+                        .padding(.horizontal)
+                }
+                Spacer()
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 12) {
+                        ForEach(filteredAlbums, id: \.name) { albumGroup in
+                            NavigationLink(destination: LocalAlbumDetailView(albumName: albumGroup.name, songs: albumGroup.songs)) {
+                                HStack(spacing: 15) {
+                                    ZStack {
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(Theme.spiderDarkGrey)
+                                            .frame(width: 60, height: 60)
+                                        
+                                        if let firstSongArt = albumGroup.songs.first?.coverArtUrl, let url = URL(string: firstSongArt) {
+                                            AsyncImage(url: url) { image in
+                                                image.resizable().aspectRatio(contentMode: .fill)
+                                            } placeholder: {
+                                                Image(systemName: "opticaldisc").foregroundColor(Theme.spiderRed).font(.title2)
+                                            }
+                                            .frame(width: 60, height: 60)
+                                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                                        } else {
+                                            Image(systemName: "opticaldisc")
+                                                .foregroundColor(Theme.spiderRed)
+                                                .font(.title2)
+                                        }
+                                    }
+                                    
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(albumGroup.name)
+                                            .font(.headline)
+                                            .foregroundColor(.white)
+                                            .lineLimit(1)
+                                        Text("\(albumGroup.songs.count) songs")
                                             .font(.caption)
                                             .foregroundColor(.gray)
                                     }
