@@ -70,11 +70,27 @@ struct FullScreenPlayerView: View {
                 }
                 .padding(.horizontal, 30)
                 
-                // Scrubber (Placeholder)
-                Slider(value: $progress, in: 0...100)
+                // Scrubber
+                VStack(spacing: 5) {
+                    Slider(value: Binding(get: {
+                        audioManager.progress
+                    }, set: { newValue in
+                        audioManager.seek(to: newValue)
+                    }), in: 0...(audioManager.duration > 0 ? audioManager.duration : 1))
                     .accentColor(.white)
-                    .padding(.horizontal, 30)
-                    .padding(.top, 20)
+                    
+                    HStack {
+                        Text(formatTime(audioManager.progress))
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.7))
+                        Spacer()
+                        Text(formatTime(audioManager.duration))
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.7))
+                    }
+                }
+                .padding(.horizontal, 30)
+                .padding(.top, 20)
                 
                 // Playback Controls
                 HStack(spacing: 40) {
@@ -108,18 +124,6 @@ struct FullScreenPlayerView: View {
                 }
                 .padding(.top, 30)
                 
-                // Volume Slider (Placeholder)
-                HStack {
-                    Image(systemName: "speaker.fill")
-                        .foregroundColor(.white.opacity(0.7))
-                    Slider(value: $volume, in: 0...1)
-                        .accentColor(.white)
-                    Image(systemName: "speaker.wave.3.fill")
-                        .foregroundColor(.white.opacity(0.7))
-                }
-                .padding(.horizontal, 30)
-                .padding(.top, 40)
-                
                 Spacer()
             }
         }
@@ -129,5 +133,12 @@ struct FullScreenPlayerView: View {
                 isShowing = false
             }
         })
+    }
+    
+    private func formatTime(_ time: Double) -> String {
+        guard time.isFinite && !time.isNaN else { return "0:00" }
+        let minutes = Int(time) / 60
+        let seconds = Int(time) % 60
+        return String(format: "%d:%02d", minutes, seconds)
     }
 }

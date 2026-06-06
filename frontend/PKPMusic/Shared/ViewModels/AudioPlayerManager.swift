@@ -6,8 +6,12 @@ class AudioPlayerManager: ObservableObject {
     static let shared = AudioPlayerManager()
     
     private var player: AVPlayer?
+    private var timeObserver: Any?
+    
     @Published var isPlaying = false
     @Published var currentSong: Song?
+    @Published var progress: Double = 0.0
+    @Published var duration: Double = 0.0
     
     private var queue: [Song] = []
     private var currentIndex: Int = 0
@@ -29,18 +33,39 @@ class AudioPlayerManager: ObservableObject {
             print("Failed to set audio session category.")
         }
         
+        if let observer = timeObserver {
+            player?.removeTimeObserver(observer)
+            timeObserver = nil
+        }
+        
         let playerItem = AVPlayerItem(url: url)
         player = AVPlayer(playerItem: playerItem)
         player?.play()
         
         isPlaying = true
         currentSong = song
+        progress = 0.0
         
         updateNowPlayingInfo(song: song)
         NetworkManager.shared.recordHistory(songId: song.id)
         
-        // Add observer for song completion
         NotificationCenter.default.addObserver(self, selector: #selector(playerDidFinishPlaying), name: .AVPlayerItemDidPlayToEndTime, object: playerItem)
+        setupTimeObserver()
+    }
+    
+    private func setupTimeObserver() {
+        let interval = CMTime(seconds: 0.5, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
+        timeObserver = player?.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
+            guard let self = self, let item = self.player?.currentItem else { return }
+            self.progress = time.seconds
+            if !item.duration.isIndefinite {
+                self.duration = item.duration.seconds
+            }
+        }
+    }
+    
+    func seek(to time: Double) {
+        player?.seek(to: CMTime(seconds: time, preferredTimescale: 1000))
     }
     
     @objc private func playerDidFinishPlaying(note: NSNotification) {
@@ -54,7 +79,10 @@ class AudioPlayerManager: ObservableObject {
     }
     
     func playPrevious() {
-        guard !queue.isEmpty, currentIndex > 0 else { return }
+        guard !queue.isEmpty, currentIndex > 0 else {
+            seek(to: 0)
+            return
+        }
         currentIndex -= 1
         play(song: queue[currentIndex], in: queue, at: currentIndex)
     }
