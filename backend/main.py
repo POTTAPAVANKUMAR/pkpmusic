@@ -113,7 +113,12 @@ async def stream_youtube(video_id: str, request: Request):
     url = f"https://www.youtube.com/watch?v={video_id}"
     try:
         # Run yt-dlp to get the dump json
-        command = ["yt-dlp", "--no-warnings", "--dump-json", "-f", "m4a/bestaudio/best", url]
+        command = [
+            "yt-dlp", "--no-warnings", "--dump-json",
+            "-f", "18/140/bestaudio",
+            "--extractor-args", "youtube:player_client=android,web",
+            url
+        ]
         result = subprocess.run(command, capture_output=True, text=True, check=True)
         
         # Extract the JSON block
