@@ -1,0 +1,14 @@
+name: PKPMusic
+options:
+  bundleIdPrefix: com.pkpmusic
+targets:
+  PKPMusic:
+    type: application
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources: [PKPMusic]
+    info:
+      path: PKPMusic/Info.plist
+      properties:
+        UILaunchScreen: {}
+        UIBackgroundModes: ["audio"]

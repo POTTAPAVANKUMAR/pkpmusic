@@ -1,0 +1,17 @@
+tunnel: f49cf9d5-aee5-4d96-a2ae-a6356c901c7e
+credentials-file: /home/pavankumarpotta/.cloudflared/f49cf9d5-aee5-4d96-a2ae-a6356c901c7e.json
+
+ingress:
+  - hostname: pottapk.win
+    service: http://localhost:80
+
+  - hostname: api.pottapk.win
+    service: http://localhost:3000
+
+  - hostname: cloud.pottapk.win
+    service: http://localhost:8080
+
+  - hostname: pkpmusic.pottapk.win
+    service: http://localhost:8000
+
+  - service: http_status:404

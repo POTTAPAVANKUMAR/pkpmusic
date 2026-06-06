@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: pkpmusic
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: musicapp
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  api:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://pkpmusic:password@db:5432/musicapp
+    volumes:
+      - ./library:/app/library
+    depends_on:
+      - db
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

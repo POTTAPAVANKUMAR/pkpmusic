@@ -1,0 +1,346 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		082DC027E03BB3B3E7249C96 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F213C4E94784F0397ADC6741 /* ContentView.swift */; };
+		085A799D461F2641B364CD7D /* PlaceholderViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C86B7E33BA6BBA1EF774545 /* PlaceholderViews.swift */; };
+		35AE60EB6D0E2970113EA176 /* AudioPlayerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27736866012C88F63281274C /* AudioPlayerManager.swift */; };
+		362F469A60251B93E1217122 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7CAE61714255DA0F875BAE9 /* HomeView.swift */; };
+		3BBA410EC893C76C19AF8C5E /* NetworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BA201F39776718B485DA939 /* NetworkManager.swift */; };
+		3C079DED5344CCDBBB2379AA /* MiniPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 163F0807CF525D3F3E1A1B0C /* MiniPlayerView.swift */; };
+		4277A6194FCDF8995F80DAB5 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD2B4D49FB2724799EEC07E1 /* Models.swift */; };
+		4B48E646BA994DDE96FFB482 /* PKPMusicApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0928722C577CE95F6978763 /* PKPMusicApp.swift */; };
+		52CF1B806CAD23EBEB2D4CCD /* FullScreenPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5623E42C8D1FE91BB91F3CE8 /* FullScreenPlayerView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		163F0807CF525D3F3E1A1B0C /* MiniPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniPlayerView.swift; sourceTree = "<group>"; };
+		1BA201F39776718B485DA939 /* NetworkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkManager.swift; sourceTree = "<group>"; };
+		1C86B7E33BA6BBA1EF774545 /* PlaceholderViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceholderViews.swift; sourceTree = "<group>"; };
+		27736866012C88F63281274C /* AudioPlayerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayerManager.swift; sourceTree = "<group>"; };
+		5623E42C8D1FE91BB91F3CE8 /* FullScreenPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullScreenPlayerView.swift; sourceTree = "<group>"; };
+		704E89C315B54C726945A735 /* PKPMusic.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PKPMusic.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		8A2DE9A318F31838B0D5EDE6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		C0928722C577CE95F6978763 /* PKPMusicApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PKPMusicApp.swift; sourceTree = "<group>"; };
+		C7CAE61714255DA0F875BAE9 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		CD2B4D49FB2724799EEC07E1 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		F213C4E94784F0397ADC6741 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		0EF10A45797BE1965B3FB188 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				CD2B4D49FB2724799EEC07E1 /* Models.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		3EACDBCC8637F6EAD4076D10 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				F213C4E94784F0397ADC6741 /* ContentView.swift */,
+				5623E42C8D1FE91BB91F3CE8 /* FullScreenPlayerView.swift */,
+				C7CAE61714255DA0F875BAE9 /* HomeView.swift */,
+				163F0807CF525D3F3E1A1B0C /* MiniPlayerView.swift */,
+				1C86B7E33BA6BBA1EF774545 /* PlaceholderViews.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		5E45829FB4929B5B02B3D3B8 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				704E89C315B54C726945A735 /* PKPMusic.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		695D33B8743BB93D4445E503 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				C0928722C577CE95F6978763 /* PKPMusicApp.swift */,
+				0EF10A45797BE1965B3FB188 /* Models */,
+				7D5769E7148C90224347B610 /* ViewModels */,
+				3EACDBCC8637F6EAD4076D10 /* Views */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		6CD5B993B14B7AA4B75F1F46 /* PKPMusic */ = {
+			isa = PBXGroup;
+			children = (
+				8A2DE9A318F31838B0D5EDE6 /* Info.plist */,
+				695D33B8743BB93D4445E503 /* Shared */,
+			);
+			path = PKPMusic;
+			sourceTree = "<group>";
+		};
+		7D5769E7148C90224347B610 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				27736866012C88F63281274C /* AudioPlayerManager.swift */,
+				1BA201F39776718B485DA939 /* NetworkManager.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		DDE84062BE82353083364D27 = {
+			isa = PBXGroup;
+			children = (
+				6CD5B993B14B7AA4B75F1F46 /* PKPMusic */,
+				5E45829FB4929B5B02B3D3B8 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		64E9246B460D2C4339C48875 /* PKPMusic */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 543B8D4D6C1F1945559A0291 /* Build configuration list for PBXNativeTarget "PKPMusic" */;
+			buildPhases = (
+				EF8DEDCCA189C806B5E36B5B /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PKPMusic;
+			packageProductDependencies = (
+			);
+			productName = PKPMusic;
+			productReference = 704E89C315B54C726945A735 /* PKPMusic.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		37EB12EA0A565F3F3448476F /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+			};
+			buildConfigurationList = C00EB00E6E7F16811C7BF5E1 /* Build configuration list for PBXProject "PKPMusic" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = DDE84062BE82353083364D27;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 5E45829FB4929B5B02B3D3B8 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				64E9246B460D2C4339C48875 /* PKPMusic */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		EF8DEDCCA189C806B5E36B5B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				35AE60EB6D0E2970113EA176 /* AudioPlayerManager.swift in Sources */,
+				082DC027E03BB3B3E7249C96 /* ContentView.swift in Sources */,
+				52CF1B806CAD23EBEB2D4CCD /* FullScreenPlayerView.swift in Sources */,
+				362F469A60251B93E1217122 /* HomeView.swift in Sources */,
+				3C079DED5344CCDBBB2379AA /* MiniPlayerView.swift in Sources */,
+				4277A6194FCDF8995F80DAB5 /* Models.swift in Sources */,
+				3BBA410EC893C76C19AF8C5E /* NetworkManager.swift in Sources */,
+				4B48E646BA994DDE96FFB482 /* PKPMusicApp.swift in Sources */,
+				085A799D461F2641B364CD7D /* PlaceholderViews.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		17C0E324A2ED3DDEB6CF6820 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = AZ2B652A3Q;
+				INFOPLIST_FILE = PKPMusic/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.pkpmusic.PKPMusic;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		57B929332567B531BDD55AFF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		8E831355347949D8FFC6631D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = AZ2B652A3Q;
+				INFOPLIST_FILE = PKPMusic/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.pkpmusic.PKPMusic;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		A1D8030F7A686F8197A85D32 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		543B8D4D6C1F1945559A0291 /* Build configuration list for PBXNativeTarget "PKPMusic" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				17C0E324A2ED3DDEB6CF6820 /* Debug */,
+				8E831355347949D8FFC6631D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		C00EB00E6E7F16811C7BF5E1 /* Build configuration list for PBXProject "PKPMusic" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				57B929332567B531BDD55AFF /* Debug */,
+				A1D8030F7A686F8197A85D32 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 37EB12EA0A565F3F3448476F /* Project object */;
+}
