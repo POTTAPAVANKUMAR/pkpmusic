@@ -67,7 +67,7 @@ struct FullScreenPlayerView: View {
                         Spacer()
                         
                         Button(action: {
-                            networkManager.addToFavorites(song: song)
+                            networkManager.addToFavorites(songId: song.id)
                         }) {
                             Image(systemName: networkManager.favorites.contains(where: { $0.id == song.id }) ? "heart.fill" : "heart")
                                 .font(.title)
