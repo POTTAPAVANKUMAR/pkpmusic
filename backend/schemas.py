@@ -92,3 +92,14 @@ class User(UserBase):
 
     class Config:
         from_attributes = True
+
+class DashboardItem(BaseModel):
+    id: str # YouTube ID or category ID
+    title: str
+    subtitle: Optional[str] = None
+    image_url: Optional[str] = None
+    type: str # "song", "playlist", "mood"
+
+class DashboardSection(BaseModel):
+    title: str
+    items: List[DashboardItem]

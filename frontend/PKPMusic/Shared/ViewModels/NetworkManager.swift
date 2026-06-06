@@ -10,10 +10,28 @@ class NetworkManager: ObservableObject {
     @Published var searchResults: [Song] = []
     @Published var favorites: [Song] = []
     @Published var playlists: [Playlist] = []
+    @Published var dashboardSections: [DashboardSection] = []
     @Published var isLoading: Bool = false
     
     // Add dummy auth user for now
     let userId = 1
+    
+    func fetchDashboard() {
+        guard let url = URL(string: "\(baseURL)/dashboard/?user_id=\(userId)") else { return }
+        
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            if let data = data {
+                do {
+                    let decodedSections = try JSONDecoder().decode([DashboardSection].self, from: data)
+                    DispatchQueue.main.async {
+                        self.dashboardSections = decodedSections
+                    }
+                } catch {
+                    print("Error decoding dashboard: \(error)")
+                }
+            }
+        }.resume()
+    }
     
     func fetchSongs() {
         // Now fetching from history to simulate Home View

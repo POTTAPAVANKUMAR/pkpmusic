@@ -49,6 +49,7 @@ struct PlaylistsView: View {
                         ScrollView {
                             LazyVStack(spacing: 12) {
                                 ForEach(networkManager.playlists, id: \.id) { playlist in
+                                    let songCount = playlist.items?.count ?? 0
                                     NavigationLink(destination: PlaylistDetailView(playlist: playlist)) {
                                         HStack(spacing: 15) {
                                             ZStack {
@@ -64,7 +65,7 @@ struct PlaylistsView: View {
                                                 Text(playlist.name)
                                                     .font(.headline)
                                                     .foregroundColor(.white)
-                                                Text("\(playlist.items?.count ?? 0) songs")
+                                                Text("\(songCount) songs")
                                                     .font(.caption)
                                                     .foregroundColor(.gray)
                                             }

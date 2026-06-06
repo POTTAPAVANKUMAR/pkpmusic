@@ -20,7 +20,6 @@ struct Playlist: Identifiable, Codable {
     let id: Int
     let name: String
     let description: String?
-    let source: String
     let items: [PlaylistItem]?
 }
 
@@ -34,4 +33,22 @@ struct PlaylistItem: Identifiable, Codable {
         case playlistId = "playlist_id"
         case song
     }
+}
+
+struct DashboardItem: Identifiable, Codable {
+    let id: String
+    let title: String
+    let subtitle: String?
+    let imageUrl: String?
+    let type: String // "song", "playlist", "mood"
+    
+    enum CodingKeys: String, CodingKey {
+        case id, title, subtitle, type
+        case imageUrl = "image_url"
+    }
+}
+
+struct DashboardSection: Codable {
+    let title: String
+    let items: [DashboardItem]
 }

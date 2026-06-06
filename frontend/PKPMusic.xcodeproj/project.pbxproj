@@ -12,6 +12,7 @@
 		08B302F563CE5A5A58B20FEC /* FavoritesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 441D50A489F6859159D2D021 /* FavoritesView.swift */; };
 		35AE60EB6D0E2970113EA176 /* AudioPlayerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27736866012C88F63281274C /* AudioPlayerManager.swift */; };
 		362F469A60251B93E1217122 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7CAE61714255DA0F875BAE9 /* HomeView.swift */; };
+		370274C13C44F234A38764FA /* PlaylistDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D07F2ECA45C91BF7B6A8FF8 /* PlaylistDetailView.swift */; };
 		3BBA410EC893C76C19AF8C5E /* NetworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BA201F39776718B485DA939 /* NetworkManager.swift */; };
 		3C079DED5344CCDBBB2379AA /* MiniPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 163F0807CF525D3F3E1A1B0C /* MiniPlayerView.swift */; };
 		4277A6194FCDF8995F80DAB5 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD2B4D49FB2724799EEC07E1 /* Models.swift */; };
@@ -30,7 +31,8 @@
 		2B3E441871C76D261D3CB668 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		441D50A489F6859159D2D021 /* FavoritesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesView.swift; sourceTree = "<group>"; };
 		5623E42C8D1FE91BB91F3CE8 /* FullScreenPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullScreenPlayerView.swift; sourceTree = "<group>"; };
-		704E89C315B54C726945A735 /* PKPMusic.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PKPMusic.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		6D07F2ECA45C91BF7B6A8FF8 /* PlaylistDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistDetailView.swift; sourceTree = "<group>"; };
+		704E89C315B54C726945A735 /* PKPMusic.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = PKPMusic.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		76E8352827020D20442D2AC5 /* PlaylistsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistsView.swift; sourceTree = "<group>"; };
 		86C4C12A49E2982B788CB2AC /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		8A2DE9A318F31838B0D5EDE6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -58,6 +60,7 @@
 				C7CAE61714255DA0F875BAE9 /* HomeView.swift */,
 				163F0807CF525D3F3E1A1B0C /* MiniPlayerView.swift */,
 				1C86B7E33BA6BBA1EF774545 /* PlaceholderViews.swift */,
+				6D07F2ECA45C91BF7B6A8FF8 /* PlaylistDetailView.swift */,
 				76E8352827020D20442D2AC5 /* PlaylistsView.swift */,
 				86C4C12A49E2982B788CB2AC /* Theme.swift */,
 			);
@@ -110,6 +113,20 @@
 			);
 			sourceTree = "<group>";
 		};
+		"TEMP_125E2A34-8F1D-4B4F-9432-EBEE2322F152" /* watchOS */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = watchOS;
+			sourceTree = "<group>";
+		};
+		"TEMP_2B0D87FD-B6D4-4744-9C15-21653A0ACA42" /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = iOS;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -139,6 +156,11 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					64E9246B460D2C4339C48875 = {
+						DevelopmentTeam = "";
+					};
+				};
 			};
 			buildConfigurationList = C00EB00E6E7F16811C7BF5E1 /* Build configuration list for PBXProject "PKPMusic" */;
 			developmentRegion = en;
@@ -185,6 +207,7 @@
 				3BBA410EC893C76C19AF8C5E /* NetworkManager.swift in Sources */,
 				4B48E646BA994DDE96FFB482 /* PKPMusicApp.swift in Sources */,
 				085A799D461F2641B364CD7D /* PlaceholderViews.swift in Sources */,
+				370274C13C44F234A38764FA /* PlaylistDetailView.swift in Sources */,
 				F51A3BBB69F264667D0EA2C0 /* PlaylistsView.swift in Sources */,
 				92A83CBCBD0CD77781E859C9 /* Theme.swift in Sources */,
 			);
@@ -198,7 +221,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = AZ2B652A3Q;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = PKPMusic/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
@@ -281,7 +304,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = AZ2B652A3Q;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = PKPMusic/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
