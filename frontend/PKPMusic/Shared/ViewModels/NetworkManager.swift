@@ -9,6 +9,7 @@ class NetworkManager: ObservableObject {
     @Published var songs: [Song] = []
     @Published var searchResults: [Song] = []
     @Published var favorites: [Song] = []
+    @Published var playlists: [Playlist] = []
     @Published var isLoading: Bool = false
     
     // Add dummy auth user for now
@@ -51,6 +52,55 @@ class NetworkManager: ObservableObject {
                 } catch {
                     print("Error decoding favorites: \(error)")
                 }
+            }
+        }.resume()
+    }
+    
+    func fetchPlaylists() {
+        guard let url = URL(string: "\(baseURL)/playlists/?user_id=\(userId)") else { return }
+        
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            if let data = data {
+                do {
+                    let decodedPlaylists = try JSONDecoder().decode([Playlist].self, from: data)
+                    DispatchQueue.main.async {
+                        self.playlists = decodedPlaylists
+                    }
+                } catch {
+                    print("Error decoding playlists: \(error)")
+                }
+            }
+        }.resume()
+    }
+    
+    func createPlaylist(name: String) {
+        guard let url = URL(string: "\(baseURL)/playlists/?user_id=\(userId)") else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let body: [String: Any] = ["name": name]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if error == nil {
+                self.fetchPlaylists()
+            }
+        }.resume()
+    }
+    
+    func addSongToPlaylist(songId: String, playlistId: Int) {
+        guard let url = URL(string: "\(baseURL)/playlists/\(playlistId)/items") else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let body: [String: Any] = ["song_id": songId, "position": 0]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if error == nil {
+                self.fetchPlaylists() // Refresh to get updated items
             }
         }.resume()
     }

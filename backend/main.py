@@ -7,6 +7,9 @@ import json
 import csv
 import io
 from datetime import datetime
+import httpx
+from fastapi.responses import RedirectResponse, StreamingResponse
+from starlette.requests import Request
 
 import models, schemas, crud
 from database import SessionLocal, engine
@@ -105,8 +108,8 @@ def search_youtube(query: str = Query(..., min_length=1)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.api_route("/stream/yt/{video_id}", methods=["GET", "HEAD"])
-def stream_youtube(video_id: str):
-    """Uses yt-dlp to extract the raw audio stream URL and redirects the client."""
+async def stream_youtube(video_id: str, request: Request):
+    """Uses yt-dlp to extract the raw audio stream URL and proxies the stream to the client."""
     url = f"https://www.youtube.com/watch?v={video_id}"
     try:
         # Run yt-dlp to get the direct URL
@@ -116,10 +119,70 @@ def stream_youtube(video_id: str):
         if not stream_url.startswith("http"):
             raise HTTPException(status_code=404, detail="Could not extract stream URL")
         
-        # Redirect the iPhone AVPlayer directly to Google's servers
-        return RedirectResponse(url=stream_url)
+        # Build headers for the proxy request
+        client_headers = {}
+        if "range" in request.headers:
+            client_headers["range"] = request.headers["range"]
+            
+        client = httpx.AsyncClient()
+        # Make a stream request to the Google servers
+        req = client.build_request("GET", stream_url, headers=client_headers)
+        response = await client.send(req, stream=True)
+        
+        # Forward the headers back to the AVPlayer (like Content-Type, Content-Length, Content-Range)
+        response_headers = {}
+        for key in ["content-type", "content-length", "content-range", "accept-ranges"]:
+            if key in response.headers:
+                response_headers[key] = response.headers[key]
+                
+        async def stream_generator():
+            async for chunk in response.aiter_bytes():
+                yield chunk
+            await client.aclose()
+            
+        return StreamingResponse(
+            stream_generator(),
+            status_code=response.status_code,
+            headers=response_headers
+        )
     except subprocess.CalledProcessError as e:
         raise HTTPException(status_code=500, detail=f"yt-dlp error: {e.stderr}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Proxy error: {str(e)}")
+
+# Playlists API
+@app.post("/playlists/", response_model=schemas.Playlist)
+def create_playlist(playlist: schemas.PlaylistCreate, user_id: int = 1, db: Session = Depends(get_db)):
+    return crud.create_user_playlist(db, playlist, user_id)
+
+@app.get("/playlists/", response_model=List[schemas.Playlist])
+def get_playlists(user_id: int = 1, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    # Assuming crud.get_playlists can be modified or we just query by owner
+    return db.query(models.Playlist).filter(models.Playlist.owner_id == user_id).offset(skip).limit(limit).all()
+
+@app.post("/playlists/{playlist_id}/items", response_model=schemas.PlaylistItem)
+def add_song_to_playlist(playlist_id: int, item: schemas.PlaylistItemCreate, db: Session = Depends(get_db)):
+    # Ensure song exists
+    db_song = crud.get_song(db, song_id=item.song_id)
+    if not db_song:
+        try:
+            song_info = yt.get_song(item.song_id)
+            details = song_info.get('videoDetails', {})
+            thumbnails = details.get('thumbnail', {}).get('thumbnails', [])
+            cover_url = thumbnails[-1]['url'] if thumbnails else None
+            
+            new_song = schemas.SongCreate(
+                id=item.song_id,
+                title=details.get('title', 'Unknown'),
+                artist=details.get('author', 'Unknown'),
+                duration_ms=int(details.get('lengthSeconds', 0)) * 1000,
+                cover_art_url=cover_url
+            )
+            db_song = crud.create_song(db, new_song)
+        except Exception as e:
+            raise HTTPException(status_code=404, detail="Song not found and could not be fetched from YT")
+            
+    return crud.add_song_to_playlist(db, playlist_id=playlist_id, item=item)
 
 @app.get("/songs/", response_model=List[schemas.Song])
 def read_songs(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):

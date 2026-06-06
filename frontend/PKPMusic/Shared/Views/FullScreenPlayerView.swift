@@ -5,6 +5,9 @@ struct FullScreenPlayerView: View {
     @StateObject private var networkManager = NetworkManager.shared
     @Binding var isShowing: Bool
     
+    @State private var showingOptions = false
+    @State private var showingPlaylists = false
+    
     var body: some View {
         ZStack {
             Theme.SpiderBackground()
@@ -27,11 +30,46 @@ struct FullScreenPlayerView: View {
                         .tracking(2)
                     Spacer()
                     Button(action: {
-                        // Options
+                        showingOptions = true
                     }) {
                         Image(systemName: "ellipsis")
                             .font(.title2)
                             .foregroundColor(.white)
+                    }
+                    .actionSheet(isPresented: $showingOptions) {
+                        ActionSheet(title: Text("Options"), buttons: [
+                            .default(Text("Add to Playlist")) {
+                                networkManager.fetchPlaylists()
+                                showingPlaylists = true
+                            },
+                            .cancel()
+                        ])
+                    }
+                    .sheet(isPresented: $showingPlaylists) {
+                        NavigationView {
+                            List {
+                                if networkManager.playlists.isEmpty {
+                                    Text("No playlists found. Create one in the Playlists tab!")
+                                        .foregroundColor(.gray)
+                                } else {
+                                    ForEach(networkManager.playlists, id: \.id) { playlist in
+                                        Button(action: {
+                                            if let song = audioManager.currentSong {
+                                                networkManager.addSongToPlaylist(songId: song.id, playlistId: playlist.id)
+                                            }
+                                            showingPlaylists = false
+                                        }) {
+                                            Text(playlist.name)
+                                                .foregroundColor(.white)
+                                        }
+                                    }
+                                }
+                            }
+                            .navigationTitle("Select Playlist")
+                            .navigationBarItems(trailing: Button("Cancel") {
+                                showingPlaylists = false
+                            })
+                        }
                     }
                 }
                 .padding()

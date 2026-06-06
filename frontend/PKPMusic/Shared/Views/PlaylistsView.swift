@@ -1,9 +1,9 @@
 import SwiftUI
 
 struct PlaylistsView: View {
+    @StateObject private var networkManager = NetworkManager.shared
     @State private var showingCreateAlert = false
     @State private var newPlaylistName = ""
-    @State private var playlists: [String] = [] // Placeholder for real playlists
     
     var body: some View {
         NavigationView {
@@ -27,7 +27,7 @@ struct PlaylistsView: View {
                     }
                     .padding()
                     
-                    if playlists.isEmpty {
+                    if networkManager.playlists.isEmpty {
                         Spacer()
                         VStack(spacing: 20) {
                             Image(systemName: "music.note.list")
@@ -39,7 +39,7 @@ struct PlaylistsView: View {
                                 .fontWeight(.bold)
                                 .foregroundColor(.white)
                             
-                            Text("To import a playlist from Amazon Music, export it as a CSV and upload it to the /playlists/import/csv endpoint on your Raspberry Pi.")
+                            Text("Create a playlist using the + button above, or import one via your Raspberry Pi.")
                                 .multilineTextAlignment(.center)
                                 .foregroundColor(.gray)
                                 .padding()
@@ -48,33 +48,40 @@ struct PlaylistsView: View {
                     } else {
                         ScrollView {
                             LazyVStack(spacing: 12) {
-                                ForEach(playlists, id: \.self) { playlist in
-                                    HStack(spacing: 15) {
-                                        ZStack {
-                                            RoundedRectangle(cornerRadius: 8)
-                                                .fill(Theme.spiderDarkGrey)
-                                                .frame(width: 60, height: 60)
-                                            Image(systemName: "music.note.list")
-                                                .foregroundColor(Theme.spiderRed)
-                                                .font(.title2)
+                                ForEach(networkManager.playlists, id: \.id) { playlist in
+                                    NavigationLink(destination: PlaylistDetailView(playlist: playlist)) {
+                                        HStack(spacing: 15) {
+                                            ZStack {
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .fill(Theme.spiderDarkGrey)
+                                                    .frame(width: 60, height: 60)
+                                                Image(systemName: "music.note.list")
+                                                    .foregroundColor(Theme.spiderRed)
+                                                    .font(.title2)
+                                            }
+                                            
+                                            VStack(alignment: .leading, spacing: 4) {
+                                                Text(playlist.name)
+                                                    .font(.headline)
+                                                    .foregroundColor(.white)
+                                                Text("\(playlist.items?.count ?? 0) songs")
+                                                    .font(.caption)
+                                                    .foregroundColor(.gray)
+                                            }
+                                            
+                                            Spacer()
+                                            Image(systemName: "chevron.right")
+                                                .foregroundColor(.gray)
                                         }
-                                        
-                                        Text(playlist)
-                                            .font(.headline)
-                                            .foregroundColor(.white)
-                                        
-                                        Spacer()
-                                        Image(systemName: "chevron.right")
-                                            .foregroundColor(.gray)
+                                        .padding(10)
+                                        .background(Color.white.opacity(0.05))
+                                        .cornerRadius(12)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .stroke(Theme.spiderDarkGrey, lineWidth: 1)
+                                        )
+                                        .padding(.horizontal)
                                     }
-                                    .padding(10)
-                                    .background(Color.white.opacity(0.05))
-                                    .cornerRadius(12)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .stroke(Theme.spiderDarkGrey, lineWidth: 1)
-                                    )
-                                    .padding(.horizontal)
                                 }
                             }
                             .padding(.top)
@@ -83,6 +90,9 @@ struct PlaylistsView: View {
                 }
             }
             .navigationBarHidden(true)
+            .onAppear {
+                networkManager.fetchPlaylists()
+            }
             .alert("Create Playlist", isPresented: $showingCreateAlert) {
                 TextField("Playlist Name", text: $newPlaylistName)
                 Button("Cancel", role: .cancel) {
@@ -90,7 +100,7 @@ struct PlaylistsView: View {
                 }
                 Button("Create") {
                     if !newPlaylistName.isEmpty {
-                        playlists.append(newPlaylistName)
+                        networkManager.createPlaylist(name: newPlaylistName)
                         newPlaylistName = ""
                     }
                 }
