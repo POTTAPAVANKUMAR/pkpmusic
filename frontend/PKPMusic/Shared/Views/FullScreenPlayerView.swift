@@ -40,7 +40,7 @@ struct FullScreenPlayerView: View {
                 
                 // Album Art with Spidey Glow
                 if let song = audioManager.currentSong {
-                    AsyncImage(url: URL(string: song.cover_art_url ?? "")) { image in
+                    AsyncImage(url: URL(string: song.coverArtUrl ?? "")) { image in
                         image.resizable().aspectRatio(contentMode: .fill)
                     } placeholder: {
                         Rectangle().fill(Theme.spiderDarkGrey)

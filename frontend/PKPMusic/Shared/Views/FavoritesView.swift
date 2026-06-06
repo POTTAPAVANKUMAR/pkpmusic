@@ -31,7 +31,7 @@ struct FavoritesView: View {
                                 ForEach(networkManager.favorites.indices, id: \.self) { index in
                                     let song = networkManager.favorites[index]
                                     HStack {
-                                        AsyncImage(url: URL(string: song.cover_art_url ?? "")) { image in
+                                        AsyncImage(url: URL(string: song.coverArtUrl ?? "")) { image in
                                             image.resizable().aspectRatio(contentMode: .fill)
                                         } placeholder: {
                                             Color.gray.opacity(0.3)
