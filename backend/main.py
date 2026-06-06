@@ -104,7 +104,7 @@ def search_youtube(query: str = Query(..., min_length=1)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/stream/yt/{video_id}")
+@app.api_route("/stream/yt/{video_id}", methods=["GET", "HEAD"])
 def stream_youtube(video_id: str):
     """Uses yt-dlp to extract the raw audio stream URL and redirects the client."""
     url = f"https://www.youtube.com/watch?v={video_id}"
