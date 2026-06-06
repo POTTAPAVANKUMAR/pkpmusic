@@ -8,6 +8,7 @@ struct LibraryView: View {
     @State private var showFileImporter = false
     @State private var isImporting = false
     @State private var importMessage: String?
+    @State private var localSearchText = ""
     
     // Segmented control state
     @State private var selectedTab = 0
@@ -15,6 +16,16 @@ struct LibraryView: View {
     
     @State private var showingCreateAlert = false
     @State private var newPlaylistName = ""
+    
+    var filteredSongs: [Song] {
+        if localSearchText.isEmpty { return networkManager.favorites }
+        return networkManager.favorites.filter { $0.title.lowercased().contains(localSearchText.lowercased()) || $0.artist.lowercased().contains(localSearchText.lowercased()) }
+    }
+    
+    var filteredPlaylists: [Playlist] {
+        if localSearchText.isEmpty { return networkManager.playlists }
+        return networkManager.playlists.filter { $0.name.lowercased().contains(localSearchText.lowercased()) }
+    }
     
     var body: some View {
         NavigationView {
@@ -58,6 +69,30 @@ struct LibraryView: View {
                         }
                     }
                     .pickerStyle(SegmentedPickerStyle())
+                    .padding(.horizontal)
+                    .padding(.bottom, 10)
+                    
+                    // Local Search Bar
+                    HStack {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(.gray)
+                        TextField("Filter your library...", text: $localSearchText)
+                            .foregroundColor(.white)
+                            .disableAutocorrection(true)
+                            .autocapitalization(.none)
+                        
+                        if !localSearchText.isEmpty {
+                            Button(action: {
+                                localSearchText = ""
+                            }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundColor(.gray)
+                            }
+                        }
+                    }
+                    .padding(10)
+                    .background(Color.white.opacity(0.1))
+                    .cornerRadius(8)
                     .padding(.horizontal)
                     .padding(.bottom, 10)
                     
@@ -127,17 +162,17 @@ struct LibraryView: View {
     
     private var songsList: some View {
         Group {
-            if networkManager.favorites.isEmpty {
+            if filteredSongs.isEmpty {
                 Spacer()
                 VStack(spacing: 20) {
                     Image(systemName: "heart.slash")
                         .font(.system(size: 60))
                         .foregroundColor(Theme.spiderRed)
-                    Text("No Songs Yet")
+                    Text(localSearchText.isEmpty ? "No Songs Yet" : "No Results")
                         .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(.white)
-                    Text("Your favorited tracks and imported CSV songs will appear here.")
+                    Text(localSearchText.isEmpty ? "Your favorited tracks and imported CSV songs will appear here." : "Try searching for something else.")
                         .multilineTextAlignment(.center)
                         .foregroundColor(.gray)
                         .padding(.horizontal)
@@ -146,11 +181,11 @@ struct LibraryView: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: 12) {
-                        ForEach(networkManager.favorites.indices, id: \.self) { index in
-                            let song = networkManager.favorites[index]
+                        ForEach(filteredSongs.indices, id: \.self) { index in
+                            let song = filteredSongs[index]
                             SongRowView(song: song, isPlaying: audioManager.currentSong?.id == song.id)
                                 .onTapGesture {
-                                    audioManager.play(song: song, in: networkManager.favorites, at: index)
+                                    audioManager.play(song: song, in: filteredSongs, at: index)
                                     showFullScreenPlayer = true
                                 }
                                 .padding(.horizontal)
@@ -164,19 +199,19 @@ struct LibraryView: View {
     
     private var playlistsList: some View {
         Group {
-            if networkManager.playlists.isEmpty {
+            if filteredPlaylists.isEmpty {
                 Spacer()
                 VStack(spacing: 20) {
                     Image(systemName: "music.note.list")
                         .font(.system(size: 60))
                         .foregroundColor(Theme.spiderRed)
                     
-                    Text("No Playlists Yet")
+                    Text(localSearchText.isEmpty ? "No Playlists Yet" : "No Results")
                         .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(.white)
                     
-                    Text("Create a playlist or import an Amazon Music CSV.")
+                    Text(localSearchText.isEmpty ? "Create a playlist or import an Amazon Music CSV." : "Try searching for something else.")
                         .multilineTextAlignment(.center)
                         .foregroundColor(.gray)
                         .padding(.horizontal)
@@ -185,7 +220,7 @@ struct LibraryView: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: 12) {
-                        ForEach(networkManager.playlists, id: \.id) { playlist in
+                        ForEach(filteredPlaylists, id: \.id) { playlist in
                             let songCount = playlist.items?.count ?? 0
                             NavigationLink(destination: PlaylistDetailView(playlist: playlist)) {
                                 HStack(spacing: 15) {

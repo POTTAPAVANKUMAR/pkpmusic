@@ -38,6 +38,45 @@ struct HomeView: View {
                     .padding(.horizontal)
                     .padding(.top, 10)
                     
+                    // Category Pills
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 12) {
+                            let categories = [
+                                ("Telugu", "music.note", "telugu songs"),
+                                ("Hindi", "music.note", "hindi songs"),
+                                ("Pop", "music.mic", "pop music"),
+                                ("R&B", "music.note.list", "r&b music"),
+                                ("Artists", "person.2.fill", "top artists"),
+                                ("Albums", "square.stack.fill", "top albums")
+                            ]
+                            
+                            ForEach(0..<categories.count, id: \.self) { i in
+                                Button(action: {
+                                    searchText = categories[i].2
+                                    performSearch()
+                                }) {
+                                    HStack {
+                                        Image(systemName: categories[i].1)
+                                        Text(categories[i].0)
+                                    }
+                                    .font(.system(size: 15, weight: .medium))
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 8)
+                                    .background(Color.white.opacity(0.1))
+                                    .foregroundColor(.white)
+                                    .cornerRadius(20)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 20)
+                                            .stroke(Theme.spiderNeonRed.opacity(0.3), lineWidth: 1)
+                                    )
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+                    .padding(.top, 15)
+                    .padding(.bottom, 5)
+                    
                     if isSearching {
                         searchResultsView
                     } else if let error = networkManager.dashboardError {
@@ -155,6 +194,17 @@ struct DashboardSectionView: View {
 struct DashboardItemCard: View {
     let item: DashboardItem
     
+    private func fallbackIcon(for type: String) -> String {
+        switch type {
+        case "song": return "music.note"
+        case "playlist": return "music.note.list"
+        case "mood": return "sparkles"
+        case "artist": return "person.crop.circle.fill"
+        case "album": return "opticaldisc"
+        default: return "play.circle.fill"
+        }
+    }
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             // Image container
@@ -169,7 +219,7 @@ struct DashboardItemCard: View {
                     }
                 } else {
                     Theme.spiderDarkGrey
-                    Image(systemName: item.type == "song" ? "music.note" : "square.stack.fill")
+                    Image(systemName: fallbackIcon(for: item.type))
                         .foregroundColor(.gray)
                         .font(.largeTitle)
                 }

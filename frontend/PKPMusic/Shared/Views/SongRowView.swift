@@ -9,7 +9,11 @@ struct SongRowView: View {
             AsyncImage(url: URL(string: song.coverArtUrl ?? "")) { image in
                 image.resizable().aspectRatio(contentMode: .fill)
             } placeholder: {
-                Color.gray.opacity(0.3)
+                ZStack {
+                    Theme.spiderDarkGrey
+                    Image(systemName: "music.note")
+                        .foregroundColor(.gray)
+                }
             }
             .frame(width: 60, height: 60)
             .cornerRadius(8)
