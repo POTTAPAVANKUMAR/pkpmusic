@@ -9,6 +9,7 @@ class NetworkManager: ObservableObject {
     @Published var songs: [Song] = []
     @Published var searchResults: [Song] = []
     @Published var favorites: [Song] = []
+    @Published var isLoading: Bool = false
     
     // Add dummy auth user for now
     let userId = 1
@@ -58,7 +59,14 @@ class NetworkManager: ObservableObject {
         guard let escapedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
               let url = URL(string: "\(baseURL)/search/yt?query=\(escapedQuery)") else { return }
               
+        DispatchQueue.main.async {
+            self.isLoading = true
+        }
+        
         URLSession.shared.dataTask(with: url) { data, response, error in
+            DispatchQueue.main.async {
+                self.isLoading = false
+            }
             if let data = data {
                 do {
                     let results = try JSONDecoder().decode([Song].self, from: data)
