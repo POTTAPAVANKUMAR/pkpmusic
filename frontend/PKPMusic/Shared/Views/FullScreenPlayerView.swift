@@ -2,129 +2,141 @@ import SwiftUI
 
 struct FullScreenPlayerView: View {
     @StateObject private var audioManager = AudioPlayerManager.shared
+    @StateObject private var networkManager = NetworkManager.shared
     @Binding var isShowing: Bool
-    
-    @State private var volume: Double = 0.5
-    @State private var progress: Double = 0.0
     
     var body: some View {
         ZStack {
-            // Background blur based on album art (simulated with a gradient for now)
-            LinearGradient(gradient: Gradient(colors: [.purple.opacity(0.8), .black]), startPoint: .top, endPoint: .bottom)
-                .edgesIgnoringSafeArea(.all)
+            Theme.SpiderBackground()
             
             VStack {
-                // Drag down indicator
-                Capsule()
-                    .fill(Color.secondary)
-                    .frame(width: 40, height: 5)
-                    .padding(.top, 10)
-                
-                Spacer()
-                
-                // Album Art
-                if let currentSong = audioManager.currentSong,
-                   let coverUrl = currentSong.coverArtUrl,
-                   let url = URL(string: coverUrl) {
-                    AsyncImage(url: url) { image in
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                    } placeholder: {
-                        RoundedRectangle(cornerRadius: 15)
-                            .fill(Color.gray.opacity(0.3))
-                    }
-                    .frame(width: UIScreen.main.bounds.width - 60, height: UIScreen.main.bounds.width - 60)
-                    .cornerRadius(15)
-                    .shadow(radius: 10)
-                    .padding(.bottom, 40)
-                } else {
-                    RoundedRectangle(cornerRadius: 15)
-                        .fill(LinearGradient(gradient: Gradient(colors: [.pink, .purple]), startPoint: .topLeading, endPoint: .bottomTrailing))
-                        .frame(width: UIScreen.main.bounds.width - 60, height: UIScreen.main.bounds.width - 60)
-                        .shadow(radius: 10)
-                        .padding(.bottom, 40)
-                }
-                
-                // Song Info
+                // Header
                 HStack {
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text(audioManager.currentSong?.title ?? "Not Playing")
-                            .font(.system(size: 24, weight: .bold, design: .default))
+                    Button(action: {
+                        isShowing = false
+                    }) {
+                        Image(systemName: "chevron.down")
+                            .font(.title2)
                             .foregroundColor(.white)
-                        
-                        Text(audioManager.currentSong?.artist ?? "")
-                            .font(.system(size: 18, weight: .medium, design: .default))
-                            .foregroundColor(.white.opacity(0.7))
                     }
                     Spacer()
+                    Text("NOW PLAYING")
+                        .font(.caption)
+                        .fontWeight(.bold)
+                        .foregroundColor(Theme.spiderRed)
+                        .tracking(2)
+                    Spacer()
                     Button(action: {
-                        if let current = audioManager.currentSong {
-                            NetworkManager.shared.addToFavorites(songId: current.id)
-                        }
+                        // Options
                     }) {
-                        Image(systemName: "heart")
-                            .font(.system(size: 24))
+                        Image(systemName: "ellipsis")
+                            .font(.title2)
                             .foregroundColor(.white)
                     }
                 }
-                .padding(.horizontal, 30)
-                
-                // Scrubber
-                VStack(spacing: 5) {
-                    Slider(value: Binding(get: {
-                        audioManager.progress
-                    }, set: { newValue in
-                        audioManager.seek(to: newValue)
-                    }), in: 0...(audioManager.duration > 0 ? audioManager.duration : 1))
-                    .accentColor(.white)
-                    
-                    HStack {
-                        Text(formatTime(audioManager.progress))
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.7))
-                        Spacer()
-                        Text(formatTime(audioManager.duration))
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.7))
-                    }
-                }
-                .padding(.horizontal, 30)
-                .padding(.top, 20)
-                
-                // Playback Controls
-                HStack(spacing: 40) {
-                    Button(action: {
-                        audioManager.playPrevious()
-                    }) {
-                        Image(systemName: "backward.fill")
-                            .font(.system(size: 30))
-                            .foregroundColor(.white)
-                    }
-                    
-                    Button(action: {
-                        if audioManager.isPlaying {
-                            audioManager.pause()
-                        } else {
-                            audioManager.resume()
-                        }
-                    }) {
-                        Image(systemName: audioManager.isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                            .font(.system(size: 70))
-                            .foregroundColor(.white)
-                    }
-                    
-                    Button(action: {
-                        audioManager.playNext()
-                    }) {
-                        Image(systemName: "forward.fill")
-                            .font(.system(size: 30))
-                            .foregroundColor(.white)
-                    }
-                }
-                .padding(.top, 30)
+                .padding()
                 
                 Spacer()
+                
+                // Album Art with Spidey Glow
+                if let song = audioManager.currentSong {
+                    AsyncImage(url: URL(string: song.cover_art_url ?? "")) { image in
+                        image.resizable().aspectRatio(contentMode: .fill)
+                    } placeholder: {
+                        Rectangle().fill(Theme.spiderDarkGrey)
+                    }
+                    .frame(width: UIScreen.main.bounds.width - 60, height: UIScreen.main.bounds.width - 60)
+                    .cornerRadius(20)
+                    .shadow(color: Theme.spiderNeonRed.opacity(0.6), radius: 30, x: 0, y: 10)
+                    .padding(.bottom, 40)
+                    
+                    // Song Info & Favorite
+                    HStack {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(song.title)
+                                .font(.title)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+                                .lineLimit(1)
+                            
+                            Text(song.artist)
+                                .font(.title3)
+                                .foregroundColor(.gray)
+                                .lineLimit(1)
+                        }
+                        Spacer()
+                        
+                        Button(action: {
+                            networkManager.addToFavorites(song: song)
+                        }) {
+                            Image(systemName: networkManager.favorites.contains(where: { $0.id == song.id }) ? "heart.fill" : "heart")
+                                .font(.title)
+                                .foregroundColor(Theme.spiderNeonRed)
+                        }
+                    }
+                    .padding(.horizontal, 30)
+                    
+                    // Scrubber
+                    VStack(spacing: 5) {
+                        Slider(value: Binding(get: {
+                            audioManager.progress
+                        }, set: { newValue in
+                            audioManager.seek(to: newValue)
+                        }), in: 0...(audioManager.duration > 0 ? audioManager.duration : 1))
+                        .accentColor(Theme.spiderNeonRed)
+                        
+                        HStack {
+                            Text(formatTime(audioManager.progress))
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                            Spacer()
+                            Text(formatTime(audioManager.duration))
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                        }
+                    }
+                    .padding(.horizontal, 30)
+                    .padding(.top, 20)
+                    
+                    // Playback Controls
+                    HStack(spacing: 40) {
+                        Button(action: {
+                            audioManager.playPrevious()
+                        }) {
+                            Image(systemName: "backward.fill")
+                                .font(.system(size: 35))
+                                .foregroundColor(.white)
+                        }
+                        
+                        Button(action: {
+                            if audioManager.isPlaying {
+                                audioManager.pause()
+                            } else {
+                                audioManager.resume()
+                            }
+                        }) {
+                            Image(systemName: audioManager.isPlaying ? "pause.circle.fill" : "play.circle.fill")
+                                .font(.system(size: 80))
+                                .foregroundColor(Theme.spiderRed)
+                                .shadow(color: Theme.spiderNeonRed.opacity(0.5), radius: 10, x: 0, y: 0)
+                        }
+                        
+                        Button(action: {
+                            audioManager.playNext()
+                        }) {
+                            Image(systemName: "forward.fill")
+                                .font(.system(size: 35))
+                                .foregroundColor(.white)
+                        }
+                    }
+                    .padding(.top, 30)
+                    
+                    Spacer()
+                } else {
+                    Text("No Song Playing")
+                        .foregroundColor(.gray)
+                    Spacer()
+                }
             }
         }
         // Allow swiping down to dismiss
