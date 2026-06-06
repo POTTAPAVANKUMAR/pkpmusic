@@ -20,7 +20,8 @@ struct HomeView: View {
                             .padding(.horizontal)
                         
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                            ForEach(Array(networkManager.searchResults.enumerated()), id: \.element.id) { index, song in
+                            ForEach(networkManager.searchResults.indices, id: \.self) { index in
+                                let song = networkManager.searchResults[index]
                                 SongCardView(song: song)
                                     .onTapGesture {
                                         audioManager.play(song: song, in: networkManager.searchResults, at: index)
@@ -38,7 +39,8 @@ struct HomeView: View {
                         
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 16) {
-                                ForEach(Array(networkManager.songs.enumerated()), id: \.element.id) { index, song in
+                                ForEach(networkManager.songs.indices, id: \.self) { index in
+                                    let song = networkManager.songs[index]
                                     SongCardView(song: song)
                                         .onTapGesture {
                                             audioManager.play(song: song, in: networkManager.songs, at: index)

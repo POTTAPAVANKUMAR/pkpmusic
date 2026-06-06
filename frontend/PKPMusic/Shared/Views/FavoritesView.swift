@@ -15,7 +15,8 @@ struct FavoritesView: View {
                             .padding()
                     } else {
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                            ForEach(Array(networkManager.favorites.enumerated()), id: \.element.id) { index, song in
+                            ForEach(networkManager.favorites.indices, id: \.self) { index in
+                                let song = networkManager.favorites[index]
                                 SongCardView(song: song)
                                     .onTapGesture {
                                         audioManager.play(song: song, in: networkManager.favorites, at: index)
