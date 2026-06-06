@@ -119,14 +119,14 @@
 			);
 			sourceTree = "<group>";
 		};
-		"TEMP_27F44A94-3893-4539-B099-79E2C9E73752" /* iOS */ = {
+		"TEMP_2580502B-1E37-4AAE-97B1-D7675B78ACF0" /* iOS */ = {
 			isa = PBXGroup;
 			children = (
 			);
 			path = iOS;
 			sourceTree = "<group>";
 		};
-		"TEMP_BA4F01B0-9328-447B-BFE0-3BDCD6B03196" /* watchOS */ = {
+		"TEMP_26D9AF59-916B-4EFF-A5FA-9D3A36543093" /* watchOS */ = {
 			isa = PBXGroup;
 			children = (
 			);
