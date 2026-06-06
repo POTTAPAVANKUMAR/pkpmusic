@@ -2,38 +2,29 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var audioManager = AudioPlayerManager.shared
-    @State private var selectedTab = 0
     
     var body: some View {
         ZStack(alignment: .bottom) {
-            TabView(selection: $selectedTab) {
+            TabView {
                 HomeView()
                     .tabItem {
-                        Image(systemName: "play.circle.fill")
-                        Text("Listen Now")
+                        Label("Listen Now", systemImage: "play.circle.fill")
                     }
-                    .tag(0)
                 
-                LibraryView()
+                FavoritesView()
                     .tabItem {
-                        Image(systemName: "square.stack.fill")
-                        Text("Library")
+                        Label("Favorites", systemImage: "heart.fill")
                     }
-                    .tag(1)
                 
-                SearchView()
+                PlaylistsView()
                     .tabItem {
-                        Image(systemName: "magnifyingglass")
-                        Text("Search")
+                        Label("Playlists", systemImage: "music.note.list")
                     }
-                    .tag(2)
             }
-            .accentColor(.pink) // Apple Music signature color
             
-            // Glassmorphic MiniPlayer sitting above the tab bar
-            if audioManager.currentSong != nil {
+            if audioManager.isPlaying || audioManager.currentSong != nil {
                 MiniPlayerView()
-                    .padding(.bottom, 49) // Offset for standard TabBar height
+                    .padding(.bottom, 50) // Adjust for TabBar height
             }
         }
     }

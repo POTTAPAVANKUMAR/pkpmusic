@@ -1,9 +1,11 @@
-from fastapi import FastAPI, Depends, HTTPException, Query
+from fastapi import FastAPI, Depends, HTTPException, Query, UploadFile, File
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from typing import List
 import subprocess
 import json
+import csv
+import io
 from datetime import datetime
 
 import models, schemas, crud
@@ -35,6 +37,46 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
     return crud.create_user(db=db, user=user)
+
+@app.post("/playlists/import/csv")
+async def import_playlist_csv(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    content = await file.read()
+    text = content.decode("utf-8")
+    reader = csv.DictReader(io.StringIO(text))
+    
+    imported_count = 0
+    yt = YTMusic()
+
+    for row in reader:
+        title = row.get("Track Name", row.get("Title", row.get("title", "")))
+        artist = row.get("Artist Name", row.get("Artist", row.get("artist", "")))
+        
+        if title:
+            query = f"{title} {artist}"
+            results = yt.search(query, filter="songs")
+            if results:
+                top_hit = results[0]
+                video_id = top_hit['videoId']
+                db_song = crud.get_song(db, video_id)
+                if not db_song:
+                    song_data = schemas.SongCreate(
+                        id=video_id,
+                        title=top_hit['title'],
+                        artist=top_hit['artists'][0]['name'] if top_hit.get('artists') else "Unknown",
+                        album=top_hit['album']['name'] if top_hit.get('album') else None,
+                        duration_ms=top_hit.get('duration_seconds', 0) * 1000 if top_hit.get('duration_seconds') else None,
+                        cover_art_url=top_hit['thumbnails'][-1]['url'] if top_hit.get('thumbnails') else None
+                    )
+                    crud.create_song(db, song_data)
+                
+                # Check if it's already in favorites to prevent duplicates
+                existing_favs = crud.get_favorites(db, user_id=1)
+                if not any(f.song_id == video_id for f in existing_favs):
+                    fav = schemas.FavoriteCreate(song_id=video_id)
+                    crud.add_favorite(db, fav, user_id=1)
+                imported_count += 1
+
+    return {"message": f"Successfully imported {imported_count} songs to favorites"}
 
 @app.get("/search/yt", response_model=List[schemas.SongBase])
 def search_youtube(query: str = Query(..., min_length=1)):
@@ -68,14 +110,10 @@ def stream_youtube(video_id: str):
     url = f"https://www.youtube.com/watch?v={video_id}"
     try:
         # Run yt-dlp to get the direct URL
-        result = subprocess.run(
-            ["yt-dlp", "-f", "bestaudio", "-g", url],
-            capture_output=True,
-            text=True,
-            check=True
-        )
-        stream_url = result.stdout.strip()
-        if not stream_url:
+        command = ["yt-dlp", "--no-warnings", "-f", "m4a/bestaudio/best", "-g", url]
+        result = subprocess.run(command, capture_output=True, text=True, check=True)
+        stream_url = result.stdout.strip().split('\n')[-1]
+        if not stream_url.startswith("http"):
             raise HTTPException(status_code=404, detail="Could not extract stream URL")
         
         # Redirect the iPhone AVPlayer directly to Google's servers

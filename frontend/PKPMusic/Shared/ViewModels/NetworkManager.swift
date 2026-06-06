@@ -8,6 +8,7 @@ class NetworkManager: ObservableObject {
     
     @Published var songs: [Song] = []
     @Published var searchResults: [Song] = []
+    @Published var favorites: [Song] = []
     
     // Add dummy auth user for now
     let userId = 1
@@ -19,8 +20,6 @@ class NetworkManager: ObservableObject {
         URLSession.shared.dataTask(with: url) { data, response, error in
             if let data = data {
                 do {
-                    // Quick map from History back to Songs
-                    // Assuming History struct returns the embedded Song
                     struct HistoryItem: Codable {
                         let song: Song
                     }
@@ -30,6 +29,26 @@ class NetworkManager: ObservableObject {
                     }
                 } catch {
                     print("Error decoding history: \(error)")
+                }
+            }
+        }.resume()
+    }
+    
+    func fetchFavorites() {
+        guard let url = URL(string: "\(baseURL)/favorites/?user_id=\(userId)") else { return }
+        
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            if let data = data {
+                do {
+                    struct FavoriteItem: Codable {
+                        let song: Song
+                    }
+                    let decodedFavorites = try JSONDecoder().decode([FavoriteItem].self, from: data)
+                    DispatchQueue.main.async {
+                        self.favorites = decodedFavorites.map { $0.song }
+                    }
+                } catch {
+                    print("Error decoding favorites: \(error)")
                 }
             }
         }.resume()
@@ -55,19 +74,32 @@ class NetworkManager: ObservableObject {
     
     func recordHistory(songId: String) {
         guard let url = URL(string: "\(baseURL)/history/?user_id=\(userId)") else { return }
-        
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        // Simple ISO timestamp for played_at
         let formatter = ISO8601DateFormatter()
         let timestamp = formatter.string(from: Date())
-        
         let body: [String: Any] = ["song_id": songId, "played_at": timestamp]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
         
         URLSession.shared.dataTask(with: request).resume()
+    }
+    
+    func addToFavorites(songId: String) {
+        guard let url = URL(string: "\(baseURL)/favorites/?user_id=\(userId)") else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let body: [String: Any] = ["song_id": songId]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if error == nil {
+                self.fetchFavorites() // Refresh
+            }
+        }.resume()
     }
     
     func getStreamURL(for songId: String) -> URL? {

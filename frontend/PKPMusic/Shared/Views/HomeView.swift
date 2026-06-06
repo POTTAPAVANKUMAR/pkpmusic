@@ -4,11 +4,14 @@ struct HomeView: View {
     @StateObject private var networkManager = NetworkManager.shared
     @StateObject private var audioManager = AudioPlayerManager.shared
     @State private var searchText = ""
+    @State private var showFullScreenPlayer = false
     
     var body: some View {
         NavigationView {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
+                    
+                    let queue = !searchText.isEmpty ? networkManager.searchResults : networkManager.songs
                     
                     if !searchText.isEmpty {
                         Text("Search Results")
@@ -17,10 +20,11 @@ struct HomeView: View {
                             .padding(.horizontal)
                         
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                            ForEach(networkManager.searchResults) { song in
+                            ForEach(Array(networkManager.searchResults.enumerated()), id: \.element.id) { index, song in
                                 SongCardView(song: song)
                                     .onTapGesture {
-                                        audioManager.play(song: song)
+                                        audioManager.play(song: song, in: networkManager.searchResults, at: index)
+                                        showFullScreenPlayer = true
                                     }
                             }
                         }
@@ -34,10 +38,11 @@ struct HomeView: View {
                         
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 16) {
-                                ForEach(networkManager.songs) { song in
+                                ForEach(Array(networkManager.songs.enumerated()), id: \.element.id) { index, song in
                                     SongCardView(song: song)
                                         .onTapGesture {
-                                            audioManager.play(song: song)
+                                            audioManager.play(song: song, in: networkManager.songs, at: index)
+                                            showFullScreenPlayer = true
                                         }
                                 }
                             }

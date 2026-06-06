@@ -47,16 +47,27 @@ struct FullScreenPlayerView: View {
                 }
                 
                 // Song Info
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(audioManager.currentSong?.title ?? "Not Playing")
-                        .font(.system(size: 24, weight: .bold, design: .default))
-                        .foregroundColor(.white)
-                    
-                    Text(audioManager.currentSong?.artist ?? "")
-                        .font(.system(size: 18, weight: .medium, design: .default))
-                        .foregroundColor(.white.opacity(0.7))
+                HStack {
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text(audioManager.currentSong?.title ?? "Not Playing")
+                            .font(.system(size: 24, weight: .bold, design: .default))
+                            .foregroundColor(.white)
+                        
+                        Text(audioManager.currentSong?.artist ?? "")
+                            .font(.system(size: 18, weight: .medium, design: .default))
+                            .foregroundColor(.white.opacity(0.7))
+                    }
+                    Spacer()
+                    Button(action: {
+                        if let current = audioManager.currentSong {
+                            NetworkManager.shared.addToFavorites(songId: current.id)
+                        }
+                    }) {
+                        Image(systemName: "heart")
+                            .font(.system(size: 24))
+                            .foregroundColor(.white)
+                    }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 30)
                 
                 // Scrubber (Placeholder)
@@ -67,7 +78,9 @@ struct FullScreenPlayerView: View {
                 
                 // Playback Controls
                 HStack(spacing: 40) {
-                    Button(action: {}) {
+                    Button(action: {
+                        audioManager.playPrevious()
+                    }) {
                         Image(systemName: "backward.fill")
                             .font(.system(size: 30))
                             .foregroundColor(.white)
@@ -85,7 +98,9 @@ struct FullScreenPlayerView: View {
                             .foregroundColor(.white)
                     }
                     
-                    Button(action: {}) {
+                    Button(action: {
+                        audioManager.playNext()
+                    }) {
                         Image(systemName: "forward.fill")
                             .font(.system(size: 30))
                             .foregroundColor(.white)
