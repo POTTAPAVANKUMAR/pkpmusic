@@ -112,15 +112,32 @@ async def stream_youtube(video_id: str, request: Request):
     """Uses yt-dlp to extract the raw audio stream URL and proxies the stream to the client."""
     url = f"https://www.youtube.com/watch?v={video_id}"
     try:
-        # Run yt-dlp to get the direct URL
-        command = ["yt-dlp", "--no-warnings", "-f", "m4a/bestaudio/best", "-g", url]
+        # Run yt-dlp to get the dump json
+        command = ["yt-dlp", "--no-warnings", "--dump-json", "-f", "m4a/bestaudio/best", url]
         result = subprocess.run(command, capture_output=True, text=True, check=True)
-        stream_url = result.stdout.strip().split('\n')[-1]
-        if not stream_url.startswith("http"):
+        
+        # Extract the JSON block
+        lines = result.stdout.strip().split('\n')
+        json_data = None
+        for line in reversed(lines):
+            if line.startswith('{'):
+                try:
+                    json_data = json.loads(line)
+                    break
+                except:
+                    continue
+                    
+        if not json_data or 'url' not in json_data:
             raise HTTPException(status_code=404, detail="Could not extract stream URL")
+            
+        stream_url = json_data['url']
+        dl_headers = json_data.get('http_headers', {})
         
         # Build headers for the proxy request
         client_headers = {}
+        for k, v in dl_headers.items():
+            client_headers[k.lower()] = v
+            
         if "range" in request.headers:
             client_headers["range"] = request.headers["range"]
             
@@ -342,8 +359,13 @@ def get_search_suggestions(query: str):
 @app.get("/lyrics/{video_id}", response_model=schemas.LyricsResponse)
 def get_lyrics(video_id: str):
     try:
-        watch_playlist = yt.get_watch_playlist(videoId=video_id)
-        lyrics_id = watch_playlist.get('lyrics')
+        lyrics_id = None
+        try:
+            watch_playlist = yt.get_watch_playlist(videoId=video_id)
+            lyrics_id = watch_playlist.get('lyrics')
+        except KeyError:
+            pass
+            
         if not lyrics_id:
             raise HTTPException(status_code=404, detail="Lyrics not found for this song")
         
