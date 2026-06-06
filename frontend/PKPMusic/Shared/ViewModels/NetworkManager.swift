@@ -11,6 +11,7 @@ class NetworkManager: ObservableObject {
     @Published var favorites: [Song] = []
     @Published var playlists: [Playlist] = []
     @Published var dashboardSections: [DashboardSection] = []
+    @Published var dashboardError: String?
     @Published var isLoading: Bool = false
     
     // Add dummy auth user for now

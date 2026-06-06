@@ -5,7 +5,6 @@ struct HomeView: View {
     @StateObject private var audioManager = AudioPlayerManager.shared
     @State private var searchText = ""
     @State private var isSearching = false
-    @State private var searchResults: [Song] = []
     @State private var showFullScreenPlayer = false
     
     var body: some View {
@@ -27,7 +26,6 @@ struct HomeView: View {
                             Button(action: {
                                 searchText = ""
                                 isSearching = false
-                                searchResults.removeAll()
                             }) {
                                 Image(systemName: "xmark.circle.fill")
                                     .foregroundColor(.gray)
@@ -95,10 +93,10 @@ struct HomeView: View {
     private var searchResultsView: some View {
         ScrollView {
             LazyVStack(spacing: 12) {
-                ForEach(searchResults) { song in
+                ForEach(networkManager.searchResults) { song in
                     SongRowView(song: song, isPlaying: audioManager.currentSong?.id == song.id)
                         .onTapGesture {
-                            audioManager.play(song: song, in: searchResults, at: searchResults.firstIndex(where: { $0.id == song.id }) ?? 0)
+                            audioManager.play(song: song, in: networkManager.searchResults, at: networkManager.searchResults.firstIndex(where: { $0.id == song.id }) ?? 0)
                             showFullScreenPlayer = true
                             
                             // Hide keyboard
@@ -114,12 +112,7 @@ struct HomeView: View {
     private func performSearch() {
         guard !searchText.isEmpty else { return }
         isSearching = true
-        
-        networkManager.search(query: searchText) { results in
-            DispatchQueue.main.async {
-                self.searchResults = results
-            }
-        }
+        networkManager.searchYouTube(query: searchText)
     }
 }
 
@@ -171,11 +164,11 @@ struct DashboardItemCard: View {
                         if let image = phase.image {
                             image.resizable().aspectRatio(contentMode: .fill)
                         } else {
-                            Color(Theme.spiderDarkGrey)
+                            Theme.spiderDarkGrey
                         }
                     }
                 } else {
-                    Color(Theme.spiderDarkGrey)
+                    Theme.spiderDarkGrey
                     Image(systemName: item.type == "song" ? "music.note" : "square.stack.fill")
                         .foregroundColor(.gray)
                         .font(.largeTitle)

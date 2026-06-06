@@ -48,7 +48,8 @@ struct DashboardItem: Identifiable, Codable {
     }
 }
 
-struct DashboardSection: Codable {
+struct DashboardSection: Codable, Identifiable {
+    var id: String { title }
     let title: String
     let items: [DashboardItem]
 }
