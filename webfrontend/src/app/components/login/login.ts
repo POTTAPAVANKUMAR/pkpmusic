@@ -51,7 +51,7 @@ export class Login {
   onSubmit() {
     if (!this.email || !this.password) return;
     
-    this.auth.login({ username: this.email, password: this.password }).subscribe({
+    this.auth.login({ email: this.email, password: this.password }).subscribe({
       next: () => {
         this.router.navigate(['/']);
       },
