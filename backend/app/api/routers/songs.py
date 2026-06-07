@@ -111,6 +111,18 @@ async def stream_youtube(video_id: str, request: Request):
 @router.get("/lyrics/{video_id}", response_model=schemas.LyricsResponse)
 def get_lyrics(video_id: str):
     try:
+        # First, try to get the song details to use for a fallback search
+        song_title = "Unknown"
+        song_artist = "Unknown"
+        try:
+            song_info = yt.get_song(video_id)
+            details = song_info.get('videoDetails', {})
+            song_title = details.get('title', 'Unknown')
+            song_artist = details.get('author', 'Unknown')
+        except Exception:
+            pass
+
+        # Try to use ytmusicapi to get official lyrics
         lyrics_id = None
         try:
             watch_playlist = yt.get_watch_playlist(videoId=video_id)
@@ -118,15 +130,38 @@ def get_lyrics(video_id: str):
         except KeyError:
             pass
             
-        if not lyrics_id:
-            raise HTTPException(status_code=404, detail="Lyrics not found for this song")
+        if lyrics_id:
+            lyrics_data = yt.get_lyrics(lyrics_id)
+            return schemas.LyricsResponse(
+                lyrics=lyrics_data.get('lyrics', ''),
+                source=lyrics_data.get('source', 'YouTube Music')
+            )
+            
+        # Fallback to lyrics.ovh API
+        if song_title != "Unknown" and song_artist != "Unknown":
+            # Clean up artist name (remove " - Topic" if present)
+            clean_artist = song_artist.replace(" - Topic", "").replace("VEVO", "")
+            
+            # Clean up title (remove "(Official Video)", etc.)
+            clean_title = song_title.split("(")[0].split("[")[0].strip()
+            
+            try:
+                response = httpx.get(f"https://api.lyrics.ovh/v1/{clean_artist}/{clean_title}", timeout=5.0)
+                if response.status_code == 200:
+                    data = response.json()
+                    if "lyrics" in data:
+                        return schemas.LyricsResponse(
+                            lyrics=data["lyrics"],
+                            source="Lyrics.ovh"
+                        )
+            except Exception:
+                pass
+
+        raise HTTPException(status_code=404, detail="Lyrics not found for this song")
         
-        lyrics = yt.get_lyrics(lyrics_id)
-        return schemas.LyricsResponse(
-            lyrics=lyrics.get('lyrics', ''),
-            source=lyrics.get('source', 'Unknown')
-        )
     except Exception as e:
+        if isinstance(e, HTTPException):
+            raise e
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/artist/{channel_id}", response_model=schemas.ArtistDetail)
