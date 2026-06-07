@@ -1,6 +1,6 @@
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Float
 from sqlalchemy.orm import relationship
-from database import Base
+from app.db.database import Base
 
 class User(Base):
     __tablename__ = "users"
@@ -77,3 +77,22 @@ class Favorite(Base):
     song_id = Column(String, ForeignKey("songs.id"))
 
     song = relationship("Song", back_populates="favorite_items")
+
+class Friendship(Base):
+    __tablename__ = "friendships"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    friend_id = Column(Integer, ForeignKey("users.id"))
+    status = Column(String) # 'pending', 'accepted'
+    created_at = Column(Float) # Epoch timestamp
+
+class Message(Base):
+    __tablename__ = "messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    sender_id = Column(Integer, ForeignKey("users.id"))
+    receiver_id = Column(Integer, ForeignKey("users.id"))
+    content = Column(String) # text, base64 image, or song_id
+    message_type = Column(String) # 'text', 'image', 'gif', 'song_share'
+    timestamp = Column(Float) # Epoch timestamp

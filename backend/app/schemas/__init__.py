@@ -142,3 +142,39 @@ class VerifyOTP(BaseModel):
     email: str
     otp: str
     new_password: str
+
+# --- Chat & Social Schemas ---
+
+class ChatUser(BaseModel):
+    id: int
+    username: str
+
+class FriendshipBase(BaseModel):
+    friend_id: int
+
+class FriendshipCreate(FriendshipBase):
+    pass
+
+class FriendshipResponse(BaseModel):
+    id: int
+    user_id: int
+    friend_id: int
+    status: str
+    created_at: float
+    friend: ChatUser
+
+class MessageBase(BaseModel):
+    receiver_id: int
+    content: str
+    message_type: str = "text"
+
+class MessageCreate(MessageBase):
+    pass
+
+class MessageResponse(MessageBase):
+    id: int
+    sender_id: int
+    timestamp: float
+
+    class Config:
+        from_attributes = True

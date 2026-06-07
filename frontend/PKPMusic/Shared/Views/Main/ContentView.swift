@@ -29,28 +29,37 @@ struct ContentView: View {
     
     var body: some View {
         Group {
-            if authManager.isAuthenticated {
-                ZStack(alignment: .bottom) {
-                    TabView {
-                        HomeView()
-                            .tabItem {
-                                Label("Home", systemImage: "music.note.house.fill")
-                            }
+            ZStack {
+                if authManager.isAuthenticated {
+                    ZStack(alignment: .bottom) {
+                        TabView {
+                            HomeView()
+                                .tabItem {
+                                    Label("Home", systemImage: "music.note.house.fill")
+                                }
+                            
+                            LibraryView()
+                                .tabItem {
+                                    Label("Library", systemImage: "play.square.stack.fill")
+                                }
+                            
+                            ChatListView()
+                                .tabItem {
+                                    Label("Chat", systemImage: "message.fill")
+                                }
+                        }
+                        .accentColor(Theme.spiderRed)
                         
-                        LibraryView()
-                            .tabItem {
-                                Label("Library", systemImage: "play.square.stack.fill")
-                            }
+                        if audioManager.isPlaying || audioManager.currentSong != nil {
+                            MiniPlayerView()
+                        }
                     }
-                    .accentColor(Theme.spiderRed)
-                    
-                    if audioManager.isPlaying || audioManager.currentSong != nil {
-                        MiniPlayerView()
-                            .padding(.bottom, 50) // Adjust for TabBar height
-                    }
+                } else {
+                    LoginView()
                 }
-            } else {
-                LoginView()
+                
+                // Spiderman Easter Egg overlaying the entire app
+                Theme.SwingingMilesView()
             }
         }
         .preferredColorScheme(.dark)

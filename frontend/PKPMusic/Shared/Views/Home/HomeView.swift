@@ -43,6 +43,8 @@ struct HomeView: View {
                         HStack(spacing: 12) {
                             let categories = [
                                 ("Telugu", "music.note", "telugu songs"),
+                                ("English", "music.note", "english songs"),
+                                ("Tamil", "music.note", "tamil songs"),
                                 ("Hindi", "music.note", "hindi songs"),
                                 ("Pop", "music.mic", "pop music"),
                                 ("R&B", "music.note.list", "r&b music"),
@@ -160,6 +162,9 @@ struct DashboardSectionView: View {
     @StateObject private var audioManager = AudioPlayerManager.shared
     @State private var showFullScreenPlayer = false
     
+    @State private var selectedMood: DashboardItem?
+    @State private var selectedAlbum: DashboardItem?
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
             Text(section.title)
@@ -179,26 +184,74 @@ struct DashboardSectionView: View {
                             }) {
                                 DashboardItemCard(item: item)
                             }
-                            .buttonStyle(PlainButtonStyle())
+                            .buttonStyle(SpiderButtonStyle())
                         } else if item.type == "mood" {
-                            NavigationLink(destination: MoodPlaylistsView(params: item.id, moodTitle: item.title)) {
+                            Button(action: {
+                                selectedMood = item
+                            }) {
                                 DashboardItemCard(item: item)
                             }
-                            .buttonStyle(PlainButtonStyle())
+                            .buttonStyle(SpiderButtonStyle())
                         } else {
-                            NavigationLink(destination: AlbumDetailView(albumId: item.id)) {
+                            Button(action: {
+                                selectedAlbum = item
+                            }) {
                                 DashboardItemCard(item: item)
                             }
-                            .buttonStyle(PlainButtonStyle())
+                            .buttonStyle(SpiderButtonStyle())
                         }
                     }
                 }
                 .padding(.horizontal)
             }
+            
+            // Programmatic Navigation Links
+            NavigationLink(
+                destination: Group {
+                    if let mood = selectedMood {
+                        MoodPlaylistsView(params: mood.id, moodTitle: mood.title)
+                    } else {
+                        EmptyView()
+                    }
+                },
+                isActive: Binding(
+                    get: { selectedMood != nil },
+                    set: { if !$0 { selectedMood = nil } }
+                )
+            ) { EmptyView() }
+            
+            NavigationLink(
+                destination: Group {
+                    if let album = selectedAlbum {
+                        AlbumDetailView(albumId: album.id)
+                    } else {
+                        EmptyView()
+                    }
+                },
+                isActive: Binding(
+                    get: { selectedAlbum != nil },
+                    set: { if !$0 { selectedAlbum = nil } }
+                )
+            ) { EmptyView() }
         }
         .fullScreenCover(isPresented: $showFullScreenPlayer) {
             FullScreenPlayerView(isShowing: $showFullScreenPlayer)
         }
+    }
+}
+
+struct SpiderButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.5, blendDuration: 0.5), value: configuration.isPressed)
+            .opacity(configuration.isPressed ? 0.8 : 1.0)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Theme.spiderNeonRed.opacity(configuration.isPressed ? 0.5 : 0), lineWidth: 2)
+                    .scaleEffect(configuration.isPressed ? 1.05 : 1.0)
+                    .animation(.easeOut(duration: 0.2), value: configuration.isPressed)
+            )
     }
 }
 
@@ -216,6 +269,47 @@ struct DashboardItemCard: View {
         }
     }
     
+    private func getDynamicIcon(for title: String, type: String) -> String {
+        let lower = title.lowercased()
+        if lower.contains("chill") { return "wind" }
+        if lower.contains("workout") || lower.contains("energize") { return "figure.run" }
+        if lower.contains("party") { return "party.popper.fill" }
+        if lower.contains("romance") || lower.contains("love") { return "heart.fill" }
+        if lower.contains("sad") { return "cloud.rain.fill" }
+        if lower.contains("sleep") { return "moon.zzz.fill" }
+        if lower.contains("focus") { return "brain.head.profile" }
+        if lower.contains("gaming") { return "gamecontroller.fill" }
+        if lower.contains("commute") { return "car.fill" }
+        if lower.contains("feel good") { return "sun.max.fill" }
+        if lower.contains("classical") { return "pianokeys" }
+        if lower.contains("jazz") || lower.contains("blues") { return "guitars.fill" }
+        if lower.contains("metal") || lower.contains("rock") { return "guitars.fill" }
+        if lower.contains("dance") || lower.contains("electronic") { return "waveform.circle.fill" }
+        if lower.contains("family") { return "figure.2.and.child.holdinghands" }
+        if lower.contains("decades") { return "clock.fill" }
+        if lower.contains("pop") { return "music.mic" }
+        if lower.contains("country") { return "guitars" }
+        if lower.contains("indie") { return "leaf.fill" }
+        
+        return fallbackIcon(for: type)
+    }
+    
+    private func getDynamicGradient(for title: String) -> LinearGradient {
+        let colorPairs: [[Color]] = [
+            [.blue, .purple],
+            [Theme.spiderNeonRed, .black],
+            [.orange, .red],
+            [.green, .blue],
+            [.pink, .purple],
+            [.yellow, .orange],
+            [.cyan, .blue],
+            [.purple, Theme.spiderNeonRed]
+        ]
+        // Pseudo-random but consistent based on title
+        let hash = abs(title.hashValue) % colorPairs.count
+        return LinearGradient(gradient: Gradient(colors: colorPairs[hash]), startPoint: .topLeading, endPoint: .bottomTrailing)
+    }
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             // Image container
@@ -229,10 +323,18 @@ struct DashboardItemCard: View {
                         }
                     }
                 } else {
-                    Theme.spiderDarkGrey
-                    Image(systemName: fallbackIcon(for: item.type))
-                        .foregroundColor(.gray)
-                        .font(.largeTitle)
+                    if item.type == "mood" || item.type == "genre" || item.type == "playlist" {
+                        getDynamicGradient(for: item.title)
+                        Image(systemName: getDynamicIcon(for: item.title, type: item.type))
+                            .foregroundColor(.white)
+                            .font(.system(size: 50))
+                            .shadow(color: .black.opacity(0.5), radius: 5)
+                    } else {
+                        Theme.spiderDarkGrey
+                        Image(systemName: fallbackIcon(for: item.type))
+                            .foregroundColor(.gray)
+                            .font(.largeTitle)
+                    }
                 }
             }
             .frame(width: 150, height: 150)

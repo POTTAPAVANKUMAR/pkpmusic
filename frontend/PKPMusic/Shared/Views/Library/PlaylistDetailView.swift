@@ -43,6 +43,57 @@ struct PlaylistDetailView: View {
                 .padding(.vertical, 10)
                 
                 if !filteredItems.isEmpty {
+                    // Action Buttons: Play & Shuffle
+                    HStack(spacing: 20) {
+                        Button(action: {
+                            audioManager.isShuffled = false
+                            let songs = playlist.items?.map { $0.song } ?? []
+                            if !songs.isEmpty {
+                                audioManager.play(song: songs[0], in: songs, at: 0)
+                                showFullScreenPlayer = true
+                            }
+                        }) {
+                            HStack {
+                                Image(systemName: "play.fill")
+                                Text("Play")
+                            }
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(Theme.spiderNeonRed)
+                            .cornerRadius(25)
+                        }
+                        .buttonStyle(SpiderButtonStyle())
+                        
+                        Button(action: {
+                            audioManager.isShuffled = true
+                            let songs = playlist.items?.map { $0.song } ?? []
+                            if let randomSong = songs.randomElement() {
+                                audioManager.play(song: randomSong, in: songs, at: 0)
+                                showFullScreenPlayer = true
+                            }
+                        }) {
+                            HStack {
+                                Image(systemName: "shuffle")
+                                Text("Shuffle")
+                            }
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(Theme.spiderDarkGrey)
+                            .cornerRadius(25)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 25)
+                                    .stroke(Theme.spiderNeonRed.opacity(0.5), lineWidth: 1)
+                            )
+                        }
+                        .buttonStyle(SpiderButtonStyle())
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 10)
+
                     ScrollView {
                         LazyVStack(spacing: 12) {
                             ForEach(filteredItems.indices, id: \.self) { index in

@@ -5,8 +5,8 @@ from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
-import crud
-from database import SessionLocal
+from app.crud import crud
+from app.db.database import SessionLocal
 import os
 import random
 
@@ -58,6 +58,16 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     if user is None:
         raise credentials_exception
     return user
+
+def get_current_user_from_token(token: str, db: Session):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            return None
+    except JWTError:
+        return None
+    return crud.get_user_by_email(db, email=email)
 
 def generate_otp():
     return str(random.randint(100000, 999999))

@@ -21,10 +21,12 @@ struct LoginView: View {
                             .font(.system(size: 80))
                             .foregroundColor(Theme.spiderNeonRed)
                             .shadow(color: Theme.spiderNeonRed.opacity(0.5), radius: 10, x: 0, y: 0)
+                            .spiderGlitch()
                         
                         Text("PKP Music")
                             .font(.system(size: 40, weight: .bold, design: .rounded))
                             .foregroundColor(.white)
+                            .spiderGlitch()
                     }
                     .padding(.top, 50)
                     
