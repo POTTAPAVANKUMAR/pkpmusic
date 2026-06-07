@@ -42,7 +42,7 @@ def get_dashboard_sync(user_id: int, db: Session):
                             id=track['videoId'],
                             title=track.get('title', 'Unknown'),
                             subtitle=", ".join([a['name'] for a in track.get('artists', [])]),
-                            image_url=track.get('thumbnail', [{}])[-1].get('url'),
+                            image_url=track.get('thumbnail')[-1].get('url') if track.get('thumbnail') else None,
                             type="song"
                         ))
         except Exception as e:
@@ -62,7 +62,7 @@ def get_dashboard_sync(user_id: int, db: Session):
                     id=track['videoId'],
                     title=track.get('title', 'Unknown'),
                     subtitle=", ".join([a['name'] for a in track.get('artists', [])]),
-                    image_url=track.get('thumbnails', [{}])[-1].get('url'),
+                    image_url=track.get('thumbnails')[-1].get('url') if track.get('thumbnails') else None,
                     type="song"
                 ))
             if trending_items:
@@ -100,7 +100,7 @@ def get_dashboard_sync(user_id: int, db: Session):
                         id=content['videoId'],
                         title=content.get('title', 'Unknown'),
                         subtitle=", ".join([a['name'] for a in content.get('artists', [])]) if content.get('artists') else "",
-                        image_url=content.get('thumbnails', [{}])[-1].get('url'),
+                        image_url=content.get('thumbnails')[-1].get('url') if content.get('thumbnails') else None,
                         type="song"
                     ))
                 elif content.get('playlistId'):
@@ -108,7 +108,7 @@ def get_dashboard_sync(user_id: int, db: Session):
                         id=content['playlistId'],
                         title=content.get('title', 'Unknown'),
                         subtitle=content.get('description'),
-                        image_url=content.get('thumbnails', [{}])[-1].get('url'),
+                        image_url=content.get('thumbnails')[-1].get('url') if content.get('thumbnails') else None,
                         type="playlist"
                     ))
             if items:
