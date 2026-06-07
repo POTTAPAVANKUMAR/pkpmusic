@@ -34,5 +34,11 @@ services:
       - db
     restart: unless-stopped
 
+  web:
+    build: ./webfrontend
+    ports:
+      - "3001:80"
+    restart: unless-stopped
+
 volumes:
   postgres_data:

@@ -1,0 +1,26 @@
+<div class="player-bar" *ngIf="currentSong">
+  <div class="progress-container" (click)="seek($event)">
+    <div class="progress-bar" [style.width.%]="progress"></div>
+  </div>
+  
+  <div class="song-info">
+    <img [src]="currentSong.image_url || currentSong.cover_art_url" alt="Cover" class="cover-art">
+    <div>
+      <div class="title">{{ currentSong.title }}</div>
+      <div class="artist">{{ currentSong.subtitle || currentSong.artist }}</div>
+    </div>
+  </div>
+  
+  <div class="controls">
+    <button class="control-btn play-btn" (click)="togglePlay()">
+      <span *ngIf="!isPlaying">▶</span>
+      <span *ngIf="isPlaying">⏸</span>
+    </button>
+  </div>
+  
+  <div class="extra-controls">
+    <!-- Volume or other controls can go here -->
+  </div>
+  
+  <audio #audioEl (timeupdate)="onTimeUpdate()" (ended)="isPlaying = false"></audio>
+</div>

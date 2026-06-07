@@ -1,0 +1,13 @@
+<div class="login-container">
+  <div class="login-box">
+    <div class="logo">PKPMusic</div>
+    <form (submit)="onSubmit(); $event.preventDefault()">
+      <div *ngIf="error" class="error">{{ error }}</div>
+      
+      <input type="email" placeholder="Email address" [(ngModel)]="email" name="email" required>
+      <input type="password" placeholder="Password" [(ngModel)]="password" name="password" required>
+      
+      <button type="submit" class="btn-primary" style="width: 100%; margin-top: 10px;">Sign In</button>
+    </form>
+  </div>
+</div>
