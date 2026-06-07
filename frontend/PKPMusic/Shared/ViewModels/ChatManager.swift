@@ -14,8 +14,11 @@ class ChatManager: ObservableObject {
     private var webSocketTask: URLSessionWebSocketTask?
     private var cancellables = Set<AnyCancellable>()
     
-    let baseURL = "http://localhost:8000" // Should use environment variable or AuthManager's base URL
-    let wsURL = "ws://localhost:8000/ws/chat"
+    var baseURL: String { NetworkManager.shared.baseURL }
+    var wsURL: String {
+        baseURL.replacingOccurrences(of: "http://", with: "ws://")
+               .replacingOccurrences(of: "https://", with: "wss://") + "/ws/chat"
+    }
     
     // Start WebSocket Connection
     func connectWebSocket(token: String) {
