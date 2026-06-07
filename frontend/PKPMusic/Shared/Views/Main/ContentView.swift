@@ -54,7 +54,7 @@ struct ContentView: View {
                                     Label("API", systemImage: "network")
                                 }
                             
-                            WebView(urlString: "https://pgadmin.pottapk.win")
+                            WebView(urlString: "https://postgresql.pottapk.win/")
                                 .edgesIgnoringSafeArea(.top)
                                 .tabItem {
                                     Label("DB", systemImage: "cylinder.split.1x2")
