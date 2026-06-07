@@ -78,6 +78,16 @@ def get_history(db: Session, user_id: int, limit: int = 50):
 
 # Favorites
 def add_favorite(db: Session, favorite: schemas.FavoriteCreate, user_id: int):
+    existing = db.query(models.Favorite).filter(
+        models.Favorite.user_id == user_id,
+        models.Favorite.song_id == favorite.song_id
+    ).first()
+    
+    if existing:
+        db.delete(existing)
+        db.commit()
+        return existing
+        
     db_fav = models.Favorite(**favorite.dict(), user_id=user_id)
     db.add(db_fav)
     db.commit()
