@@ -13,17 +13,46 @@ from app.db import models
 
 router = APIRouter(tags=["dashboard"])
 
-dashboard_cache = {
-    "data": None,
-    "timestamp": 0
-}
-CACHE_TTL = 3600 # 1 hour
+dashboard_cache = {} # user_id -> {"data": sections, "timestamp": float}
+CACHE_TTL = 1800 # 30 minutes
 
 def get_dashboard_sync(user_id: int, db: Session):
-    global dashboard_cache
     sections = []
     
-    # 1. Trending Songs (Charts)
+    # 1. For You (Personalized Recommendations based on history and favorites)
+    foryou_items = []
+    seed_songs = set()
+    
+    history = crud.get_history(db, user_id=user_id, limit=3)
+    favorites = crud.get_favorites(db, user_id=user_id)
+    
+    if history:
+        seed_songs.add(history[0].song_id)
+    if favorites:
+        seed_songs.add(favorites[-1].song_id)
+        
+    for seed in list(seed_songs)[:2]: # Use up to 2 seeds
+        try:
+            watch_playlist = yt.get_watch_playlist(videoId=seed, limit=10)
+            for track in watch_playlist.get('tracks', [])[1:6]: # 5 recs per seed
+                if track.get('videoId'):
+                    # check if already added
+                    if not any(i.id == track['videoId'] for i in foryou_items):
+                        foryou_items.append(schemas.DashboardItem(
+                            id=track['videoId'],
+                            title=track.get('title', 'Unknown'),
+                            subtitle=", ".join([a['name'] for a in track.get('artists', [])]),
+                            image_url=track.get('thumbnail', [{}])[-1].get('url'),
+                            type="song"
+                        ))
+        except Exception as e:
+            print(f"Error fetching recommendations for seed {seed}: {e}")
+            
+    if foryou_items:
+        sections.append(schemas.DashboardSection(title="Recommended For You", items=foryou_items))
+
+    
+    # 2. Trending Songs (Charts)
     try:
         charts = yt.get_charts(country='US')
         trending_items = []
@@ -40,27 +69,6 @@ def get_dashboard_sync(user_id: int, db: Session):
                 sections.append(schemas.DashboardSection(title="Trending Hits", items=trending_items))
     except Exception as e:
         print(f"Error fetching charts: {e}")
-
-    # 2. For You (Personalized Recommendations based on history)
-    history = crud.get_history(db, user_id=user_id, limit=1)
-    if history:
-        try:
-            seed_song = history[0].song_id
-            watch_playlist = yt.get_watch_playlist(videoId=seed_song, limit=15)
-            foryou_items = []
-            for track in watch_playlist.get('tracks', [])[1:11]: # Skip the seed song itself
-                if track.get('videoId'):
-                    foryou_items.append(schemas.DashboardItem(
-                        id=track['videoId'],
-                        title=track.get('title', 'Unknown'),
-                        subtitle=", ".join([a['name'] for a in track.get('artists', [])]),
-                        image_url=track.get('thumbnail', [{}])[-1].get('url'),
-                        type="song"
-                    ))
-            if foryou_items:
-                sections.append(schemas.DashboardSection(title="Recommended For You", items=foryou_items))
-        except Exception as e:
-            print(f"Error fetching recommendations: {e}")
 
     # 3. Moods & Genres
     try:
@@ -108,16 +116,21 @@ def get_dashboard_sync(user_id: int, db: Session):
     except Exception as e:
         print(f"Error fetching home features: {e}")
 
-    dashboard_cache["data"] = sections
-    dashboard_cache["timestamp"] = time.time()
     return sections
 
 @router.get("/dashboard/", response_model=List[schemas.DashboardSection])
 def get_dashboard(current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(get_db)):
     global dashboard_cache
-    if dashboard_cache["data"] and (time.time() - dashboard_cache["timestamp"]) < CACHE_TTL:
-        return dashboard_cache["data"]
-    return get_dashboard_sync(current_user.id, db)
+    user_cache = dashboard_cache.get(current_user.id)
+    if user_cache and (time.time() - user_cache["timestamp"]) < CACHE_TTL:
+        return user_cache["data"]
+        
+    sections = get_dashboard_sync(current_user.id, db)
+    dashboard_cache[current_user.id] = {
+        "data": sections,
+        "timestamp": time.time()
+    }
+    return sections
 
 @router.get("/moods/{params}", response_model=List[schemas.DashboardItem])
 def get_mood_playlists(params: str):
