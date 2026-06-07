@@ -33,21 +33,21 @@ struct Theme {
                     // Web string
                     Rectangle()
                         .fill(LinearGradient(gradient: Gradient(colors: [.white.opacity(0.8), .white.opacity(0.0)]), startPoint: .top, endPoint: .bottom))
-                        .frame(width: 1.5, height: 250)
+                        .frame(width: 2, height: 400)
                     
                     // Spider-Man Image
                     Image("swinging_hero")
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 120, height: 120)
-                        .offset(y: 210) // Position him at the end of the web
+                        .frame(width: 200, height: 200)
+                        .offset(y: 350) // Position him at the end of the web
                         .rotationEffect(.degrees(-swingAngle * 0.3)) // Adjust posture slightly while swinging
-                        .shadow(color: Theme.spiderNeonRed.opacity(0.8), radius: 15, x: 0, y: 0)
+                        .shadow(color: Theme.spiderNeonRed.opacity(0.8), radius: 20, x: 0, y: 0)
                 }
-                .frame(width: 150, height: 400, alignment: .top)
+                .frame(width: 250, height: 600, alignment: .top)
                 // Anchor the rotation at the very top of the web
                 .rotationEffect(.degrees(swingAngle), anchor: .top)
-                .position(x: geo.size.width / 2, y: -30) // Hang from the exact middle of the screen!
+                .position(x: geo.size.width / 2, y: -20) // Hang from the exact middle of the screen!
                 .onAppear {
                     withAnimation(Animation.easeInOut(duration: 2.2).repeatForever(autoreverses: true)) {
                         swingAngle = 25

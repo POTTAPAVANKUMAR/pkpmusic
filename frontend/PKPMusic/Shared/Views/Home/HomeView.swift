@@ -13,28 +13,38 @@ struct HomeView: View {
                 Theme.SpiderBackground()
                 
                 VStack(spacing: 0) {
-                    // Modern Header (Search Bar)
-                    HStack {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundColor(.gray)
-                        TextField("Find music, playlists, and more...", text: $searchText, onCommit: performSearch)
-                            .foregroundColor(.white)
-                            .disableAutocorrection(true)
-                            .autocapitalization(.none)
-                        
-                        if !searchText.isEmpty {
-                            Button(action: {
-                                searchText = ""
-                                isSearching = false
-                            }) {
-                                Image(systemName: "xmark.circle.fill")
-                                    .foregroundColor(.gray)
+                    // Modern Header (Search Bar & Logout)
+                    HStack(spacing: 12) {
+                        HStack {
+                            Image(systemName: "magnifyingglass")
+                                .foregroundColor(.gray)
+                            TextField("Find music, playlists, and more...", text: $searchText, onCommit: performSearch)
+                                .foregroundColor(.white)
+                                .disableAutocorrection(true)
+                                .autocapitalization(.none)
+                            
+                            if !searchText.isEmpty {
+                                Button(action: {
+                                    searchText = ""
+                                    isSearching = false
+                                }) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundColor(.gray)
+                                }
                             }
                         }
+                        .padding(12)
+                        .background(Theme.spiderDarkGrey.opacity(0.8))
+                        .cornerRadius(10)
+                        
+                        Button(action: {
+                            AuthManager.shared.logout()
+                        }) {
+                            Image(systemName: "rectangle.portrait.and.arrow.forward")
+                                .font(.title2)
+                                .foregroundColor(Theme.spiderRed)
+                        }
                     }
-                    .padding(12)
-                    .background(Theme.spiderDarkGrey.opacity(0.8))
-                    .cornerRadius(10)
                     .padding(.horizontal)
                     .padding(.top, 10)
                     
