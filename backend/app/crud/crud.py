@@ -85,7 +85,7 @@ def add_favorite(db: Session, favorite: schemas.FavoriteCreate, user_id: int):
     return db_fav
 
 def get_favorites(db: Session, user_id: int):
-    return db.query(models.Favorite).filter(models.Favorite.user_id == user_id).all()
+    return db.query(models.Favorite).filter(models.Favorite.user_id == user_id).order_by(models.Favorite.id.desc()).all()
 
 # --- Chat & Social ---
 
