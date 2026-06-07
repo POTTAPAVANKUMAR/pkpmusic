@@ -51,8 +51,24 @@ struct LibraryView: View {
                             .bold()
                             .foregroundColor(.white)
                         Spacer()
-                        
-                        if selectedTab == 1 {
+                        if selectedTab == 0 {
+                            Button(action: {
+                                for song in networkManager.favorites {
+                                    if !DownloadManager.shared.isDownloaded(songId: song.id) {
+                                        DownloadManager.shared.download(song: song)
+                                    }
+                                }
+                            }) {
+                                Text("Download All")
+                                    .font(.subheadline)
+                                    .bold()
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(Theme.spiderDarkGrey)
+                                    .cornerRadius(20)
+                                    .foregroundColor(Theme.spiderNeonRed)
+                            }
+                        } else if selectedTab == 1 {
                             Button(action: {
                                 showingCreateAlert = true
                             }) {
@@ -61,22 +77,6 @@ struct LibraryView: View {
                                     .foregroundColor(Theme.spiderNeonRed)
                             }
                         }
-                        
-                        NavigationLink(destination: DownloadsView()) {
-                            Image(systemName: "arrow.down.circle")
-                                .font(.title2)
-                                .foregroundColor(Theme.spiderNeonRed)
-                        }
-                        .padding(.leading, 10)
-                        
-                        Button(action: {
-                            showFileImporter = true
-                        }) {
-                            Image(systemName: "square.and.arrow.down")
-                                .font(.title2)
-                                .foregroundColor(Theme.spiderNeonRed)
-                        }
-                        .padding(.leading, 10)
                     }
                     .padding()
                     
@@ -134,6 +134,26 @@ struct LibraryView: View {
                         playlistsList
                     } else {
                         albumsList
+                    }
+                }
+                
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        Button(action: {
+                            showFileImporter = true
+                        }) {
+                            Image(systemName: "square.and.arrow.down")
+                                .font(.system(size: 24, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(width: 60, height: 60)
+                                .background(Theme.spiderNeonRed)
+                                .clipShape(Circle())
+                                .shadow(color: Theme.spiderNeonRed.opacity(0.3), radius: 10, x: 0, y: 5)
+                        }
+                        .padding(.trailing, 20)
+                        .padding(.bottom, 80)
                     }
                 }
             }
