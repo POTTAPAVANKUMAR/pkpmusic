@@ -28,6 +28,11 @@ class AudioPlayerManager: ObservableObject {
         setupRemoteTransportControls()
     }
     
+    func playSong(songId: String) {
+        let tempSong = Song(id: songId, title: "Shared Song", artist: "Unknown", album: nil, durationMs: nil, coverArtUrl: nil)
+        play(song: tempSong)
+    }
+    
     func play(song: Song, in newQueue: [Song] = [], at index: Int = 0) {
         guard let url = NetworkManager.shared.getStreamURL(for: song.id) else { return }
         
