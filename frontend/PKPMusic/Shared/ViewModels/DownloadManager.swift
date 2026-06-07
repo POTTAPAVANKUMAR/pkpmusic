@@ -78,6 +78,18 @@ class DownloadManager: NSObject, ObservableObject {
         }
     }
     
+    func removeAllDownloads() {
+        for song in downloadedSongs {
+            let url = getLocalFileURL(for: song.id)
+            try? fileManager.removeItem(at: url)
+        }
+        
+        DispatchQueue.main.async {
+            self.downloadedSongs.removeAll()
+            self.saveMetadata()
+        }
+    }
+    
     // MARK: - Persistence
     
     private func saveMetadata() {

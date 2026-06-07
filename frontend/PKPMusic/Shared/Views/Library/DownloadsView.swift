@@ -73,6 +73,18 @@ struct DownloadsView: View {
         }
         .navigationTitle("Downloads")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if !downloadManager.downloadedSongs.isEmpty {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        downloadManager.removeAllDownloads()
+                    }) {
+                        Text("Delete All")
+                            .foregroundColor(Theme.spiderNeonRed)
+                    }
+                }
+            }
+        }
         .searchable(text: $searchQuery, prompt: "Search offline songs...")
         }
     }
