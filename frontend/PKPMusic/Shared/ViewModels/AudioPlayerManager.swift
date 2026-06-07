@@ -14,6 +14,7 @@ class AudioPlayerManager: ObservableObject {
     @Published var duration: Double = 0.0
     
     @Published var isShuffled = false
+    @Published var isAutoPlayEnabled = true
     
     enum RepeatMode {
         case off, all, one
@@ -21,7 +22,7 @@ class AudioPlayerManager: ObservableObject {
     @Published var repeatMode: RepeatMode = .off
     
     private var originalQueue: [Song] = []
-    private var queue: [Song] = []
+    var queue: [Song] = []
     private var currentIndex: Int = 0
     
     init() {
@@ -135,15 +136,56 @@ class AudioPlayerManager: ObservableObject {
     
     func playNext(isAutoPlay: Bool = false) {
         guard !queue.isEmpty else { return }
+        
         if currentIndex < queue.count - 1 {
             currentIndex += 1
             play(song: queue[currentIndex])
+            
+            // Pre-fetch more songs if we are nearing the end of the queue
+            if isAutoPlayEnabled && currentIndex == queue.count - 2 {
+                fetchMoreForUpNext()
+            }
+        } else if isAutoPlayEnabled && isAutoPlay {
+            // Reached the end, fetch up next and wait
+            pause()
+            fetchMoreForUpNext { [weak self] success in
+                guard let self = self else { return }
+                if success && self.currentIndex < self.queue.count - 1 {
+                    self.currentIndex += 1
+                    self.play(song: self.queue[self.currentIndex])
+                } else if self.repeatMode == .all || self.isShuffled {
+                    self.currentIndex = 0
+                    self.play(song: self.queue[self.currentIndex])
+                } else {
+                    self.seek(to: 0)
+                }
+            }
         } else if repeatMode == .all || (!isAutoPlay && isShuffled) {
             currentIndex = 0
             play(song: queue[currentIndex])
         } else {
             pause()
             seek(to: 0)
+        }
+    }
+    
+    private func fetchMoreForUpNext(completion: ((Bool) -> Void)? = nil) {
+        guard let lastSong = queue.last else {
+            completion?(false)
+            return
+        }
+        
+        NetworkManager.shared.fetchUpNext(videoId: lastSong.id) { [weak self] newSongs in
+            guard let self = self else { return }
+            
+            let uniqueSongs = newSongs.filter { s in !self.queue.contains(where: { $0.id == s.id }) }
+            if !uniqueSongs.isEmpty {
+                self.queue.append(contentsOf: uniqueSongs)
+                self.originalQueue.append(contentsOf: uniqueSongs)
+                completion?(true)
+            } else {
+                completion?(false)
+            }
         }
     }
     

@@ -266,3 +266,24 @@ def add_favorite(favorite: schemas.FavoriteCreate, current_user: models.User = D
 @router.get("/favorites/", response_model=List[schemas.Favorite])
 def get_favorites(current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(get_db)):
     return crud.get_favorites(db, current_user.id)
+
+@router.get("/upnext/{video_id}", response_model=List[schemas.SongBase])
+def get_upnext(video_id: str):
+    try:
+        watch_playlist = yt.get_watch_playlist(videoId=video_id, limit=30)
+        formatted = []
+        for track in watch_playlist.get('tracks', []):
+            if track.get('videoId'):
+                # Avoid returning the same song if it's the exact same video_id, but the player can also filter.
+                song = schemas.SongBase(
+                    id=track['videoId'],
+                    title=track.get('title', 'Unknown Title'),
+                    artist=", ".join([a['name'] for a in track.get('artists', [])]),
+                    album=track.get('album', {}).get('name') if track.get('album') else None,
+                    duration_ms=track.get('lengthSeconds', 0) * 1000 if track.get('lengthSeconds') else 0,
+                    cover_art_url=track.get('thumbnail', [{}])[-1].get('url') if track.get('thumbnail') else None
+                )
+                formatted.append(song)
+        return formatted
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

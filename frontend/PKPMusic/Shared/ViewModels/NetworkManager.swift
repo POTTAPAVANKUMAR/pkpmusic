@@ -271,4 +271,21 @@ class NetworkManager: ObservableObject {
             }
         }.resume()
     }
+    
+    func fetchUpNext(videoId: String, completion: @escaping ([Song]) -> Void) {
+        guard let request = createRequest(for: "\(baseURL)/upnext/\(videoId)") else { return }
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let data = data {
+                do {
+                    let songs = try JSONDecoder().decode([Song].self, from: data)
+                    DispatchQueue.main.async { completion(songs) }
+                } catch {
+                    print("Error decoding upnext: \(error)")
+                    DispatchQueue.main.async { completion([]) }
+                }
+            } else {
+                DispatchQueue.main.async { completion([]) }
+            }
+        }.resume()
+    }
 }

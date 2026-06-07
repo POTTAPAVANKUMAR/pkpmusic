@@ -122,6 +122,14 @@ struct FullScreenPlayerView: View {
                         }
                         
                         Button(action: {
+                            audioManager.isAutoPlayEnabled.toggle()
+                        }) {
+                            Image(systemName: "infinity")
+                                .font(.title)
+                                .foregroundColor(audioManager.isAutoPlayEnabled ? Theme.spiderNeonRed : .gray)
+                        }
+                        
+                        Button(action: {
                             networkManager.addToFavorites(songId: song.id)
                         }) {
                             Image(systemName: networkManager.favorites.contains(where: { $0.id == song.id }) ? "heart.fill" : "heart")
