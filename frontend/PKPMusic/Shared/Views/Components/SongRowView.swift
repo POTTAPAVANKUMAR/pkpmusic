@@ -3,6 +3,7 @@ import SwiftUI
 struct SongRowView: View {
     let song: Song
     let isPlaying: Bool
+    @ObservedObject var downloadManager = DownloadManager.shared
     
     var body: some View {
         HStack(spacing: 15) {
@@ -38,6 +39,24 @@ struct SongRowView: View {
                 Text(formatTime(song.durationMs))
                     .font(.caption)
                     .foregroundColor(.gray)
+            }
+            
+            // Download button
+            if downloadManager.isDownloaded(songId: song.id) {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(Theme.spiderNeonRed)
+            } else if let progress = downloadManager.activeDownloads[song.id] {
+                ProgressView(value: progress)
+                    .progressViewStyle(CircularProgressViewStyle(tint: Theme.spiderNeonRed))
+                    .frame(width: 20, height: 20)
+            } else {
+                Button(action: {
+                    downloadManager.download(song: song)
+                }) {
+                    Image(systemName: "arrow.down.circle")
+                        .foregroundColor(.gray)
+                }
+                .buttonStyle(PlainButtonStyle())
             }
         }
         .padding(10)

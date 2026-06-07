@@ -60,8 +60,18 @@ async def stream_youtube(video_id: str, request: Request):
             "--extractor-args", "youtube:player_client=android,web",
             url
         ]
-        result = subprocess.run(command, capture_output=True, text=True, check=True)
-        lines = result.stdout.strip().split('\n')
+        import asyncio
+        process = await asyncio.create_subprocess_exec(
+            *command,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        stdout, stderr = await process.communicate()
+        
+        if process.returncode != 0:
+            raise HTTPException(status_code=500, detail=f"yt-dlp error: {stderr.decode()}")
+            
+        lines = stdout.decode().strip().split('\n')
         json_data = None
         for line in reversed(lines):
             if line.startswith('{'):
@@ -103,8 +113,6 @@ async def stream_youtube(video_id: str, request: Request):
             status_code=response.status_code,
             headers=response_headers
         )
-    except subprocess.CalledProcessError as e:
-        raise HTTPException(status_code=500, detail=f"yt-dlp error: {e.stderr}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Proxy error: {str(e)}")
 

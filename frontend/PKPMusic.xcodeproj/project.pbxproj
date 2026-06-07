@@ -14,6 +14,7 @@
 		2F9DC886815C5B0DCD413FF6 /* PlaylistDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6C5AA50FF0B6E4172757CE9 /* PlaylistDetailView.swift */; };
 		35AE60EB6D0E2970113EA176 /* AudioPlayerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27736866012C88F63281274C /* AudioPlayerManager.swift */; };
 		3BBA410EC893C76C19AF8C5E /* NetworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BA201F39776718B485DA939 /* NetworkManager.swift */; };
+		439A5E77F5BD82090072C030 /* DownloadsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7350957D65F10BFF7FB00147 /* DownloadsView.swift */; };
 		4B48E646BA994DDE96FFB482 /* PKPMusicApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0928722C577CE95F6978763 /* PKPMusicApp.swift */; };
 		4CB40B5E9B6BC30218FFAEF5 /* Playlist.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF90F15A8E6145CA7E4C5434 /* Playlist.swift */; };
 		4EB125A96F772AB4CB107B1C /* CarPlayManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3914972D938D7CE089F0B40F /* CarPlayManager.swift */; };
@@ -30,6 +31,7 @@
 		AEDDBDCE7A9CCE65003CDBB3 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFD1D54F3DD0846C95829B65 /* HomeView.swift */; };
 		B3A376C70FB000B9575940FB /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A752344978A7692AE8B7D2D /* AppDelegate.swift */; };
 		B3D553FCF3340C8CF9531205 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34E815EF6CAAADE1B4A603F4 /* ContentView.swift */; };
+		B514006F13CC9C13209ADF16 /* DownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D0AEEDC7A99934EA163F6D /* DownloadManager.swift */; };
 		B91D1E0E47C5F53B39960BCC /* CarPlaySceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67FD19FB07A85633E97E889F /* CarPlaySceneDelegate.swift */; };
 		C39465C1D2629881343AC1A0 /* ForgotPasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21A490D5F03F491482F708A2 /* ForgotPasswordView.swift */; };
 		C9DB835A5A37197BE2053C40 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6A6EA2C632A277807DE3540 /* LibraryView.swift */; };
@@ -56,10 +58,12 @@
 		4D4A57AB49F22BE9ED65C03F /* Social.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Social.swift; sourceTree = "<group>"; };
 		53F4BF55E063DD353E4F8388 /* ChatDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatDetailView.swift; sourceTree = "<group>"; };
 		5E626E7E36CBA6BA6DD314CF /* WebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebView.swift; sourceTree = "<group>"; };
+		63D0AEEDC7A99934EA163F6D /* DownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadManager.swift; sourceTree = "<group>"; };
 		67FD19FB07A85633E97E889F /* CarPlaySceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlaySceneDelegate.swift; sourceTree = "<group>"; };
 		697918E063F38DC9FC6204CE /* SongRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongRowView.swift; sourceTree = "<group>"; };
 		6EDACEDD2DB4FEEB7B75FAC8 /* FullScreenPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullScreenPlayerView.swift; sourceTree = "<group>"; };
 		704E89C315B54C726945A735 /* PKPMusic.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PKPMusic.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		7350957D65F10BFF7FB00147 /* DownloadsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadsView.swift; sourceTree = "<group>"; };
 		7E748B6899C0D9FC56DED164 /* LocalAlbumDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAlbumDetailView.swift; sourceTree = "<group>"; };
 		8475B580F8D6708739832853 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		8A2DE9A318F31838B0D5EDE6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -166,6 +170,7 @@
 				27736866012C88F63281274C /* AudioPlayerManager.swift */,
 				92EBC5B752757F6697FF7DD5 /* AuthManager.swift */,
 				B48C3C4D51AAACFE413EA6FA /* ChatManager.swift */,
+				63D0AEEDC7A99934EA163F6D /* DownloadManager.swift */,
 				1BA201F39776718B485DA939 /* NetworkManager.swift */,
 			);
 			path = ViewModels;
@@ -219,6 +224,7 @@
 		FB723C9C38A8DEA794819787 /* Library */ = {
 			isa = PBXGroup;
 			children = (
+				7350957D65F10BFF7FB00147 /* DownloadsView.swift */,
 				E6A6EA2C632A277807DE3540 /* LibraryView.swift */,
 				7E748B6899C0D9FC56DED164 /* LocalAlbumDetailView.swift */,
 				D6C5AA50FF0B6E4172757CE9 /* PlaylistDetailView.swift */,
@@ -303,6 +309,8 @@
 				0A37C51C11314DA803953853 /* ChatManager.swift in Sources */,
 				B3D553FCF3340C8CF9531205 /* ContentView.swift in Sources */,
 				76CD6DB86A21DF663A5203C0 /* Dashboard.swift in Sources */,
+				B514006F13CC9C13209ADF16 /* DownloadManager.swift in Sources */,
+				439A5E77F5BD82090072C030 /* DownloadsView.swift in Sources */,
 				C39465C1D2629881343AC1A0 /* ForgotPasswordView.swift in Sources */,
 				6B5877E7ED88D58088440A6E /* FullScreenPlayerView.swift in Sources */,
 				AEDDBDCE7A9CCE65003CDBB3 /* HomeView.swift in Sources */,

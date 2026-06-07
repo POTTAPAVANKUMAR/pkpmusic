@@ -27,6 +27,17 @@ class NetworkManager: ObservableObject {
     func fetchDashboard() {
         guard let request = createRequest(for: "\(baseURL)/dashboard/") else { return }
         URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                print("Network error fetching dashboard: \(error.localizedDescription)")
+                DispatchQueue.main.async {
+                    if self.dashboardSections.isEmpty && !DownloadManager.shared.downloadedSongs.isEmpty {
+                        let offlineItems = DownloadManager.shared.downloadedSongs.map { DashboardItem(id: $0.id, title: $0.title, subtitle: $0.artist, imageUrl: $0.coverArtUrl, type: "song") }
+                        let offlineSection = DashboardSection(title: "Available Offline", items: offlineItems)
+                        self.dashboardSections = [offlineSection]
+                    }
+                }
+                return
+            }
             if let data = data {
                 do {
                     let decodedSections = try JSONDecoder().decode([DashboardSection].self, from: data)
@@ -62,6 +73,15 @@ class NetworkManager: ObservableObject {
     func fetchFavorites() {
         guard let request = createRequest(for: "\(baseURL)/favorites/") else { return }
         URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                print("Network error fetching favorites: \(error.localizedDescription)")
+                DispatchQueue.main.async {
+                    if self.favorites.isEmpty {
+                        self.favorites = DownloadManager.shared.downloadedSongs
+                    }
+                }
+                return
+            }
             if let data = data {
                 do {
                     struct FavoriteItem: Codable {
@@ -69,7 +89,15 @@ class NetworkManager: ObservableObject {
                     }
                     let decodedFavorites = try JSONDecoder().decode([FavoriteItem].self, from: data)
                     DispatchQueue.main.async {
-                        self.favorites = decodedFavorites.map { $0.song }
+                        let favSongs = decodedFavorites.map { $0.song }
+                        self.favorites = favSongs
+                        
+                        // Automatically download favorite songs
+                        for song in favSongs {
+                            if !DownloadManager.shared.isDownloaded(songId: song.id) {
+                                DownloadManager.shared.download(song: song)
+                            }
+                        }
                     }
                 } catch {
                     print("Error decoding favorites: \(error)")

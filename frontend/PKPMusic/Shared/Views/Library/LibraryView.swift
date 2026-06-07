@@ -62,6 +62,13 @@ struct LibraryView: View {
                             }
                         }
                         
+                        NavigationLink(destination: DownloadsView()) {
+                            Image(systemName: "arrow.down.circle")
+                                .font(.title2)
+                                .foregroundColor(Theme.spiderNeonRed)
+                        }
+                        .padding(.leading, 10)
+                        
                         Button(action: {
                             showFileImporter = true
                         }) {

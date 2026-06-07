@@ -34,7 +34,14 @@ class AudioPlayerManager: ObservableObject {
     }
     
     func play(song: Song, in newQueue: [Song] = [], at index: Int = 0) {
-        guard let url = NetworkManager.shared.getStreamURL(for: song.id) else { return }
+        let url: URL
+        if let localUrl = DownloadManager.shared.localURL(for: song.id) {
+            url = localUrl
+        } else if let remoteUrl = NetworkManager.shared.getStreamURL(for: song.id) {
+            url = remoteUrl
+        } else {
+            return
+        }
         
         if !newQueue.isEmpty {
             self.originalQueue = newQueue
