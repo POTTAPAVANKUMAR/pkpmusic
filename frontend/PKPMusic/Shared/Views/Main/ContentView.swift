@@ -47,6 +47,11 @@ struct ContentView: View {
                                 .tabItem {
                                     Label("Chat", systemImage: "message.fill")
                                 }
+                                
+                            DownloadsView()
+                                .tabItem {
+                                    Label("Offline", systemImage: "arrow.down.circle.fill")
+                                }
                             
                             WebView(urlString: "https://pkpmusic.pottapk.win/docs")
                                 .edgesIgnoringSafeArea(.top)

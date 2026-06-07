@@ -29,13 +29,6 @@ class NetworkManager: ObservableObject {
         URLSession.shared.dataTask(with: request) { data, response, error in
             if let error = error {
                 print("Network error fetching dashboard: \(error.localizedDescription)")
-                DispatchQueue.main.async {
-                    if self.dashboardSections.isEmpty && !DownloadManager.shared.downloadedSongs.isEmpty {
-                        let offlineItems = DownloadManager.shared.downloadedSongs.map { DashboardItem(id: $0.id, title: $0.title, subtitle: $0.artist, imageUrl: $0.coverArtUrl, type: "song") }
-                        let offlineSection = DashboardSection(title: "Available Offline", items: offlineItems)
-                        self.dashboardSections = [offlineSection]
-                    }
-                }
                 return
             }
             if let data = data {
@@ -75,11 +68,6 @@ class NetworkManager: ObservableObject {
         URLSession.shared.dataTask(with: request) { data, response, error in
             if let error = error {
                 print("Network error fetching favorites: \(error.localizedDescription)")
-                DispatchQueue.main.async {
-                    if self.favorites.isEmpty {
-                        self.favorites = DownloadManager.shared.downloadedSongs
-                    }
-                }
                 return
             }
             if let data = data {
