@@ -22,3 +22,9 @@ targets:
       properties:
         UILaunchScreen: {}
         UIBackgroundModes: ["audio"]
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: true
+          UISceneConfigurations:
+            CPTemplateApplicationSceneSessionRoleApplication:
+              - UISceneConfigurationName: "CarPlay Configuration"
+                UISceneDelegateClassName: "$(PRODUCT_MODULE_NAME).CarPlaySceneDelegate"
