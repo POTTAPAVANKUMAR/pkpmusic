@@ -1,3 +1,4 @@
+#if os(iOS)
 import CarPlay
 import UIKit
 
@@ -13,3 +14,4 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
         carPlayManager.templateApplicationScene(templateApplicationScene, didDisconnectInterfaceController: interfaceController)
     }
 }
+#endif

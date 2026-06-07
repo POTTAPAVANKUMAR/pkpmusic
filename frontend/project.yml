@@ -4,12 +4,14 @@ options:
   deploymentTarget:
     iOS: 15.0
     macOS: 12.0
+    watchOS: 8.0
 targets:
   PKPMusic:
     type: application
     platform: iOS
     deploymentTarget: "15.0"
-    sources: [PKPMusic]
+    sources: 
+      - path: PKPMusic
     settings:
       base:
         INFOPLIST_FILE: PKPMusic/Info.plist
@@ -17,6 +19,8 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         DEVELOPMENT_TEAM: "" # Add your team ID here if needed for physical device
         ENABLE_PREVIEWS: YES
+        SUPPORTS_MACCATALYST: YES
+        DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER: YES
     info:
       path: PKPMusic/Info.plist
       properties:
@@ -28,3 +32,26 @@ targets:
             CPTemplateApplicationSceneSessionRoleApplication:
               - UISceneConfigurationName: "CarPlay Configuration"
                 UISceneDelegateClassName: "$(PRODUCT_MODULE_NAME).CarPlaySceneDelegate"
+  
+  PKPMusicWatch:
+    type: application
+    platform: watchOS
+    deploymentTarget: "8.0"
+    sources:
+      - path: PKPMusicWatch
+        excludes: ["Info.plist"]
+      - path: PKPMusic/Shared/Services
+      - path: PKPMusic/Shared/Models
+      - path: PKPMusic/Shared/ViewModels
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.pottapavankumar.PKPMusic.watchkitapp
+        DEVELOPMENT_TEAM: ""
+        ENABLE_PREVIEWS: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    info:
+      path: PKPMusicWatch/Info.plist
+      properties:
+        WKWatchOnly: true
+        WKApplication: true
+        UIBackgroundModes: ["audio"]

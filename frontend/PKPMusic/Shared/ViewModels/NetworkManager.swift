@@ -79,13 +79,6 @@ class NetworkManager: ObservableObject {
                     DispatchQueue.main.async {
                         let favSongs = decodedFavorites.map { $0.song }
                         self.favorites = favSongs
-                        
-                        // Automatically download favorite songs
-                        for song in favSongs {
-                            if !DownloadManager.shared.isDownloaded(songId: song.id) {
-                                DownloadManager.shared.download(song: song)
-                            }
-                        }
                     }
                 } catch {
                     print("Error decoding favorites: \(error)")
