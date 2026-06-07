@@ -48,13 +48,13 @@ struct ContentView: View {
                                     Label("Chat", systemImage: "message.fill")
                                 }
                             
-                            WebView(urlString: "http://192.168.1.151:8000/docs")
+                            WebView(urlString: "https://pkpmusic.pottapk.win/docs")
                                 .edgesIgnoringSafeArea(.top)
                                 .tabItem {
                                     Label("API", systemImage: "network")
                                 }
                             
-                            WebView(urlString: "http://192.168.1.151:5050")
+                            WebView(urlString: "https://pgadmin.pottapk.win")
                                 .edgesIgnoringSafeArea(.top)
                                 .tabItem {
                                     Label("DB", systemImage: "cylinder.split.1x2")
