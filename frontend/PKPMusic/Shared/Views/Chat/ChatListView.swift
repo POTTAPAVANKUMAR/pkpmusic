@@ -105,9 +105,9 @@ struct ChatListView: View {
                                 .padding(.horizontal)
                             
                             if chatManager.friends.isEmpty {
-                                Text("No friends yet. Search for someone!")
+                                Text("No friends yet. Add someone below!")
                                     .foregroundColor(.gray)
-                                    .padding()
+                                    .padding(.horizontal)
                             } else {
                                 ForEach(chatManager.friends) { friendship in
                                     NavigationLink(destination: ChatDetailView(friend: friendship.friend, chatManager: chatManager)) {
@@ -129,6 +129,39 @@ struct ChatListView: View {
                                     }
                                 }
                             }
+                            
+                            // Available Users (Exclude already friends and pending requests)
+                            let friendIds = Set(chatManager.friends.map { $0.friend.id })
+                            let pendingIds = Set(chatManager.pendingRequests.map { $0.friend.id })
+                            let available = chatManager.availableUsers.filter { !friendIds.contains($0.id) && !pendingIds.contains($0.id) }
+                            
+                            if !available.isEmpty && chatManager.searchResults.isEmpty {
+                                Text("Available Users")
+                                    .font(.headline)
+                                    .foregroundColor(.gray)
+                                    .padding(.horizontal)
+                                    .padding(.top, 10)
+                                
+                                ForEach(available) { user in
+                                    HStack {
+                                        Text(user.username)
+                                            .foregroundColor(.white)
+                                        Spacer()
+                                        Button(action: {
+                                            chatManager.sendRequest(friendId: user.id, token: authManager.token ?? "")
+                                        }) {
+                                            Text("Add Friend")
+                                                .font(.caption)
+                                                .padding(6)
+                                                .background(Color.white.opacity(0.2))
+                                                .foregroundColor(.white)
+                                                .cornerRadius(6)
+                                        }
+                                    }
+                                    .padding(.horizontal)
+                                    .padding(.vertical, 4)
+                                }
+                            }
                         }
                         .padding(.vertical)
                     }
@@ -140,6 +173,7 @@ struct ChatListView: View {
                 if let token = authManager.token {
                     chatManager.fetchFriends(token: token)
                     chatManager.fetchPendingRequests(token: token)
+                    chatManager.fetchAllUsers(token: token)
                     chatManager.connectWebSocket(token: token)
                 }
             }

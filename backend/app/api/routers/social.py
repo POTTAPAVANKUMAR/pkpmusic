@@ -17,6 +17,11 @@ def search_users(q: str, current_user: models.User = Depends(auth.get_current_us
     users = crud.search_users(db, query=q)
     return [schemas.ChatUser(id=u.id, username=u.username) for u in users if u.id != current_user.id]
 
+@router.get("/users", response_model=List[schemas.ChatUser])
+def get_all_users(current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(get_db)):
+    users = db.query(models.User).filter(models.User.id != current_user.id).all()
+    return [schemas.ChatUser(id=u.id, username=u.username) for u in users]
+
 @router.post("/request", response_model=schemas.FriendshipResponse)
 def send_friend_request(req: schemas.FriendshipCreate, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(get_db)):
     existing = db.query(models.Friendship).filter(
