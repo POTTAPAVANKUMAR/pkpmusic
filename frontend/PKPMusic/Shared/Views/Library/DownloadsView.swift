@@ -74,8 +74,8 @@ struct DownloadsView: View {
         .navigationTitle("Downloads")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            if !downloadManager.downloadedSongs.isEmpty {
-                ToolbarItem(placement: .navigationBarTrailing) {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                if !downloadManager.downloadedSongs.isEmpty {
                     Button(action: {
                         downloadManager.removeAllDownloads()
                     }) {

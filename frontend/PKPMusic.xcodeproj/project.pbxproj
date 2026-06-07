@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 100;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -290,11 +290,7 @@
 			);
 			buildRules = (
 			);
-			dependencies = (
-			);
 			name = PKPMusic;
-			packageProductDependencies = (
-			);
 			productName = PKPMusic;
 			productReference = 704E89C315B54C726945A735 /* PKPMusic.app */;
 			productType = "com.apple.product-type.application";
@@ -307,11 +303,7 @@
 			);
 			buildRules = (
 			);
-			dependencies = (
-			);
 			name = PKPMusicWatch;
-			packageProductDependencies = (
-			);
 			productName = PKPMusicWatch;
 			productReference = 2A7F21298454D691FDC1C475 /* PKPMusicWatch.app */;
 			productType = "com.apple.product-type.application";
@@ -339,7 +331,7 @@
 			);
 			mainGroup = DDE84062BE82353083364D27;
 			minimizedProjectReferenceProxies = 1;
-			preferredProjectObjectVersion = 77;
+			preferredProjectObjectVersion = 100;
 			productRefGroup = 5E45829FB4929B5B02B3D3B8 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -353,18 +345,15 @@
 /* Begin PBXResourcesBuildPhase section */
 		0AF272BD5E7173D76DC2D2F0 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				D6F42A03E900AECC84948A14 /* Assets.xcassets in Resources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		1A5186ABC2F4D4972C1BF05E /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				7A7B9BF8D6FC056E62D1A051 /* AudioPlayerManager.swift in Sources */,
 				CB455D5D3C5B0A3384474A30 /* AuthManager.swift in Sources */,
@@ -380,11 +369,9 @@
 				FDD8277585BD296F58FB9127 /* WatchPlayerView.swift in Sources */,
 				71E1343B00847868C1144732 /* YouTube.swift in Sources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		EF8DEDCCA189C806B5E36B5B /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				057781B116A9462CBE11359E /* AlbumDetailView.swift in Sources */,
 				B3A376C70FB000B9575940FB /* AppDelegate.swift in Sources */,
@@ -421,12 +408,11 @@
 				E38E5AEB8CEDF7DE1465C4F9 /* WebView.swift in Sources */,
 				E484B3B3364C2AF009A7935F /* YouTube.swift in Sources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		17C0E324A2ED3DDEB6CF6820 /* Debug */ = {
+		17C0E324A2ED3DDEB6CF6820 /* Debug configuration for PBXNativeTarget "PKPMusic" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -447,7 +433,7 @@
 			};
 			name = Debug;
 		};
-		2C0C96B9F578F1FCD5E58A5E /* Release */ = {
+		2C0C96B9F578F1FCD5E58A5E /* Release configuration for PBXNativeTarget "PKPMusicWatch" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -462,7 +448,7 @@
 			};
 			name = Release;
 		};
-		57B929332567B531BDD55AFF /* Debug */ = {
+		57B929332567B531BDD55AFF /* Debug configuration for PBXProject "PKPMusic" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -526,7 +512,7 @@
 			};
 			name = Debug;
 		};
-		8E831355347949D8FFC6631D /* Release */ = {
+		8E831355347949D8FFC6631D /* Release configuration for PBXNativeTarget "PKPMusic" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -547,7 +533,7 @@
 			};
 			name = Release;
 		};
-		9B730304ACADDB975F8FB4F6 /* Debug */ = {
+		9B730304ACADDB975F8FB4F6 /* Debug configuration for PBXNativeTarget "PKPMusicWatch" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -562,7 +548,7 @@
 			};
 			name = Debug;
 		};
-		A1D8030F7A686F8197A85D32 /* Release */ = {
+		A1D8030F7A686F8197A85D32 /* Release configuration for PBXProject "PKPMusic" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -625,28 +611,25 @@
 		543B8D4D6C1F1945559A0291 /* Build configuration list for PBXNativeTarget "PKPMusic" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				17C0E324A2ED3DDEB6CF6820 /* Debug */,
-				8E831355347949D8FFC6631D /* Release */,
+				17C0E324A2ED3DDEB6CF6820 /* Debug configuration for PBXNativeTarget "PKPMusic" */,
+				8E831355347949D8FFC6631D /* Release configuration for PBXNativeTarget "PKPMusic" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
 		59B85BD05A2735152F985894 /* Build configuration list for PBXNativeTarget "PKPMusicWatch" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				9B730304ACADDB975F8FB4F6 /* Debug */,
-				2C0C96B9F578F1FCD5E58A5E /* Release */,
+				9B730304ACADDB975F8FB4F6 /* Debug configuration for PBXNativeTarget "PKPMusicWatch" */,
+				2C0C96B9F578F1FCD5E58A5E /* Release configuration for PBXNativeTarget "PKPMusicWatch" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
 		C00EB00E6E7F16811C7BF5E1 /* Build configuration list for PBXProject "PKPMusic" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				57B929332567B531BDD55AFF /* Debug */,
-				A1D8030F7A686F8197A85D32 /* Release */,
+				57B929332567B531BDD55AFF /* Debug configuration for PBXProject "PKPMusic" */,
+				A1D8030F7A686F8197A85D32 /* Release configuration for PBXProject "PKPMusic" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
