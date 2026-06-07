@@ -47,6 +47,18 @@ struct ContentView: View {
                                 .tabItem {
                                     Label("Chat", systemImage: "message.fill")
                                 }
+                            
+                            WebView(urlString: "http://192.168.1.151:8000/docs")
+                                .edgesIgnoringSafeArea(.top)
+                                .tabItem {
+                                    Label("API", systemImage: "network")
+                                }
+                            
+                            WebView(urlString: "http://192.168.1.151:5050")
+                                .edgesIgnoringSafeArea(.top)
+                                .tabItem {
+                                    Label("DB", systemImage: "cylinder.split.1x2")
+                                }
                         }
                         .accentColor(Theme.spiderRed)
                         
