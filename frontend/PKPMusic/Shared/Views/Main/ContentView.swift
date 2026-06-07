@@ -64,6 +64,12 @@ struct ContentView: View {
                                 .tabItem {
                                     Label("DB", systemImage: "cylinder.split.1x2")
                                 }
+                                
+                            WebView(urlString: "https://pkpmusiclogs.pottapk.win/")
+                                .edgesIgnoringSafeArea(.top)
+                                .tabItem {
+                                    Label("Logs", systemImage: "terminal.fill")
+                                }
                         }
                         .accentColor(Theme.spiderRed)
                         
