@@ -9,7 +9,17 @@ import app.api.routers.dashboard as dashboard_router
 # Create the database tables
 models.Base.metadata.create_all(bind=engine)
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI(title="PKP Music API", description="Backend for the new cross-platform music app.")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(auth.router)
 app.include_router(playlists.router)
