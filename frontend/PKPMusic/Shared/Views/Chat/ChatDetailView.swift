@@ -101,6 +101,25 @@ struct ChatDetailView: View {
         }
         .navigationTitle(friend.username)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                if let urlString = friend.profilePictureUrl, let url = URL(string: urlString) {
+                    AsyncImage(url: url) { image in
+                        image.resizable()
+                            .aspectRatio(contentMode: .fill)
+                    } placeholder: {
+                        Image(systemName: "person.circle.fill").foregroundColor(.gray)
+                    }
+                    .frame(width: 32, height: 32)
+                    .clipShape(Circle())
+                } else {
+                    Image(systemName: "person.circle.fill")
+                        .resizable()
+                        .frame(width: 32, height: 32)
+                        .foregroundColor(.gray)
+                }
+            }
+        }
         .onAppear {
             if let token = authManager.token {
                 chatManager.fetchChatHistory(friendId: friend.id, token: token)

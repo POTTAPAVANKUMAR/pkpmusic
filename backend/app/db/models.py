@@ -12,6 +12,7 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     otp_code = Column(String, nullable=True)
     otp_expires_at = Column(Float, nullable=True) # Epoch timestamp
+    profile_picture_url = Column(String, nullable=True)
 
     playlists = relationship("Playlist", back_populates="owner")
 
@@ -23,6 +24,7 @@ class Song(Base):
     title = Column(String, index=True)
     artist = Column(String, index=True)
     album = Column(String)
+    album_id = Column(String, nullable=True)
     duration_ms = Column(Integer)
     cover_art_url = Column(String)
     
@@ -77,6 +79,16 @@ class Favorite(Base):
     song_id = Column(String, ForeignKey("songs.id"))
 
     song = relationship("Song", back_populates="favorite_items")
+
+class Bookmark(Base):
+    __tablename__ = "bookmarks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    item_id = Column(String, index=True) # browseId of album or artist
+    item_type = Column(String) # 'album' or 'artist'
+    title = Column(String)
+    cover_art_url = Column(String, nullable=True)
 
 class Friendship(Base):
     __tablename__ = "friendships"

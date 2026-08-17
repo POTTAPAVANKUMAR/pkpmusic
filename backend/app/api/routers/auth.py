@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app import schemas
 from app.crud import crud
 from app.core import security as auth
 from app.db.database import get_db
+from app.db import models
 import time
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -58,3 +59,12 @@ def verify_otp(req: schemas.VerifyOTP, db: Session = Depends(get_db)):
         
     crud.update_user_password(db, db_user, req.new_password)
     return {"message": "Password updated successfully"}
+
+@router.put("/profile_picture", response_model=schemas.User)
+def update_profile_picture(req: schemas.ProfilePictureUpdate, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(get_db)):
+    updated_user = crud.update_profile_picture(db, current_user, req.profile_picture_url)
+    return updated_user
+
+@router.get("/me", response_model=schemas.User)
+def get_me(current_user: models.User = Depends(auth.get_current_user)):
+    return current_user

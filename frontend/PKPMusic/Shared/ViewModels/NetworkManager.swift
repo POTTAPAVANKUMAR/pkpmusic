@@ -8,6 +8,8 @@ class NetworkManager: ObservableObject {
     
     @Published var songs: [Song] = []
     @Published var searchResults: [Song] = []
+    @Published var searchAlbumResults: [AlbumSearchResult] = []
+    @Published var searchArtistResults: [ArtistSearchResult] = []
     @Published var favorites: [Song] = []
     @Published var playlists: [Playlist] = []
     @Published var dashboardSections: [DashboardSection] = []
@@ -151,6 +153,48 @@ class NetworkManager: ObservableObject {
             }
         }.resume()
     }
+
+    func searchYouTubeAlbums(query: String) {
+        guard let escapedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let request = createRequest(for: "\(baseURL)/search/yt/albums?query=\(escapedQuery)") else { return }
+              
+        DispatchQueue.main.async { self.isLoading = true }
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async { self.isLoading = false }
+            if let data = data {
+                do {
+                    let results = try JSONDecoder().decode([AlbumSearchResult].self, from: data)
+                    DispatchQueue.main.async {
+                        self.searchAlbumResults = results
+                    }
+                } catch {
+                    print("Error decoding album search results: \(error)")
+                }
+            }
+        }.resume()
+    }
+    
+    func searchYouTubeArtists(query: String) {
+        guard let escapedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let request = createRequest(for: "\(baseURL)/search/yt/artists?query=\(escapedQuery)") else { return }
+              
+        DispatchQueue.main.async { self.isLoading = true }
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async { self.isLoading = false }
+            if let data = data {
+                do {
+                    let results = try JSONDecoder().decode([ArtistSearchResult].self, from: data)
+                    DispatchQueue.main.async {
+                        self.searchArtistResults = results
+                    }
+                } catch {
+                    print("Error decoding artist search results: \(error)")
+                }
+            }
+        }.resume()
+    }
     
     func recordHistory(songId: String) {
         guard var request = createRequest(for: "\(baseURL)/history/", method: "POST") else { return }
@@ -178,8 +222,39 @@ class NetworkManager: ObservableObject {
         }.resume()
     }
     
+    func addBookmark(itemId: String, itemType: String, title: String, coverArtUrl: String?) {
+        guard var request = createRequest(for: "\(baseURL)/bookmarks/", method: "POST") else { return }
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        var body: [String: Any] = [
+            "item_id": itemId,
+            "item_type": itemType,
+            "title": title
+        ]
+        if let coverArtUrl = coverArtUrl {
+            body["cover_art_url"] = coverArtUrl
+        }
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if error == nil {
+                self.fetchDashboard()
+            }
+        }.resume()
+    }
+    
     func getStreamURL(for songId: String) -> URL? {
         return URL(string: "\(baseURL)/stream/yt/\(songId)")
+    }
+    
+    func prefetchStream(videoId: String) {
+        guard let url = getStreamURL(for: videoId) else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "HEAD" // Trigger cache population on backend without downloading
+        
+        let task = URLSession.shared.dataTask(with: request)
+        task.priority = URLSessionTask.lowPriority
+        task.resume()
     }
     
     func fetchSearchSuggestions(query: String, completion: @escaping ([String]) -> Void) {

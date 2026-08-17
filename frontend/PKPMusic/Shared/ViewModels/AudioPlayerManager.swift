@@ -1,6 +1,9 @@
 import Foundation
 import AVFoundation
 import MediaPlayer
+#if os(iOS)
+import UIKit
+#endif
 
 class AudioPlayerManager: ObservableObject {
     static let shared = AudioPlayerManager()
@@ -30,7 +33,7 @@ class AudioPlayerManager: ObservableObject {
     }
     
     func playSong(songId: String) {
-        let tempSong = Song(id: songId, title: "Shared Song", artist: "Unknown", album: nil, durationMs: nil, coverArtUrl: nil)
+        let tempSong = Song(id: songId, title: "Shared Song", artist: "Unknown", album: nil, albumId: nil, durationMs: nil, coverArtUrl: nil)
         play(song: tempSong)
     }
     
@@ -83,6 +86,52 @@ class AudioPlayerManager: ObservableObject {
         
         NotificationCenter.default.addObserver(self, selector: #selector(playerDidFinishPlaying), name: .AVPlayerItemDidPlayToEndTime, object: playerItem)
         setupTimeObserver()
+        
+        // Prefetch next song stream for gapless playback
+        prefetchNextSongStream()
+    }
+    
+    private func prefetchNextSongStream() {
+        guard !queue.isEmpty, currentIndex + 1 < queue.count else { return }
+        let nextSong = queue[currentIndex + 1]
+        
+        // Only prefetch if not downloaded
+        if !DownloadManager.shared.isDownloaded(songId: nextSong.id) {
+            NetworkManager.shared.prefetchStream(videoId: nextSong.id)
+        }
+    }
+    
+    // MARK: - Queue Management
+    
+    func insertNext(song: Song) {
+        if queue.isEmpty {
+            play(song: song)
+        } else {
+            // Insert after current index
+            let insertIndex = currentIndex + 1
+            if insertIndex < queue.count {
+                queue.insert(song, at: insertIndex)
+            } else {
+                queue.append(song)
+            }
+            // If we are currently playing, prefetching is already handled for the *old* next song.
+            // But if the user clicks Play Next, we should probably prefetch this one.
+            if currentIndex + 1 < queue.count && queue[currentIndex + 1].id == song.id {
+                prefetchNextSongStream()
+            }
+        }
+    }
+    
+    func addToQueue(song: Song) {
+        if queue.isEmpty {
+            play(song: song)
+        } else {
+            queue.append(song)
+            // If this is the only song we added next, prefetch it
+            if currentIndex + 1 == queue.count - 1 {
+                prefetchNextSongStream()
+            }
+        }
     }
     
     func toggleShuffle() {
@@ -211,6 +260,14 @@ class AudioPlayerManager: ObservableObject {
     
     private func setupRemoteTransportControls() {
         let commandCenter = MPRemoteCommandCenter.shared()
+        
+        // Remove existing targets if any
+        commandCenter.playCommand.removeTarget(nil)
+        commandCenter.pauseCommand.removeTarget(nil)
+        commandCenter.nextTrackCommand.removeTarget(nil)
+        commandCenter.previousTrackCommand.removeTarget(nil)
+        commandCenter.changeShuffleModeCommand.removeTarget(nil)
+        
         commandCenter.playCommand.addTarget { [unowned self] _ in
             self.resume()
             return .success
@@ -227,12 +284,38 @@ class AudioPlayerManager: ObservableObject {
             self.playPrevious()
             return .success
         }
+        commandCenter.changeShuffleModeCommand.addTarget { [unowned self] event in
+            guard let shuffleEvent = event as? MPChangeShuffleModeCommandEvent else { return .commandFailed }
+            self.isShuffled = (shuffleEvent.shuffleType != .off)
+            if self.isShuffled, let current = self.currentSong {
+                self.shuffleQueue(startingWith: current)
+            } else if let current = self.currentSong, let idx = self.originalQueue.firstIndex(where: { $0.id == current.id }) {
+                self.queue = self.originalQueue
+                self.currentIndex = idx
+            }
+            return .success
+        }
     }
     
     private func updateNowPlayingInfo(song: Song) {
         var nowPlayingInfo = [String: Any]()
         nowPlayingInfo[MPMediaItemPropertyTitle] = song.title
         nowPlayingInfo[MPMediaItemPropertyArtist] = song.artist
+        
+        #if os(iOS)
+        if let urlString = song.coverArtUrl, let url = URL(string: urlString) {
+            URLSession.shared.dataTask(with: url) { data, _, _ in
+                if let data = data, let image = UIImage(data: data) {
+                    let artwork = MPMediaItemArtwork(boundsSize: image.size) { _ in return image }
+                    nowPlayingInfo[MPMediaItemPropertyArtwork] = artwork
+                    DispatchQueue.main.async {
+                        MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
+                    }
+                }
+            }.resume()
+        }
+        #endif
+        
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
     }
 }

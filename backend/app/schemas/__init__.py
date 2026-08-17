@@ -6,11 +6,28 @@ class SongBase(BaseModel):
     title: str
     artist: str
     album: Optional[str] = None
+    album_id: Optional[str] = None
     duration_ms: Optional[int] = None
     cover_art_url: Optional[str] = None
     bpm: Optional[float] = None
     energy: Optional[float] = None
     danceability: Optional[float] = None
+
+class BookmarkBase(BaseModel):
+    item_id: str
+    item_type: str # 'album' or 'artist'
+    title: str
+    cover_art_url: Optional[str] = None
+
+class BookmarkCreate(BookmarkBase):
+    pass
+
+class BookmarkResponse(BookmarkBase):
+    id: int
+    user_id: int
+    
+    class Config:
+        from_attributes = True
 
 class SongCreate(SongBase):
     pass
@@ -81,6 +98,7 @@ class Favorite(FavoriteBase):
 class UserBase(BaseModel):
     username: str
     email: str
+    profile_picture_url: Optional[str] = None
 
 class UserCreate(UserBase):
     password: str
@@ -124,6 +142,18 @@ class AlbumDetail(BaseModel):
     thumbnails: List[dict] = []
     songs: List[SongBase] = []
 
+class AlbumSearchResult(BaseModel):
+    browseId: str
+    title: str
+    artist: str
+    year: Optional[str] = None
+    cover_art_url: Optional[str] = None
+
+class ArtistSearchResult(BaseModel):
+    browseId: str
+    artist: str
+    cover_art_url: Optional[str] = None
+
 class Token(BaseModel):
     access_token: str
     token_type: str
@@ -143,11 +173,18 @@ class VerifyOTP(BaseModel):
     otp: str
     new_password: str
 
+class ProfilePictureUpdate(BaseModel):
+    profile_picture_url: str
+
 # --- Chat & Social Schemas ---
 
 class ChatUser(BaseModel):
     id: int
     username: str
+    profile_picture_url: Optional[str] = None
+
+    class Config:
+        from_attributes = True
 
 class FriendshipBase(BaseModel):
     friend_id: int

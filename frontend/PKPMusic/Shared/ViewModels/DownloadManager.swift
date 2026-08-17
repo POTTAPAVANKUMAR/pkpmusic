@@ -32,7 +32,7 @@ class DownloadManager: NSObject, ObservableObject {
     }
     
     private func getLocalFileURL(for songId: String) -> URL {
-        return getDocumentsDirectory().appendingPathComponent("\(songId).mp3")
+        return getDocumentsDirectory().appendingPathComponent("\(songId).m4a")
     }
     
     // MARK: - Public API
@@ -42,8 +42,17 @@ class DownloadManager: NSObject, ObservableObject {
     }
     
     func localURL(for songId: String) -> URL? {
-        let url = getLocalFileURL(for: songId)
-        return fileManager.fileExists(atPath: url.path) ? url : nil
+        let m4aUrl = getLocalFileURL(for: songId)
+        if fileManager.fileExists(atPath: m4aUrl.path) {
+            return m4aUrl
+        }
+        
+        let mp3Url = getDocumentsDirectory().appendingPathComponent("\(songId).mp3")
+        if fileManager.fileExists(atPath: mp3Url.path) {
+            return mp3Url
+        }
+        
+        return nil
     }
     
     func download(song: Song) {

@@ -9,6 +9,7 @@ from app.core import security as auth
 from app.db.database import get_db, SessionLocal
 from app.services.youtube import yt
 from app.db import models
+from app.api.image_utils import upscale_thumbnail
 
 router = APIRouter(prefix="/playlists", tags=["playlists"])
 
@@ -28,7 +29,7 @@ def add_song_to_playlist(playlist_id: int, item: schemas.PlaylistItemCreate, cur
             song_info = yt.get_song(item.song_id)
             details = song_info.get('videoDetails', {})
             thumbnails = details.get('thumbnail', {}).get('thumbnails', [])
-            cover_url = thumbnails[-1]['url'] if thumbnails else None
+            cover_url = upscale_thumbnail(thumbnails[-1]['url']) if thumbnails else None
             
             new_song = schemas.SongCreate(
                 id=item.song_id,
@@ -83,7 +84,7 @@ def process_csv_import(csv_text: str, user_id: int):
                         artist=top_hit['artists'][0]['name'] if top_hit.get('artists') else artist,
                         album=top_hit['album']['name'] if top_hit.get('album') else None,
                         duration_ms=top_hit.get('duration_seconds', 0) * 1000 if top_hit.get('duration_seconds') else None,
-                        cover_art_url=top_hit['thumbnails'][-1]['url'] if top_hit.get('thumbnails') else None
+                        cover_art_url=upscale_thumbnail(top_hit['thumbnails'][-1]['url']) if top_hit.get('thumbnails') else None
                     )
                     crud.create_song(db, song_data)
                 

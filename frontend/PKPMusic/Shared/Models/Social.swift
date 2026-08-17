@@ -3,6 +3,12 @@ import Foundation
 struct ChatUser: Identifiable, Codable {
     let id: Int
     let username: String
+    let profilePictureUrl: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case id, username
+        case profilePictureUrl = "profile_picture_url"
+    }
 }
 
 struct Friendship: Identifiable, Codable {

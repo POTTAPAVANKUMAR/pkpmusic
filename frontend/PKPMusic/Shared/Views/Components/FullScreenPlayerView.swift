@@ -7,6 +7,7 @@ struct FullScreenPlayerView: View {
     
     @State private var showingOptions = false
     @State private var showingPlaylists = false
+    @State private var showingAlbum = false
     
     @State private var showingLyrics = false
     @State private var isLoadingLyrics = false
@@ -14,7 +15,24 @@ struct FullScreenPlayerView: View {
     
     var body: some View {
         ZStack {
-            Theme.SpiderBackground()
+            // Sleek Blurred Background
+            if let song = audioManager.currentSong {
+                AsyncImage(url: URL(string: song.coverArtUrl ?? "")) { image in
+                    image.resizable()
+                        .aspectRatio(contentMode: .fill)
+                } placeholder: {
+                    Theme.SpiderBackground()
+                }
+                .frame(width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height)
+                .clipped()
+                .overlay(.ultraThinMaterial)
+                .opacity(0.8) // Darken it slightly so text pops
+                .ignoresSafeArea()
+                
+                Color.black.opacity(0.3).ignoresSafeArea() // Extra contrast
+            } else {
+                Theme.SpiderBackground().ignoresSafeArea()
+            }
             
             VStack {
                 // Header
@@ -27,11 +45,10 @@ struct FullScreenPlayerView: View {
                             .foregroundColor(.white)
                     }
                     Spacer()
-                    Text("NOW PLAYING")
-                        .font(.caption)
-                        .fontWeight(.bold)
-                        .foregroundColor(Theme.spiderRed)
-                        .tracking(2)
+                        Text("NOW PLAYING")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.white.opacity(0.7))
+                            .tracking(2)
                     Spacer()
                     Button(action: {
                         showingOptions = true
@@ -41,6 +58,31 @@ struct FullScreenPlayerView: View {
                             .foregroundColor(.white)
                     }
                     .confirmationDialog("Options", isPresented: $showingOptions, titleVisibility: .visible) {
+                        if let song = audioManager.currentSong {
+                            if DownloadManager.shared.isDownloaded(songId: song.id) {
+                                Button("Remove Download", role: .destructive) {
+                                    DownloadManager.shared.removeDownload(songId: song.id)
+                                }
+                            } else {
+                                Button("Download") {
+                                    DownloadManager.shared.download(song: song)
+                                }
+                            }
+                            
+                            if song.albumId != nil {
+                                Button("Go to Album") {
+                                    showingAlbum = true
+                                }
+                            }
+                            
+                            Button("Play Radio (Similar Songs)") {
+                                networkManager.fetchUpNext(videoId: song.id) { recommendedSongs in
+                                    if let first = recommendedSongs.first {
+                                        audioManager.play(song: first, in: recommendedSongs, at: 0)
+                                    }
+                                }
+                            }
+                        }
                         Button("Add to Playlist") {
                             networkManager.fetchPlaylists()
                             showingPlaylists = true
@@ -48,7 +90,19 @@ struct FullScreenPlayerView: View {
                         Button("Cancel", role: .cancel) {}
                     }
                 }
-                .padding()
+                .padding(.horizontal)
+                .padding(.top, 60)
+                .padding(.bottom, 10)
+                .sheet(isPresented: $showingAlbum) {
+                    if let song = audioManager.currentSong, let albumId = song.albumId {
+                        NavigationView {
+                            AlbumDetailView(albumId: albumId)
+                                .navigationBarItems(leading: Button("Close") {
+                                    showingAlbum = false
+                                })
+                        }
+                    }
+                }
                 .sheet(isPresented: $showingPlaylists) {
                     NavigationView {
                         List {
@@ -83,12 +137,14 @@ struct FullScreenPlayerView: View {
                     AsyncImage(url: URL(string: song.coverArtUrl ?? "")) { image in
                         image.resizable().aspectRatio(contentMode: .fill)
                     } placeholder: {
-                        Rectangle().fill(Theme.spiderDarkGrey)
+                        Rectangle().fill(Color.gray.opacity(0.2))
                     }
                     .frame(width: UIScreen.main.bounds.width - 60, height: UIScreen.main.bounds.width - 60)
-                    .cornerRadius(20)
-                    .shadow(color: Theme.spiderNeonRed.opacity(0.6), radius: 30, x: 0, y: 10)
-                    .padding(.bottom, 40)
+                    .cornerRadius(12)
+                    .shadow(color: .black.opacity(0.3), radius: 20, x: 0, y: 15)
+                    .scaleEffect(audioManager.isPlaying ? 1.0 : 0.85) // Apple Music style bounce
+                    .animation(.spring(response: 0.5, dampingFraction: 0.6, blendDuration: 0), value: audioManager.isPlaying)
+                    .padding(.bottom, 30)
                     
                     // Song Info & Favorite
                     HStack {
@@ -140,26 +196,26 @@ struct FullScreenPlayerView: View {
                     .padding(.horizontal, 30)
                     
                     // Scrubber
-                    VStack(spacing: 5) {
+                    VStack(spacing: 8) {
                         Slider(value: Binding(get: {
                             audioManager.progress
                         }, set: { newValue in
                             audioManager.seek(to: newValue)
                         }), in: 0...(audioManager.duration > 0 ? audioManager.duration : 1))
-                        .accentColor(Theme.spiderNeonRed)
+                        .accentColor(.white)
                         
                         HStack {
                             Text(formatTime(audioManager.progress))
-                                .font(.caption)
-                                .foregroundColor(.gray)
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(.white.opacity(0.7))
                             Spacer()
                             Text(formatTime(audioManager.duration))
-                                .font(.caption)
-                                .foregroundColor(.gray)
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(.white.opacity(0.7))
                         }
                     }
                     .padding(.horizontal, 30)
-                    .padding(.top, 20)
+                    .padding(.top, 10)
                     
                     // Playback Controls
                     HStack(spacing: 30) {
@@ -188,8 +244,8 @@ struct FullScreenPlayerView: View {
                             }
                         }) {
                             Image(systemName: audioManager.isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                                .font(.system(size: 70))
-                                .foregroundColor(Theme.spiderNeonRed)
+                                .font(.system(size: 75))
+                                .foregroundColor(.white)
                         }
                         
                         Button(action: {
@@ -222,8 +278,7 @@ struct FullScreenPlayerView: View {
             // Lyrics Overlay
             if showingLyrics {
                 ZStack {
-                    Theme.SpiderBackground()
-                        .opacity(0.95)
+                    Color.black.opacity(0.85)
                         .edgesIgnoringSafeArea(.all)
                     
                     VStack {

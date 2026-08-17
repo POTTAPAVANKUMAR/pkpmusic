@@ -47,11 +47,21 @@ struct AlbumDetailView: View {
                         }
                         
                         VStack(spacing: 8) {
-                            Text(detail.title)
-                                .font(.title)
-                                .bold()
-                                .foregroundColor(.white)
-                                .multilineTextAlignment(.center)
+                            HStack {
+                                Text(detail.title)
+                                    .font(.title)
+                                    .bold()
+                                    .foregroundColor(.white)
+                                    .multilineTextAlignment(.center)
+                                
+                                Button(action: {
+                                    networkManager.addBookmark(itemId: albumId, itemType: "album", title: detail.title, coverArtUrl: detail.thumbnails.last?.url)
+                                }) {
+                                    Image(systemName: "bookmark")
+                                        .font(.title2)
+                                        .foregroundColor(Theme.spiderNeonRed)
+                                }
+                            }
                             
                             if let desc = detail.description, !desc.isEmpty {
                                 Text(desc)

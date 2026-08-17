@@ -46,9 +46,10 @@ async def websocket_endpoint(websocket: WebSocket, token: str, db: Session = Dep
             
             if receiver_id and content:
                 timestamp = time.time()
-                crud.save_message(db, sender_id=user.id, receiver_id=receiver_id, content=content, message_type=message_type, timestamp=timestamp)
+                db_message = crud.save_message(db, sender_id=user.id, receiver_id=receiver_id, content=content, message_type=message_type, timestamp=timestamp)
                 
                 out_payload = {
+                    "id": db_message.id,
                     "sender_id": user.id,
                     "receiver_id": receiver_id,
                     "content": content,

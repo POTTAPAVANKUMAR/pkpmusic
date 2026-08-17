@@ -4,6 +4,9 @@ struct SongRowView: View {
     let song: Song
     let isPlaying: Bool
     @ObservedObject var downloadManager = DownloadManager.shared
+    @StateObject private var audioManager = AudioPlayerManager.shared
+    @StateObject private var networkManager = NetworkManager.shared
+    @State private var showingPlaylists = false
     
     var body: some View {
         HStack(spacing: 15) {
@@ -66,6 +69,70 @@ struct SongRowView: View {
             RoundedRectangle(cornerRadius: 12)
                 .stroke(isPlaying ? Theme.spiderNeonRed.opacity(0.5) : Theme.spiderDarkGrey, lineWidth: 1)
         )
+        .contextMenu {
+            Button(action: {
+                AudioPlayerManager.shared.insertNext(song: song)
+            }) {
+                Label("Play Next", systemImage: "text.insert")
+            }
+            
+            Button(action: {
+                AudioPlayerManager.shared.addToQueue(song: song)
+            }) {
+                Label("Add to Queue", systemImage: "text.badge.plus")
+            }
+            
+            Divider()
+            
+            Button(action: {
+                if downloadManager.isDownloaded(songId: song.id) {
+                    downloadManager.removeDownload(songId: song.id)
+                } else {
+                    downloadManager.download(song: song)
+                }
+            }) {
+                Label(downloadManager.isDownloaded(songId: song.id) ? "Remove Download" : "Download", 
+                      systemImage: downloadManager.isDownloaded(songId: song.id) ? "trash" : "arrow.down.circle")
+            }
+            
+            Button(action: {
+                networkManager.addToFavorites(songId: song.id)
+            }) {
+                Label(networkManager.favorites.contains(where: { $0.id == song.id }) ? "Remove from Favorites" : "Add to Favorites", 
+                      systemImage: networkManager.favorites.contains(where: { $0.id == song.id }) ? "heart.fill" : "heart")
+            }
+            
+            Button(action: {
+                networkManager.fetchPlaylists()
+                showingPlaylists = true
+            }) {
+                Label("Add to Playlist", systemImage: "music.note.list")
+            }
+        }
+        .sheet(isPresented: $showingPlaylists) {
+            NavigationView {
+                List {
+                    if networkManager.playlists.isEmpty {
+                        Text("No playlists found. Create one in the Playlists tab!")
+                            .foregroundColor(.gray)
+                    } else {
+                        ForEach(networkManager.playlists, id: \.id) { playlist in
+                            Button(action: {
+                                networkManager.addSongToPlaylist(songId: song.id, playlistId: playlist.id)
+                                showingPlaylists = false
+                            }) {
+                                Text(playlist.name)
+                                    .foregroundColor(.primary)
+                            }
+                        }
+                    }
+                }
+                .navigationTitle("Select Playlist")
+                .navigationBarItems(trailing: Button("Cancel") {
+                    showingPlaylists = false
+                })
+            }
+        }
     }
     
     private func formatTime(_ ms: Int?) -> String {

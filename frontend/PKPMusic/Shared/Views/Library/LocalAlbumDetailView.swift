@@ -6,6 +6,16 @@ struct LocalAlbumDetailView: View {
     @StateObject private var audioManager = AudioPlayerManager.shared
     @State private var showFullScreenPlayer = false
     
+    @State private var searchText = ""
+    
+    private var filteredSongs: [Song] {
+        if searchText.isEmpty { return songs }
+        return songs.filter { song in
+            song.title.localizedCaseInsensitiveContains(searchText) ||
+            song.artist.localizedCaseInsensitiveContains(searchText)
+        }
+    }
+    
     var body: some View {
         ZStack {
             Theme.SpiderBackground()
@@ -48,19 +58,91 @@ struct LocalAlbumDetailView: View {
                             .foregroundColor(Theme.spiderRed)
                     }
                     
-                    // Songs
+                    // Action Buttons: Play & Shuffle
                     if !songs.isEmpty {
+                        HStack(spacing: 20) {
+                            Button(action: {
+                                audioManager.isShuffled = false
+                                audioManager.play(song: songs[0], in: songs, at: 0)
+                                showFullScreenPlayer = true
+                            }) {
+                                HStack {
+                                    Image(systemName: "play.fill")
+                                    Text("Play")
+                                }
+                                .font(.headline)
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .background(Theme.spiderNeonRed)
+                                .cornerRadius(25)
+                            }
+                            .buttonStyle(SpiderButtonStyle())
+                            
+                            Button(action: {
+                                audioManager.isShuffled = true
+                                let randomSong = songs.randomElement() ?? songs[0]
+                                audioManager.play(song: randomSong, in: songs, at: 0)
+                                showFullScreenPlayer = true
+                            }) {
+                                HStack {
+                                    Image(systemName: "shuffle")
+                                    Text("Shuffle")
+                                }
+                                .font(.headline)
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .background(Theme.spiderDarkGrey)
+                                .cornerRadius(25)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 25)
+                                        .stroke(Theme.spiderNeonRed.opacity(0.5), lineWidth: 1)
+                                )
+                            }
+                            .buttonStyle(SpiderButtonStyle())
+                        }
+                        .padding(.horizontal, 20)
+                    }
+                    
+                    // Search Bar
+                    HStack {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(.gray)
+                        TextField("Search in album...", text: $searchText)
+                            .foregroundColor(.white)
+                            .disableAutocorrection(true)
+                            .autocapitalization(.none)
+                        
+                        if !searchText.isEmpty {
+                            Button(action: { searchText = "" }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundColor(.gray)
+                            }
+                        }
+                    }
+                    .padding(12)
+                    .background(Theme.spiderDarkGrey.opacity(0.6))
+                    .cornerRadius(10)
+                    .padding(.horizontal)
+                    
+                    // Songs
+                    if !filteredSongs.isEmpty {
                         LazyVStack(spacing: 12) {
-                            ForEach(songs.indices, id: \.self) { index in
-                                let song = songs[index]
+                            ForEach(filteredSongs.indices, id: \.self) { index in
+                                let song = filteredSongs[index]
                                 SongRowView(song: song, isPlaying: audioManager.currentSong?.id == song.id)
                                     .onTapGesture {
-                                        audioManager.play(song: song, in: songs, at: index)
+                                        audioManager.play(song: song, in: filteredSongs, at: index)
                                         showFullScreenPlayer = true
                                     }
                             }
                         }
                         .padding()
+                    } else if !songs.isEmpty {
+                        Text("No songs match your search.")
+                            .foregroundColor(.gray)
+                            .padding()
                     }
                 }
             }

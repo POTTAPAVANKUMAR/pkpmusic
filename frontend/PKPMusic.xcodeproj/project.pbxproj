@@ -17,6 +17,7 @@
 		2F9DC886815C5B0DCD413FF6 /* PlaylistDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6C5AA50FF0B6E4172757CE9 /* PlaylistDetailView.swift */; };
 		35AE60EB6D0E2970113EA176 /* AudioPlayerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27736866012C88F63281274C /* AudioPlayerManager.swift */; };
 		3BBA410EC893C76C19AF8C5E /* NetworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BA201F39776718B485DA939 /* NetworkManager.swift */; };
+		42C124F0C5C2197C97DA30B2 /* ProfileImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FE9385F106826F63192BD1B /* ProfileImageView.swift */; };
 		439A5E77F5BD82090072C030 /* DownloadsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7350957D65F10BFF7FB00147 /* DownloadsView.swift */; };
 		4B48E646BA994DDE96FFB482 /* PKPMusicApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0928722C577CE95F6978763 /* PKPMusicApp.swift */; };
 		4CB40B5E9B6BC30218FFAEF5 /* Playlist.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF90F15A8E6145CA7E4C5434 /* Playlist.swift */; };
@@ -34,6 +35,7 @@
 		90A37AD95A916A949FE428F6 /* MoodPlaylistsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1E1F098B3B481507E599268 /* MoodPlaylistsView.swift */; };
 		9D993BB12BDCD4C59C318C83 /* ChatManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B48C3C4D51AAACFE413EA6FA /* ChatManager.swift */; };
 		9F37610BC62C85429D9F9683 /* LocalAlbumDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E748B6899C0D9FC56DED164 /* LocalAlbumDetailView.swift */; };
+		A65A3B0276E312CE2729981C /* ProfileSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A3E1572631EA5999DE96E66 /* ProfileSettingsView.swift */; };
 		AEDDBDCE7A9CCE65003CDBB3 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFD1D54F3DD0846C95829B65 /* HomeView.swift */; };
 		B3A376C70FB000B9575940FB /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A752344978A7692AE8B7D2D /* AppDelegate.swift */; };
 		B3D553FCF3340C8CF9531205 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34E815EF6CAAADE1B4A603F4 /* ContentView.swift */; };
@@ -62,6 +64,7 @@
 		1BA201F39776718B485DA939 /* NetworkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkManager.swift; sourceTree = "<group>"; };
 		21A490D5F03F491482F708A2 /* ForgotPasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgotPasswordView.swift; sourceTree = "<group>"; };
 		27736866012C88F63281274C /* AudioPlayerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayerManager.swift; sourceTree = "<group>"; };
+		2A3E1572631EA5999DE96E66 /* ProfileSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileSettingsView.swift; sourceTree = "<group>"; };
 		2A7F21298454D691FDC1C475 /* PKPMusicWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PKPMusicWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2B3E441871C76D261D3CB668 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		327B5FD08B09E2933D5EA2FD /* RegisterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterView.swift; sourceTree = "<group>"; };
@@ -80,6 +83,7 @@
 		704E89C315B54C726945A735 /* PKPMusic.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PKPMusic.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7350957D65F10BFF7FB00147 /* DownloadsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadsView.swift; sourceTree = "<group>"; };
 		7E748B6899C0D9FC56DED164 /* LocalAlbumDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAlbumDetailView.swift; sourceTree = "<group>"; };
+		7FE9385F106826F63192BD1B /* ProfileImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileImageView.swift; sourceTree = "<group>"; };
 		8475B580F8D6708739832853 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		8A2DE9A318F31838B0D5EDE6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		8A752344978A7692AE8B7D2D /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -151,6 +155,7 @@
 				6EDACEDD2DB4FEEB7B75FAC8 /* FullScreenPlayerView.swift */,
 				0F8766E50A5884AAB29C7D85 /* MiniPlayerView.swift */,
 				E782F9376F6F19E7320C5D56 /* PlaceholderViews.swift */,
+				7FE9385F106826F63192BD1B /* ProfileImageView.swift */,
 				697918E063F38DC9FC6204CE /* SongRowView.swift */,
 				8475B580F8D6708739832853 /* Theme.swift */,
 				5E626E7E36CBA6BA6DD314CF /* WebView.swift */,
@@ -235,6 +240,7 @@
 			isa = PBXGroup;
 			children = (
 				34E815EF6CAAADE1B4A603F4 /* ContentView.swift */,
+				2A3E1572631EA5999DE96E66 /* ProfileSettingsView.swift */,
 			);
 			path = Main;
 			sourceTree = "<group>";
@@ -316,11 +322,6 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
-				TargetAttributes = {
-					EC66B52A329E85300654C15D = {
-						DevelopmentTeam = "";
-					};
-				};
 			};
 			buildConfigurationList = C00EB00E6E7F16811C7BF5E1 /* Build configuration list for PBXProject "PKPMusic" */;
 			developmentRegion = en;
@@ -400,6 +401,8 @@
 				772380740F172F20951F637D /* PlaceholderViews.swift in Sources */,
 				4CB40B5E9B6BC30218FFAEF5 /* Playlist.swift in Sources */,
 				2F9DC886815C5B0DCD413FF6 /* PlaylistDetailView.swift in Sources */,
+				42C124F0C5C2197C97DA30B2 /* ProfileImageView.swift in Sources */,
+				A65A3B0276E312CE2729981C /* ProfileSettingsView.swift in Sources */,
 				F45E75B249FB758A6211BFA6 /* RegisterView.swift in Sources */,
 				904DAC352A7B3C1ED0D4EE0C /* Social.swift in Sources */,
 				643B1D63B5D890A1EC76FEB2 /* Song.swift in Sources */,
@@ -417,11 +420,12 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = YES;
 				DEVELOPMENT_TEAM = AZ2B652A3Q;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = PKPMusic/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -437,7 +441,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = AZ2B652A3Q;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = PKPMusicWatch/Info.plist;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pottapavankumar.PKPMusic.watchkitapp;
@@ -517,11 +521,12 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = YES;
 				DEVELOPMENT_TEAM = AZ2B652A3Q;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = PKPMusic/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -537,7 +542,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = AZ2B652A3Q;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = PKPMusicWatch/Info.plist;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pottapavankumar.PKPMusic.watchkitapp;

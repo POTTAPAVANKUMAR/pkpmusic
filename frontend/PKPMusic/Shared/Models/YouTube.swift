@@ -11,6 +11,12 @@ struct Thumbnail: Codable {
     let height: Int
 }
 
+struct AlbumRef: Codable {
+    let title: String
+    let browseId: String
+    let thumbnails: [Thumbnail]?
+}
+
 struct ArtistDetail: Codable {
     let name: String
     let description: String?
@@ -18,6 +24,7 @@ struct ArtistDetail: Codable {
     let subscribers: String?
     let thumbnails: [Thumbnail]
     let songs: [Song]
+    let albums: [AlbumRef]?
 }
 
 struct AlbumDetail: Codable {

@@ -33,6 +33,12 @@ def update_user_password(db: Session, user: models.User, new_password: str):
     db.refresh(user)
     return user
 
+def update_profile_picture(db: Session, user: models.User, profile_picture_url: str):
+    user.profile_picture_url = profile_picture_url
+    db.commit()
+    db.refresh(user)
+    return user
+
 # Songs
 def get_songs(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Song).offset(skip).limit(limit).all()
@@ -96,6 +102,27 @@ def add_favorite(db: Session, favorite: schemas.FavoriteCreate, user_id: int):
 
 def get_favorites(db: Session, user_id: int):
     return db.query(models.Favorite).filter(models.Favorite.user_id == user_id).order_by(models.Favorite.id.desc()).all()
+
+# Bookmarks
+def add_bookmark(db: Session, bookmark: schemas.BookmarkCreate, user_id: int):
+    existing = db.query(models.Bookmark).filter(
+        models.Bookmark.user_id == user_id,
+        models.Bookmark.item_id == bookmark.item_id
+    ).first()
+    
+    if existing:
+        db.delete(existing)
+        db.commit()
+        return existing
+        
+    db_bookmark = models.Bookmark(**bookmark.dict(), user_id=user_id)
+    db.add(db_bookmark)
+    db.commit()
+    db.refresh(db_bookmark)
+    return db_bookmark
+
+def get_bookmarks(db: Session, user_id: int):
+    return db.query(models.Bookmark).filter(models.Bookmark.user_id == user_id).order_by(models.Bookmark.id.desc()).all()
 
 # --- Chat & Social ---
 

@@ -3,9 +3,11 @@ import SwiftUI
 struct HomeView: View {
     @StateObject private var networkManager = NetworkManager.shared
     @StateObject private var audioManager = AudioPlayerManager.shared
+    @StateObject private var authManager = AuthManager.shared
     @State private var searchText = ""
     @State private var isSearching = false
     @State private var showFullScreenPlayer = false
+    @State private var selectedSearchType = 0 // 0: Songs, 1: Albums, 2: Artists
     
     var body: some View {
         NavigationView {
@@ -37,8 +39,14 @@ struct HomeView: View {
                         .background(Theme.spiderDarkGrey.opacity(0.8))
                         .cornerRadius(10)
                         
+                        NavigationLink(destination: ProfileSettingsView()) {
+                            ProfileImageView(urlString: authManager.currentUserProfilePicture)
+                                .frame(width: 35, height: 35)
+                                .clipShape(Circle())
+                        }
+                        
                         Button(action: {
-                            AuthManager.shared.logout()
+                            authManager.logout()
                         }) {
                             Image(systemName: "rectangle.portrait.and.arrow.forward")
                                 .font(.title2)
@@ -90,7 +98,21 @@ struct HomeView: View {
                     .padding(.bottom, 5)
                     
                     if isSearching {
-                        searchResultsView
+                        VStack(spacing: 0) {
+                            Picker("Search Type", selection: $selectedSearchType) {
+                                Text("Songs").tag(0)
+                                Text("Albums").tag(1)
+                                Text("Artists").tag(2)
+                            }
+                            .pickerStyle(SegmentedPickerStyle())
+                            .padding(.horizontal)
+                            .padding(.bottom, 10)
+                            .onChange(of: selectedSearchType) { _ in
+                                performSearch()
+                            }
+                            
+                            searchResultsView
+                        }
                     } else if let error = networkManager.dashboardError {
                         Spacer()
                         VStack(spacing: 15) {
@@ -141,29 +163,98 @@ struct HomeView: View {
         }
     }
     
+    @ViewBuilder
     private var searchResultsView: some View {
         ScrollView {
             LazyVStack(spacing: 12) {
-                ForEach(networkManager.searchResults) { song in
-                    SongRowView(song: song, isPlaying: audioManager.currentSong?.id == song.id)
-                        .onTapGesture {
-                            audioManager.play(song: song, in: networkManager.searchResults, at: networkManager.searchResults.firstIndex(where: { $0.id == song.id }) ?? 0)
-                            showFullScreenPlayer = true
-                            
-                            // Hide keyboard
-                            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-                        }
-                        .padding(.horizontal)
+                if selectedSearchType == 0 {
+                    songSearchResultsView
+                } else if selectedSearchType == 1 {
+                    albumSearchResultsView
+                } else if selectedSearchType == 2 {
+                    artistSearchResultsView
                 }
             }
             .padding(.top)
         }
     }
     
+    @ViewBuilder
+    private var songSearchResultsView: some View {
+        ForEach(networkManager.searchResults) { song in
+            SongRowView(song: song, isPlaying: audioManager.currentSong?.id == song.id)
+                .onTapGesture {
+                    audioManager.play(song: song, in: networkManager.searchResults, at: networkManager.searchResults.firstIndex(where: { $0.id == song.id }) ?? 0)
+                    showFullScreenPlayer = true
+                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                }
+                .padding(.horizontal)
+        }
+    }
+    
+    @ViewBuilder
+    private var albumSearchResultsView: some View {
+        ForEach(networkManager.searchAlbumResults) { album in
+            NavigationLink(destination: AlbumDetailView(albumId: album.id)) {
+                HStack {
+                    if let urlString = album.coverArtUrl, let url = URL(string: urlString) {
+                        AsyncImage(url: url) { image in
+                            image.resizable().aspectRatio(contentMode: .fill)
+                        } placeholder: {
+                            Image(systemName: "opticaldisc").foregroundColor(.gray)
+                        }
+                        .frame(width: 50, height: 50)
+                        .cornerRadius(5)
+                    } else {
+                        Image(systemName: "opticaldisc").frame(width: 50, height: 50).background(Color.gray.opacity(0.3)).cornerRadius(5)
+                    }
+                    
+                    VStack(alignment: .leading) {
+                        Text(album.title).foregroundColor(.white).bold()
+                        Text(album.artist).foregroundColor(.gray).font(.caption)
+                    }
+                    Spacer()
+                }
+                .padding(.horizontal)
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private var artistSearchResultsView: some View {
+        ForEach(networkManager.searchArtistResults) { artist in
+            NavigationLink(destination: ArtistDetailView(artistId: artist.id, artistName: artist.artist)) {
+                HStack {
+                    if let urlString = artist.coverArtUrl, let url = URL(string: urlString) {
+                        AsyncImage(url: url) { image in
+                            image.resizable().aspectRatio(contentMode: .fill)
+                        } placeholder: {
+                            Image(systemName: "person.circle.fill").foregroundColor(.gray)
+                        }
+                        .frame(width: 50, height: 50)
+                        .clipShape(Circle())
+                    } else {
+                        Image(systemName: "person.circle.fill").frame(width: 50, height: 50).background(Color.gray.opacity(0.3)).clipShape(Circle())
+                    }
+                    
+                    Text(artist.artist).foregroundColor(.white).bold()
+                    Spacer()
+                }
+                .padding(.horizontal)
+            }
+        }
+    }
+    
     private func performSearch() {
         guard !searchText.isEmpty else { return }
         isSearching = true
-        networkManager.searchYouTube(query: searchText)
+        if selectedSearchType == 0 {
+            networkManager.searchYouTube(query: searchText)
+        } else if selectedSearchType == 1 {
+            networkManager.searchYouTubeAlbums(query: searchText)
+        } else if selectedSearchType == 2 {
+            networkManager.searchYouTubeArtists(query: searchText)
+        }
     }
 }
 
@@ -174,6 +265,7 @@ struct DashboardSectionView: View {
     
     @State private var selectedMood: DashboardItem?
     @State private var selectedAlbum: DashboardItem?
+    @State private var selectedArtist: DashboardItem?
     
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
@@ -188,7 +280,7 @@ struct DashboardSectionView: View {
                     ForEach(section.items) { item in
                         if item.type == "song" {
                             Button(action: {
-                                let song = Song(id: item.id, title: item.title, artist: item.subtitle ?? "Unknown", album: nil, durationMs: nil, coverArtUrl: item.imageUrl)
+                                let song = Song(id: item.id, title: item.title, artist: item.subtitle ?? "Unknown", album: nil, albumId: nil, durationMs: nil, coverArtUrl: item.imageUrl)
                                 audioManager.play(song: song)
                                 showFullScreenPlayer = true
                             }) {
@@ -198,6 +290,13 @@ struct DashboardSectionView: View {
                         } else if item.type == "mood" {
                             Button(action: {
                                 selectedMood = item
+                            }) {
+                                DashboardItemCard(item: item)
+                            }
+                            .buttonStyle(SpiderButtonStyle())
+                        } else if item.type == "artist" {
+                            Button(action: {
+                                selectedArtist = item
                             }) {
                                 DashboardItemCard(item: item)
                             }
@@ -241,6 +340,20 @@ struct DashboardSectionView: View {
                 isActive: Binding(
                     get: { selectedAlbum != nil },
                     set: { if !$0 { selectedAlbum = nil } }
+                )
+            ) { EmptyView() }
+            
+            NavigationLink(
+                destination: Group {
+                    if let artist = selectedArtist {
+                        ArtistDetailView(artistId: artist.id, artistName: artist.title)
+                    } else {
+                        EmptyView()
+                    }
+                },
+                isActive: Binding(
+                    get: { selectedArtist != nil },
+                    set: { if !$0 { selectedArtist = nil } }
                 )
             ) { EmptyView() }
         }

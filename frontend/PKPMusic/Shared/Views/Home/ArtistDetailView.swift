@@ -11,6 +11,17 @@ struct ArtistDetailView: View {
     @State private var isLoading = true
     @State private var showFullScreenPlayer = false
     
+    @State private var searchText = ""
+    
+    private var filteredSongs: [Song] {
+        guard let detail = artistDetail else { return [] }
+        if searchText.isEmpty { return detail.songs }
+        return detail.songs.filter { song in
+            song.title.localizedCaseInsensitiveContains(searchText) ||
+            song.album?.localizedCaseInsensitiveContains(searchText) == true
+        }
+    }
+    
     var body: some View {
         ZStack {
             Theme.SpiderBackground()
@@ -21,62 +32,193 @@ struct ArtistDetailView: View {
                     .scaleEffect(1.5)
             } else if let detail = artistDetail {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 20) {
+                    VStack(alignment: .center, spacing: 20) {
                         // Header
-                        ZStack(alignment: .bottomLeading) {
-                            if let headerUrl = detail.thumbnails.last?.url, let url = URL(string: headerUrl) {
-                                AsyncImage(url: url) { image in
-                                    image.resizable()
-                                        .aspectRatio(contentMode: .fill)
-                                } placeholder: {
-                                    Rectangle().fill(Theme.spiderDarkGrey)
-                                }
-                                .frame(height: 250)
-                                .clipped()
-                            } else {
+                        if let headerUrl = detail.thumbnails.last?.url, let url = URL(string: headerUrl) {
+                            AsyncImage(url: url) { image in
+                                image.resizable()
+                                    .aspectRatio(contentMode: .fill)
+                            } placeholder: {
                                 Rectangle().fill(Theme.spiderDarkGrey)
-                                    .frame(height: 250)
+                            }
+                            .frame(width: 250, height: 250)
+                            .cornerRadius(15)
+                            .shadow(color: Theme.spiderNeonRed.opacity(0.3), radius: 20)
+                            .padding(.top, 20)
+                        } else {
+                            Image(systemName: "person.circle.fill")
+                                .resizable()
+                                .foregroundColor(Theme.spiderDarkGrey)
+                                .frame(width: 250, height: 250)
+                                .cornerRadius(15)
+                                .shadow(color: Theme.spiderNeonRed.opacity(0.3), radius: 20)
+                                .padding(.top, 20)
+                        }
+                        
+                        VStack(spacing: 8) {
+                            HStack {
+                                Text(detail.name)
+                                    .font(.title)
+                                    .bold()
+                                    .foregroundColor(.white)
+                                    .multilineTextAlignment(.center)
+                                
+                                Button(action: {
+                                    networkManager.addBookmark(itemId: artistId, itemType: "artist", title: detail.name, coverArtUrl: detail.thumbnails.last?.url)
+                                }) {
+                                    Image(systemName: "bookmark")
+                                        .font(.title2)
+                                        .foregroundColor(Theme.spiderNeonRed)
+                                }
                             }
                             
-                            LinearGradient(gradient: Gradient(colors: [.clear, .black.opacity(0.9)]), startPoint: .top, endPoint: .bottom)
-                                .frame(height: 250)
+                            if let desc = detail.description, !desc.isEmpty {
+                                Text(desc)
+                                    .font(.subheadline)
+                                    .foregroundColor(.gray)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal)
+                                    .lineLimit(3)
+                            }
                             
-                            VStack(alignment: .leading) {
-                                Text(detail.name)
-                                    .font(.system(size: 40, weight: .bold))
+                            if let subs = detail.subscribers {
+                                Text("\(subs) subscribers")
+                                    .font(.caption)
+                                    .foregroundColor(Theme.spiderRed)
+                            }
+                        }
+                        
+                        // Action Buttons: Play & Shuffle
+                        if !detail.songs.isEmpty {
+                            HStack(spacing: 20) {
+                                Button(action: {
+                                    audioManager.isShuffled = false
+                                    audioManager.play(song: detail.songs[0], in: detail.songs, at: 0)
+                                    showFullScreenPlayer = true
+                                }) {
+                                    HStack {
+                                        Image(systemName: "play.fill")
+                                        Text("Play")
+                                    }
+                                    .font(.headline)
                                     .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                                    .background(Theme.spiderNeonRed)
+                                    .cornerRadius(25)
+                                }
+                                .buttonStyle(SpiderButtonStyle())
                                 
-                                if let subs = detail.subscribers {
-                                    Text("\(subs) subscribers")
-                                        .font(.subheadline)
+                                Button(action: {
+                                    audioManager.isShuffled = true
+                                    let randomSong = detail.songs.randomElement() ?? detail.songs[0]
+                                    audioManager.play(song: randomSong, in: detail.songs, at: 0)
+                                    showFullScreenPlayer = true
+                                }) {
+                                    HStack {
+                                        Image(systemName: "shuffle")
+                                        Text("Shuffle")
+                                    }
+                                    .font(.headline)
+                                    .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                                    .background(Theme.spiderDarkGrey)
+                                    .cornerRadius(25)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 25)
+                                            .stroke(Theme.spiderNeonRed.opacity(0.5), lineWidth: 1)
+                                    )
+                                }
+                                .buttonStyle(SpiderButtonStyle())
+                            }
+                            .padding(.horizontal, 20)
+                        }
+                        
+                        // Search Bar
+                        HStack {
+                            Image(systemName: "magnifyingglass")
+                                .foregroundColor(.gray)
+                            TextField("Search top songs...", text: $searchText)
+                                .foregroundColor(.white)
+                                .disableAutocorrection(true)
+                                .autocapitalization(.none)
+                            
+                            if !searchText.isEmpty {
+                                Button(action: { searchText = "" }) {
+                                    Image(systemName: "xmark.circle.fill")
                                         .foregroundColor(.gray)
                                 }
                             }
+                        }
+                        .padding(12)
+                        .background(Theme.spiderDarkGrey.opacity(0.6))
+                        .cornerRadius(10)
+                        .padding(.horizontal)
+                        
+                        // Songs
+                        if !filteredSongs.isEmpty {
+                            LazyVStack(spacing: 12) {
+                                ForEach(filteredSongs.indices, id: \.self) { index in
+                                    let song = filteredSongs[index]
+                                    SongRowView(song: song, isPlaying: audioManager.currentSong?.id == song.id)
+                                        .onTapGesture {
+                                            audioManager.play(song: song, in: filteredSongs, at: index)
+                                            showFullScreenPlayer = true
+                                            networkManager.recordHistory(songId: song.id)
+                                        }
+                                }
+                            }
                             .padding()
+                        } else if !detail.songs.isEmpty {
+                            Text("No songs match your search.")
+                                .foregroundColor(.gray)
+                                .padding()
                         }
                         
-                        // Top Songs
-                        if !detail.songs.isEmpty {
+                        // Albums section
+                        if let albums = detail.albums, !albums.isEmpty {
                             VStack(alignment: .leading) {
-                                Text("Top Songs")
+                                Text("Albums")
                                     .font(.title2)
                                     .bold()
                                     .foregroundColor(.white)
                                     .padding(.horizontal)
                                 
-                                LazyVStack(spacing: 12) {
-                                    ForEach(detail.songs.indices, id: \.self) { index in
-                                        let song = detail.songs[index]
-                                        SongRowView(song: song, isPlaying: audioManager.currentSong?.id == song.id)
-                                            .onTapGesture {
-                                                audioManager.play(song: song, in: detail.songs, at: index)
-                                                showFullScreenPlayer = true
-                                                networkManager.recordHistory(songId: song.id)
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 16) {
+                                        ForEach(albums, id: \.browseId) { album in
+                                            NavigationLink(destination: AlbumDetailView(albumId: album.browseId)) {
+                                                VStack(alignment: .leading) {
+                                                    if let urlString = album.thumbnails?.last?.url,
+                                                       let url = URL(string: urlString) {
+                                                        AsyncImage(url: url) { image in
+                                                            image.resizable().aspectRatio(contentMode: .fill)
+                                                        } placeholder: {
+                                                            Theme.spiderDarkGrey
+                                                        }
+                                                        .frame(width: 150, height: 150)
+                                                        .cornerRadius(12)
+                                                        .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: 3)
+                                                    } else {
+                                                        Theme.spiderDarkGrey
+                                                            .frame(width: 150, height: 150)
+                                                            .cornerRadius(12)
+                                                    }
+                                                    
+                                                    Text(album.title)
+                                                        .font(.subheadline)
+                                                        .foregroundColor(.white)
+                                                        .lineLimit(1)
+                                                        .frame(width: 150, alignment: .leading)
+                                                }
                                             }
+                                        }
                                     }
+                                    .padding(.horizontal)
                                 }
-                                .padding(.horizontal)
                             }
+                            .padding(.bottom, 30)
                         }
                     }
                 }

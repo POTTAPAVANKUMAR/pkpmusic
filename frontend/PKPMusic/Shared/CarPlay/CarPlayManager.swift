@@ -36,7 +36,7 @@ class CarPlayManager: NSObject, CPTemplateApplicationSceneDelegate {
     func createPlaylistsTemplate() -> CPListTemplate {
         // We will fetch from NetworkManager
         let item = CPListItem(text: "Favorites", detailText: "Your liked songs")
-        item.handler = { [weak self] item, completion in
+        item.handler = { _, completion in
             // Action to open favorites list
             completion()
         }

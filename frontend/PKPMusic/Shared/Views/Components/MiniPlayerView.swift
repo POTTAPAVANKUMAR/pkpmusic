@@ -30,7 +30,7 @@ struct MiniPlayerView: View {
                 }) {
                     Image(systemName: audioManager.isPlaying ? "pause.fill" : "play.fill")
                         .font(.system(size: 22))
-                        .foregroundColor(Theme.spiderRed)
+                        .foregroundColor(.white)
                         .frame(width: 30, height: 30)
                 }
                 
@@ -44,17 +44,11 @@ struct MiniPlayerView: View {
                         .frame(width: 30, height: 30)
                 }
             }
-            .padding(.horizontal, 15)
+            .padding(.horizontal, 10)
             .padding(.vertical, 8)
-            .background(
-                RoundedRectangle(cornerRadius: 35)
-                    .fill(Theme.spiderDarkGrey.opacity(0.95))
-                    .shadow(color: .black.opacity(0.4), radius: 10, x: 0, y: 5)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 35)
-                            .stroke(Theme.spiderNeonRed.opacity(0.5), lineWidth: 1)
-                    )
-            )
+            .background(.ultraThinMaterial)
+            .cornerRadius(35)
+            .shadow(color: .black.opacity(0.15), radius: 15, x: 0, y: 8)
             // Tap to open full player
             .onTapGesture {
                 isShowingFullScreen = true

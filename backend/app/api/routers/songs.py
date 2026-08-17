@@ -1,18 +1,21 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, RedirectResponse
 from starlette.requests import Request
 from sqlalchemy.orm import Session
 from typing import List
 import subprocess
 import json
 import httpx
-
+import time
+import logging
+import asyncio
 from app import schemas
 from app.crud import crud
 from app.core import security as auth
 from app.db.database import get_db
 from app.services.youtube import yt
 from app.db import models
+from app.api.image_utils import upscale_thumbnail
 
 router = APIRouter(tags=["songs"])
 
@@ -28,16 +31,57 @@ def search_youtube(query: str = Query(..., min_length=1)):
         for r in results:
             if r.get('videoId'):
                 thumbnails = r.get('thumbnails', [])
-                cover_url = thumbnails[-1]['url'] if thumbnails else None
+                cover_url = upscale_thumbnail(thumbnails[-1]['url']) if thumbnails else None
                 song = {
                     "id": r['videoId'],
                     "title": r.get('title', 'Unknown Title'),
                     "artist": ", ".join([a['name'] for a in r.get('artists', [])]),
                     "album": r.get('album', {}).get('name') if r.get('album') else None,
+                    "album_id": r.get('album', {}).get('id') if r.get('album') else None,
                     "duration_ms": r.get('duration_seconds', 0) * 1000 if r.get('duration_seconds') else 0,
                     "cover_art_url": cover_url
                 }
                 formatted.append(song)
+        return formatted
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/search/yt/albums", response_model=List[schemas.AlbumSearchResult])
+def search_youtube_albums(query: str = Query(..., min_length=1)):
+    try:
+        results = yt.search(query, filter="albums", limit=20)
+        formatted = []
+        for r in results:
+            if r.get('browseId'):
+                thumbnails = r.get('thumbnails', [])
+                cover_url = upscale_thumbnail(thumbnails[-1]['url']) if thumbnails else None
+                album = {
+                    "browseId": r['browseId'],
+                    "title": r.get('title', 'Unknown Title'),
+                    "artist": ", ".join([a['name'] for a in r.get('artists', [])]) if r.get('artists') else "Unknown",
+                    "year": r.get('year'),
+                    "cover_art_url": cover_url
+                }
+                formatted.append(album)
+        return formatted
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/search/yt/artists", response_model=List[schemas.ArtistSearchResult])
+def search_youtube_artists(query: str = Query(..., min_length=1)):
+    try:
+        results = yt.search(query, filter="artists", limit=20)
+        formatted = []
+        for r in results:
+            if r.get('browseId'):
+                thumbnails = r.get('thumbnails', [])
+                cover_url = upscale_thumbnail(thumbnails[-1]['url']) if thumbnails else None
+                artist = {
+                    "browseId": r['browseId'],
+                    "artist": r.get('artist', 'Unknown Artist'),
+                    "cover_art_url": cover_url
+                }
+                formatted.append(artist)
         return formatted
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -50,71 +94,85 @@ def get_search_suggestions(query: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+STREAM_CACHE = {}
+YT_DLP_SEMAPHORE = asyncio.Semaphore(5)
+
 @router.api_route("/stream/yt/{video_id}", methods=["GET", "HEAD"])
 async def stream_youtube(video_id: str, request: Request):
+    logger.info(f"Received stream request for video_id: {video_id}")
     url = f"https://www.youtube.com/watch?v={video_id}"
     try:
-        command = [
-            "yt-dlp", "--no-warnings", "--dump-json",
-            "-f", "18/140/bestaudio",
-            "--extractor-args", "youtube:player_client=android,web",
-            url
-        ]
-        import asyncio
-        process = await asyncio.create_subprocess_exec(
-            *command,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
-        stdout, stderr = await process.communicate()
-        
-        if process.returncode != 0:
-            raise HTTPException(status_code=500, detail=f"yt-dlp error: {stderr.decode()}")
-            
-        lines = stdout.decode().strip().split('\n')
-        json_data = None
-        for line in reversed(lines):
-            if line.startswith('{'):
-                try:
-                    json_data = json.loads(line)
-                    break
-                except:
-                    continue
-                    
-        if not json_data or 'url' not in json_data:
-            raise HTTPException(status_code=404, detail="Could not extract stream URL")
-            
-        stream_url = json_data['url']
-        dl_headers = json_data.get('http_headers', {})
-        
-        client_headers = {}
-        for k, v in dl_headers.items():
-            client_headers[k.lower()] = v
-            
-        if "range" in request.headers:
-            client_headers["range"] = request.headers["range"]
-            
-        client = httpx.AsyncClient()
-        req = client.build_request("GET", stream_url, headers=client_headers)
-        response = await client.send(req, stream=True)
-        
-        response_headers = {}
-        for key in ["content-type", "content-length", "content-range", "accept-ranges"]:
-            if key in response.headers:
-                response_headers[key] = response.headers[key]
+        now = time.time()
+        # Clean up old cache entries if cache grows too large
+        if len(STREAM_CACHE) > 500:
+            cleaned = 0
+            for k in list(STREAM_CACHE.keys()):
+                if now - STREAM_CACHE[k]['time'] > 7200:
+                    del STREAM_CACHE[k]
+                    cleaned += 1
+            if cleaned > 0:
+                logger.info(f"Cleaned {cleaned} expired entries from stream cache.")
                 
-        async def stream_generator():
-            async for chunk in response.aiter_bytes():
-                yield chunk
-            await client.aclose()
+        stream_url = None
+        if video_id in STREAM_CACHE:
+            stream_url = STREAM_CACHE[video_id]['url']
+            logger.info(f"Cache hit for video_id: {video_id}")
+        else:
+            logger.info(f"Cache miss for video_id: {video_id}. Preparing yt-dlp extraction.")
+            command = [
+                "yt-dlp", "--no-warnings", "--dump-json",
+                "-f", "140/bestaudio[ext=m4a]/bestaudio/18",
+                "--extractor-args", "youtube:player_client=android,web",
+                url
+            ]
             
-        return StreamingResponse(
-            stream_generator(),
-            status_code=response.status_code,
-            headers=response_headers
-        )
+            logger.info(f"Waiting for semaphore to execute yt-dlp for {video_id}...")
+            async with YT_DLP_SEMAPHORE:
+                logger.info(f"Acquired semaphore. Executing yt-dlp for {video_id}...")
+                start_time = time.time()
+                process = await asyncio.create_subprocess_exec(
+                    *command,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE
+                )
+                stdout, stderr = await process.communicate()
+                exec_time = time.time() - start_time
+                logger.info(f"yt-dlp execution for {video_id} completed in {exec_time:.2f}s with return code {process.returncode}")
+            
+            if process.returncode != 0:
+                error_msg = stderr.decode()
+                logger.error(f"yt-dlp failed for {video_id}: {error_msg}")
+                raise HTTPException(status_code=500, detail=f"yt-dlp error: {error_msg}")
+                
+            lines = stdout.decode().strip().split('\n')
+            json_data = None
+            for line in reversed(lines):
+                if line.startswith('{'):
+                    try:
+                        json_data = json.loads(line)
+                        break
+                    except json.JSONDecodeError as e:
+                        logger.warning(f"Failed to parse JSON line from yt-dlp output for {video_id}: {e}")
+                        continue
+                        
+            if not json_data or 'url' not in json_data:
+                logger.error(f"Could not extract stream URL for {video_id} from yt-dlp output.")
+                raise HTTPException(status_code=404, detail="Could not extract stream URL")
+                
+            stream_url = json_data['url']
+            STREAM_CACHE[video_id] = {'url': stream_url, 'time': now}
+            logger.info(f"Successfully extracted and cached stream URL for {video_id}")
+            
+        logger.info(f"Redirecting {video_id} to stream URL.")
+        return RedirectResponse(url=stream_url)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Proxy error: {str(e)}")
+        import traceback
+        err_msg = "".join(traceback.format_exception(type(e), e, e.__traceback__))
+        logger.error(f"STREAM ERROR for {video_id}: {err_msg}")
+        raise HTTPException(status_code=500, detail=f"Stream error: {str(e)}")
 
 @router.get("/lyrics/{video_id}", response_model=schemas.LyricsResponse)
 def get_lyrics(video_id: str):
@@ -172,21 +230,61 @@ def get_lyrics(video_id: str):
             raise e
         raise HTTPException(status_code=500, detail=str(e))
 
+def extract_duration_ms(item):
+    dur = item.get('duration_seconds')
+    if dur is not None:
+        try:
+            return int(dur) * 1000
+        except:
+            pass
+            
+    duration_str = item.get('duration')
+    if duration_str:
+        parts = str(duration_str).split(':')
+        try:
+            if len(parts) == 2:
+                return (int(parts[0]) * 60 + int(parts[1])) * 1000
+            elif len(parts) == 3:
+                return (int(parts[0]) * 3600 + int(parts[1]) * 60 + int(parts[2])) * 1000
+        except Exception:
+            pass
+    return 0
+
 @router.get("/artist/{channel_id}", response_model=schemas.ArtistDetail)
 def get_artist(channel_id: str):
     try:
         artist = yt.get_artist(channel_id)
+        
+        # Fetch the full playlist for songs if available
+        songs_list = []
+        songs_playlist_id = artist.get('songs', {}).get('browseId')
+        if songs_playlist_id:
+            try:
+                playlist = yt.get_playlist(songs_playlist_id, limit=200)
+                songs_list = playlist.get('tracks', [])
+            except Exception as e:
+                logger.error(f"Failed to fetch songs playlist for {channel_id}: {e}")
+                songs_list = artist.get('songs', {}).get('results', [])
+        else:
+            songs_list = artist.get('songs', {}).get('results', [])
+
         songs = []
-        if 'songs' in artist and 'results' in artist['songs']:
-            for s in artist['songs']['results']:
+        for s in songs_list:
+            # The playlist tracks might have slightly different keys than artist top songs
+            if s.get('videoId'):
                 songs.append(schemas.SongBase(
                     id=s['videoId'],
                     title=s.get('title', 'Unknown'),
                     artist=artist.get('name', 'Unknown'),
                     album=s.get('album', {}).get('name') if s.get('album') else None,
-                    duration_ms=0,
-                    cover_art_url=s.get('thumbnails', [{}])[-1].get('url')
+                    album_id=s.get('album', {}).get('id') if s.get('album') else None,
+                    duration_ms=extract_duration_ms(s),
+                    cover_art_url=upscale_thumbnail(s.get('thumbnails', [{}])[-1].get('url') if s.get('thumbnails') else None)
                 ))
+                
+        # Combine albums and singles
+        all_albums = artist.get('albums', {}).get('results', []) + artist.get('singles', {}).get('results', [])
+        
         return schemas.ArtistDetail(
             name=artist.get('name', 'Unknown'),
             description=artist.get('description'),
@@ -194,7 +292,7 @@ def get_artist(channel_id: str):
             subscribers=artist.get('subscribers'),
             thumbnails=artist.get('thumbnails', []),
             songs=songs,
-            albums=artist.get('albums', {}).get('results', [])
+            albums=all_albums
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -212,13 +310,19 @@ def get_album(browse_id: str):
         songs = []
         for track in album.get(tracks_key, []):
             if track.get('videoId'):
+                # Safely get thumbnails, fallback to album thumbnails or a default empty list
+                t_thumbs = track.get('thumbnails')
+                a_thumbs = album.get('thumbnails')
+                thumbnails = t_thumbs if t_thumbs else (a_thumbs if a_thumbs else [{}])
+                cover_url = upscale_thumbnail(thumbnails[-1].get('url')) if thumbnails else None
+                
                 songs.append(schemas.Song(
                     id=track['videoId'],
                     title=track.get('title', 'Unknown'),
                     artist=", ".join([a['name'] for a in track.get('artists', [])]) if track.get('artists') else "Unknown Artist",
                     album=album.get('title'),
-                    duration_ms=0,
-                    cover_art_url=track.get('thumbnails', album.get('thumbnails', [{}]))[-1].get('url')
+                    duration_ms=extract_duration_ms(track),
+                    cover_art_url=cover_url
                 ))
         return schemas.AlbumDetail(
             title=album.get('title', 'Unknown'),
@@ -240,7 +344,7 @@ def add_to_history(history: schemas.HistoryCreate, current_user: models.User = D
             song_info = yt.get_song(history.song_id)
             details = song_info.get('videoDetails', {})
             thumbnails = details.get('thumbnail', {}).get('thumbnails', [])
-            cover_url = thumbnails[-1]['url'] if thumbnails else None
+            cover_url = upscale_thumbnail(thumbnails[-1]['url']) if thumbnails else None
             
             new_song = schemas.SongCreate(
                 id=history.song_id,
@@ -280,6 +384,7 @@ def get_upnext(video_id: str):
                     title=track.get('title', 'Unknown Title'),
                     artist=", ".join([a['name'] for a in track.get('artists', [])]),
                     album=track.get('album', {}).get('name') if track.get('album') else None,
+                    album_id=track.get('album', {}).get('id') if track.get('album') else None,
                     duration_ms=track.get('lengthSeconds', 0) * 1000 if track.get('lengthSeconds') else 0,
                     cover_art_url=track.get('thumbnail', [{}])[-1].get('url') if track.get('thumbnail') else None
                 )
