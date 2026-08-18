@@ -269,11 +269,18 @@ struct DashboardSectionView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
-            Text(section.title)
-                .font(.title2)
-                .bold()
-                .foregroundColor(.white)
-                .padding(.horizontal)
+            HStack {
+                Text(section.title)
+                    .font(.title2)
+                    .bold()
+                    .foregroundColor(.white)
+                
+                if section.title.contains("AI Recommended") {
+                    Image(systemName: "sparkles")
+                        .foregroundColor(.purple)
+                }
+            }
+            .padding(.horizontal)
             
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 16) {

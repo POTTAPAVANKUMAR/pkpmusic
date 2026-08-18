@@ -29,9 +29,14 @@ app.include_router(dashboard.router)
 app.include_router(podcasts.router)
 app.include_router(websocket.router)
 
+from app.jobs.scheduler import start_scheduler
+
 @app.on_event("startup")
 async def startup_event():
-    # Pre-warm the cache in the background
+    # Start APScheduler
+    start_scheduler()
+    
+    # Run dashboard cache prewarm in background
     asyncio.create_task(prewarm_dashboard_cache())
 
 async def prewarm_dashboard_cache():

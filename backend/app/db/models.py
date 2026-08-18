@@ -108,3 +108,15 @@ class Message(Base):
     content = Column(String) # text, base64 image, or song_id
     message_type = Column(String) # 'text', 'image', 'gif', 'song_share'
     timestamp = Column(Float) # Epoch timestamp
+
+class AIRecommendation(Base):
+    __tablename__ = "ai_recommendations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    song_id = Column(String, ForeignKey("songs.id"))
+    confidence_score = Column(Float)
+    reason = Column(String)
+    created_at = Column(Float) # Epoch timestamp
+
+    song = relationship("Song")

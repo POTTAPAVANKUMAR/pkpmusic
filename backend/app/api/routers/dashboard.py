@@ -20,6 +20,28 @@ CACHE_TTL = 1800 # 30 minutes
 def get_dashboard_sync(user_id: int, db: Session):
     sections = []
     
+    # 0. AI Recommendations (Top Priority if they exist)
+    try:
+        ai_recs = crud.get_ai_recommendations(db, user_id=user_id)
+        if ai_recs:
+            rec_items = []
+            for rec in ai_recs[:10]: # Top 10
+                if rec.song:
+                    rec_items.append(schemas.DashboardItem(
+                        id=rec.song.id,
+                        title=rec.song.title or 'Unknown',
+                        subtitle=rec.song.artist or '',
+                        image_url=upscale_thumbnail(rec.song.cover_art_url) if rec.song.cover_art_url else None,
+                        type="song"
+                    ))
+            if rec_items:
+                sections.append(schemas.DashboardSection(
+                    title="✨ AI Recommended for You", 
+                    items=rec_items
+                ))
+    except Exception as e:
+        print(f"Error fetching AI recommendations: {e}")
+    
     # 0. Bookmarks
     try:
         bookmarks = crud.get_bookmarks(db, user_id=user_id)
@@ -111,14 +133,14 @@ def get_dashboard_sync(user_id: int, db: Session):
 
     # 4. Personalized Playlists (Replacing Featured Playlists)
     try:
-        history = crud.get_history(db, user_id=user_id, limit=50)
+        history = crud.get_history(db, user_id=user_id, limit=200)
         seed_artists = []
         for h in history:
             if h.song and h.song.artist:
                 first_artist = h.song.artist.split(",")[0].strip()
                 if first_artist and first_artist not in seed_artists:
                     seed_artists.append(first_artist)
-                if len(seed_artists) >= 2:
+                if len(seed_artists) >= 6:
                     break
         
         if seed_artists:
@@ -228,7 +250,7 @@ def get_mood_playlists(params: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/explore/", response_model=List[schemas.DashboardSection])
+@router.get("/dashboard/explore/", response_model=List[schemas.DashboardSection])
 def get_explore():
     """
     Get the generic explore page using yt.get_home() to show globally trending community playlists, new releases, and moods.

@@ -198,3 +198,24 @@ def get_chat_history(db: Session, user_id: int, friend_id: int, limit: int = 50)
             and_(models.Message.sender_id == friend_id, models.Message.receiver_id == user_id)
         )
     ).order_by(models.Message.timestamp.desc()).limit(limit).all()
+
+# AI Recommendations
+def save_ai_recommendations(db: Session, user_id: int, recommendations: list):
+    import time
+    # First, delete old recommendations for this user
+    db.query(models.AIRecommendation).filter(models.AIRecommendation.user_id == user_id).delete()
+    
+    # Insert new ones
+    for rec in recommendations:
+        db_rec = models.AIRecommendation(
+            user_id=user_id,
+            song_id=rec["song_id"],
+            confidence_score=rec.get("confidence_score", 0.0),
+            reason=rec.get("reason", ""),
+            created_at=time.time()
+        )
+        db.add(db_rec)
+    db.commit()
+
+def get_ai_recommendations(db: Session, user_id: int):
+    return db.query(models.AIRecommendation).filter(models.AIRecommendation.user_id == user_id).order_by(models.AIRecommendation.confidence_score.desc()).all()
