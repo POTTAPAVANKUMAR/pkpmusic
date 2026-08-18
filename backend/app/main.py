@@ -28,6 +28,7 @@ app.include_router(social.router)
 app.include_router(dashboard.router)
 app.include_router(podcasts.router)
 app.include_router(websocket.router)
+app.include_router(admin.router)
 
 from app.jobs.scheduler import start_scheduler
 

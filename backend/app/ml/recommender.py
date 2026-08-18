@@ -12,11 +12,16 @@ def run_ml_pipeline():
     logger.info("Starting Nightly ML Pipeline...")
     
     db = SessionLocal()
+    job_run = crud.create_ml_job_run(db)
+    users_processed = 0
+    recs_generated = 0
+    
     try:
         # 1. Fetch all songs
         songs = db.query(models.Song).all()
         if not songs:
             logger.info("No songs found in DB. Exiting ML pipeline.")
+            crud.update_ml_job_run(db, job_run.id, "Success", users_processed, recs_generated)
             return
 
         # 2. Build DataFrame
@@ -44,6 +49,7 @@ def run_ml_pipeline():
         # 5. Get all users
         users = db.query(models.User).all()
         for user in users:
+            users_processed += 1
             # Get user history
             history = db.query(models.History).filter(models.History.user_id == user.id).order_by(models.History.id.desc()).limit(100).all()
             if not history:
@@ -91,10 +97,15 @@ def run_ml_pipeline():
                     
             if recommendations:
                 crud.save_ai_recommendations(db, user.id, recommendations)
+                recs_generated += len(recommendations)
                 logger.info(f"Generated {len(recommendations)} recommendations for user {user.id}")
                 
+            crud.update_ml_job_run(db, job_run.id, "Running", users_processed, recs_generated)
+                
+        crud.update_ml_job_run(db, job_run.id, "Success", users_processed, recs_generated)
     except Exception as e:
         logger.error(f"Error in ML pipeline: {e}")
+        crud.update_ml_job_run(db, job_run.id, "Failed", users_processed, recs_generated, str(e))
     finally:
         db.close()
         logger.info("Nightly ML Pipeline finished.")

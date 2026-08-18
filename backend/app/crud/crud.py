@@ -219,3 +219,32 @@ def save_ai_recommendations(db: Session, user_id: int, recommendations: list):
 
 def get_ai_recommendations(db: Session, user_id: int):
     return db.query(models.AIRecommendation).filter(models.AIRecommendation.user_id == user_id).order_by(models.AIRecommendation.confidence_score.desc()).all()
+
+# ML Job Runs
+def create_ml_job_run(db: Session):
+    import time
+    db_run = models.MLJobRun(
+        status="Running",
+        started_at=time.time()
+    )
+    db.add(db_run)
+    db.commit()
+    db.refresh(db_run)
+    return db_run
+
+def update_ml_job_run(db: Session, run_id: int, status: str, users_processed: int, recs_generated: int, error_message: str = None):
+    import time
+    db_run = db.query(models.MLJobRun).filter(models.MLJobRun.id == run_id).first()
+    if db_run:
+        db_run.status = status
+        db_run.users_processed = users_processed
+        db_run.recommendations_generated = recs_generated
+        db_run.error_message = error_message
+        if status in ["Success", "Failed"]:
+            db_run.completed_at = time.time()
+        db.commit()
+        db.refresh(db_run)
+    return db_run
+
+def get_ml_job_runs(db: Session, limit: int = 20):
+    return db.query(models.MLJobRun).order_by(models.MLJobRun.started_at.desc()).limit(limit).all()

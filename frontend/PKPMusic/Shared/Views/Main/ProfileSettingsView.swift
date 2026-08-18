@@ -127,6 +127,42 @@ struct ProfileSettingsView: View {
                     }
                     .padding(.horizontal)
                     
+                    // ML Analytics Section
+                    NavigationLink(destination: MLAnalyticsView()) {
+                        HStack(spacing: 14) {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.purple.opacity(0.2))
+                                    .frame(width: 46, height: 46)
+                                
+                                Image(systemName: "sparkles.tv")
+                                    .font(.system(size: 20, weight: .bold))
+                                    .foregroundColor(.purple)
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("AI Model Analytics")
+                                    .font(.headline)
+                                    .foregroundColor(.white)
+                                
+                                Text("View ML job runs & trigger pipeline")
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                            }
+                            
+                            Spacer()
+                            
+                            Image(systemName: "chevron.right")
+                                .foregroundColor(.gray.opacity(0.5))
+                                .font(.system(size: 14, weight: .bold))
+                        }
+                        .padding(14)
+                        .background(Theme.surface)
+                        .cornerRadius(14)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 10)
+                    
                     // Theme Selection Section
                     VStack(alignment: .leading, spacing: 14) {
                         HStack {

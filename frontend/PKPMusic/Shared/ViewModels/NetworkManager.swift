@@ -452,3 +452,59 @@ class NetworkManager: ObservableObject {
     }
 }
 
+// MARK: - ML Analytics Models
+struct MLJobRun: Codable, Identifiable {
+    let id: Int
+    let status: String
+    let started_at: Double
+    let completed_at: Double?
+    let users_processed: Int
+    let recommendations_generated: Int
+    let error_message: String?
+}
+
+// MARK: - ML Analytics API Methods
+extension NetworkManager {
+    func fetchMLMetrics(completion: @escaping ([MLJobRun]) -> Void) {
+        guard let url = URL(string: "\(baseURL)/admin/jobs/ml/metrics") else { return }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        if let token = UserDefaults.standard.string(forKey: "authToken") {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let data = data {
+                if let runs = try? JSONDecoder().decode([MLJobRun].self, from: data) {
+                    DispatchQueue.main.async { completion(runs) }
+                } else {
+                    DispatchQueue.main.async { completion([]) }
+                }
+            } else {
+                DispatchQueue.main.async { completion([]) }
+            }
+        }.resume()
+    }
+    
+    func triggerMLJob(completion: @escaping (Bool) -> Void) {
+        guard let url = URL(string: "\(baseURL)/admin/jobs/ml/trigger") else { return }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        if let token = UserDefaults.standard.string(forKey: "authToken") {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
+                    completion(true)
+                } else {
+                    completion(false)
+                }
+            }
+        }.resume()
+    }
+}
+

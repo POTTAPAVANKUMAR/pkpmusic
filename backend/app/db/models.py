@@ -120,3 +120,14 @@ class AIRecommendation(Base):
     created_at = Column(Float) # Epoch timestamp
 
     song = relationship("Song")
+
+class MLJobRun(Base):
+    __tablename__ = "ml_job_runs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    status = Column(String) # 'Running', 'Success', 'Failed'
+    started_at = Column(Float) # Epoch timestamp
+    completed_at = Column(Float, nullable=True) # Epoch timestamp
+    users_processed = Column(Integer, default=0)
+    recommendations_generated = Column(Integer, default=0)
+    error_message = Column(String, nullable=True)
