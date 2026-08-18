@@ -102,7 +102,7 @@ LYRICS_CACHE = {}
 YT_DLP_SEMAPHORE = asyncio.Semaphore(5)
 
 @router.api_route("/stream/yt/{video_id}", methods=["GET", "HEAD"])
-async def stream_youtube(video_id: str, request: Request):
+async def stream_youtube(video_id: str, request: Request, video: bool = False):
     logger.info(f"Received stream request for video_id: {video_id}")
     url = f"https://www.youtube.com/watch?v={video_id}"
     try:
@@ -118,14 +118,18 @@ async def stream_youtube(video_id: str, request: Request):
                 logger.info(f"Cleaned {cleaned} expired entries from stream cache.")
                 
         stream_url = None
-        if video_id in STREAM_CACHE and (now - STREAM_CACHE[video_id]['time'] < 3600):
-            stream_url = STREAM_CACHE[video_id]['url']
-            logger.info(f"Cache hit for video_id: {video_id}")
+        cache_key = f"{video_id}_video" if video else f"{video_id}_audio"
+        if cache_key in STREAM_CACHE and (now - STREAM_CACHE[cache_key]['time'] < 3600):
+            stream_url = STREAM_CACHE[cache_key]['url']
+            logger.info(f"Cache hit for {cache_key}")
         else:
-            logger.info(f"Cache miss for video_id: {video_id}. Preparing yt-dlp extraction.")
+            logger.info(f"Cache miss for {cache_key}. Preparing yt-dlp extraction.")
+            
+            format_str = "18/best[ext=mp4]/best" if video else "140/bestaudio[ext=m4a]/bestaudio[acodec^=mp4a]/18/best[ext=mp4]/bestaudio/best"
+            
             command = [
                 "yt-dlp", "--no-warnings", "--dump-json",
-                "-f", "140/bestaudio[ext=m4a]/bestaudio[acodec^=mp4a]/18/best[ext=mp4]/bestaudio/best",
+                "-f", format_str,
                 "--extractor-args", "youtube:player_client=ios,android,web",
                 url
             ]
@@ -164,8 +168,8 @@ async def stream_youtube(video_id: str, request: Request):
                 raise HTTPException(status_code=404, detail="Could not extract stream URL")
                 
             stream_url = json_data['url']
-            STREAM_CACHE[video_id] = {'url': stream_url, 'time': now}
-            logger.info(f"Successfully extracted and cached stream URL for {video_id}")
+            STREAM_CACHE[cache_key] = {'url': stream_url, 'time': now}
+            logger.info(f"Successfully extracted and cached stream URL for {cache_key}")
             
         logger.info(f"Redirecting {video_id} to stream URL.")
         return RedirectResponse(url=stream_url)

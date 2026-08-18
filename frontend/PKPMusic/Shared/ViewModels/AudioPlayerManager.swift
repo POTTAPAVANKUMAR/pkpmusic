@@ -8,7 +8,7 @@ import UIKit
 class AudioPlayerManager: ObservableObject {
     static let shared = AudioPlayerManager()
     
-    private var player: AVPlayer?
+    @Published var player: AVPlayer?
     private var timeObserver: Any?
     
     @Published var isPlaying = false
@@ -20,6 +20,7 @@ class AudioPlayerManager: ObservableObject {
     
     @Published var isShuffled = false
     @Published var isAutoPlayEnabled = true
+    @Published var isVideoMode = false
     
     enum RepeatMode {
         case off, all, one
@@ -64,13 +65,13 @@ class AudioPlayerManager: ObservableObject {
         likelyToKeepUpObservation = nil
     }
     
-    func play(song: Song, in newQueue: [Song] = [], at index: Int = 0) {
+    func play(song: Song, in newQueue: [Song] = [], at index: Int = 0, startTime: Double = 0.0) {
         cleanupCurrentPlayer()
         
         let url: URL
         if let localUrl = DownloadManager.shared.localURL(for: song.id) {
             url = localUrl
-        } else if let remoteUrl = NetworkManager.shared.getStreamURL(for: song.id) {
+        } else if let remoteUrl = NetworkManager.shared.getStreamURL(for: song.id, video: isVideoMode) {
             url = remoteUrl
         } else {
             self.playbackError = "Invalid song URL"
@@ -170,6 +171,9 @@ class AudioPlayerManager: ObservableObject {
         NotificationCenter.default.addObserver(self, selector: #selector(playerFailedToPlayToEnd), name: .AVPlayerItemFailedToPlayToEndTime, object: playerItem)
         
         setupTimeObserver()
+        if startTime > 0 {
+            player?.seek(to: CMTime(seconds: startTime, preferredTimescale: 1000))
+        }
         player?.play()
         
         // Prefetch next song stream for gapless playback
@@ -385,6 +389,21 @@ class AudioPlayerManager: ObservableObject {
         player?.play()
         isPlaying = true
         updateNowPlayingPlaybackState()
+    }
+    
+    func setVideoMode(_ video: Bool) {
+        guard isVideoMode != video, let song = currentSong else { return }
+        isVideoMode = video
+        
+        if DownloadManager.shared.isDownloaded(songId: song.id) { return }
+        
+        let currentTime = progress
+        let wasPlaying = isPlaying
+        
+        play(song: song, startTime: currentTime)
+        if !wasPlaying {
+            pause()
+        }
     }
     
     private func setupRemoteTransportControls() {

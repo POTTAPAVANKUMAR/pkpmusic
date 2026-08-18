@@ -254,8 +254,8 @@ class NetworkManager: ObservableObject {
         }.resume()
     }
     
-    func getStreamURL(for songId: String) -> URL? {
-        return URL(string: "\(baseURL)/stream/yt/\(songId)")
+    func getStreamURL(for songId: String, video: Bool = false) -> URL? {
+        return URL(string: "\(baseURL)/stream/yt/\(songId)?video=\(video)")
     }
     
     func prefetchStream(videoId: String) {

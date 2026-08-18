@@ -1,4 +1,5 @@
 import SwiftUI
+import AVKit
 
 struct FullScreenPlayerView: View {
     @StateObject private var audioManager = AudioPlayerManager.shared
@@ -44,10 +45,34 @@ struct FullScreenPlayerView: View {
                             .foregroundColor(.white)
                     }
                     Spacer()
-                        Text("NOW PLAYING")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundColor(.white.opacity(0.7))
-                            .tracking(2)
+                    // Song / Video Toggle
+                    HStack(spacing: 0) {
+                        Button(action: {
+                            withAnimation(.spring()) { audioManager.setVideoMode(false) }
+                        }) {
+                            Text("Song")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(audioManager.isVideoMode ? .white.opacity(0.5) : .white)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 6)
+                                .background(audioManager.isVideoMode ? Color.clear : Color.white.opacity(0.2))
+                                .clipShape(Capsule())
+                        }
+                        
+                        Button(action: {
+                            withAnimation(.spring()) { audioManager.setVideoMode(true) }
+                        }) {
+                            Text("Video")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(audioManager.isVideoMode ? .white : .white.opacity(0.5))
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 6)
+                                .background(audioManager.isVideoMode ? Color.white.opacity(0.2) : Color.clear)
+                                .clipShape(Capsule())
+                        }
+                    }
+                    .background(Color.black.opacity(0.3))
+                    .clipShape(Capsule())
                     Spacer()
                     Button(action: {
                         showingOptions = true
@@ -131,19 +156,30 @@ struct FullScreenPlayerView: View {
                 
                 Spacer()
                 
-                // Album Art with Spidey Glow
+                // Album Art or Video
                 if let song = audioManager.currentSong {
-                    AsyncImage(url: URL(string: song.coverArtUrl ?? "")) { image in
-                        image.resizable().aspectRatio(contentMode: .fill)
-                    } placeholder: {
-                        Rectangle().fill(Color.gray.opacity(0.2))
+                    if audioManager.isVideoMode, let player = audioManager.player {
+                        VideoPlayer(player: player)
+                            .frame(width: ((UIApplication.shared.connectedScenes.first as? UIWindowScene)?.screen.bounds.width ?? 400) - 60, height: ((UIApplication.shared.connectedScenes.first as? UIWindowScene)?.screen.bounds.width ?? 400) - 60)
+                            .cornerRadius(12)
+                            .shadow(color: .black.opacity(0.3), radius: 20, x: 0, y: 15)
+                            .scaleEffect(audioManager.isPlaying ? 1.0 : 0.95)
+                            .animation(.spring(response: 0.5, dampingFraction: 0.6, blendDuration: 0), value: audioManager.isPlaying)
+                            .padding(.bottom, 30)
+                            .disabled(true) // Disable native AVKit controls so it doesn't conflict with our UI
+                    } else {
+                        AsyncImage(url: URL(string: song.coverArtUrl ?? "")) { image in
+                            image.resizable().aspectRatio(contentMode: .fill)
+                        } placeholder: {
+                            Rectangle().fill(Color.gray.opacity(0.2))
+                        }
+                        .frame(width: ((UIApplication.shared.connectedScenes.first as? UIWindowScene)?.screen.bounds.width ?? 400) - 60, height: ((UIApplication.shared.connectedScenes.first as? UIWindowScene)?.screen.bounds.width ?? 400) - 60)
+                        .cornerRadius(12)
+                        .shadow(color: .black.opacity(0.3), radius: 20, x: 0, y: 15)
+                        .scaleEffect(audioManager.isPlaying ? 1.0 : 0.85) // Apple Music style bounce
+                        .animation(.spring(response: 0.5, dampingFraction: 0.6, blendDuration: 0), value: audioManager.isPlaying)
+                        .padding(.bottom, 30)
                     }
-                    .frame(width: ((UIApplication.shared.connectedScenes.first as? UIWindowScene)?.screen.bounds.width ?? 400) - 60, height: ((UIApplication.shared.connectedScenes.first as? UIWindowScene)?.screen.bounds.width ?? 400) - 60)
-                    .cornerRadius(12)
-                    .shadow(color: .black.opacity(0.3), radius: 20, x: 0, y: 15)
-                    .scaleEffect(audioManager.isPlaying ? 1.0 : 0.85) // Apple Music style bounce
-                    .animation(.spring(response: 0.5, dampingFraction: 0.6, blendDuration: 0), value: audioManager.isPlaying)
-                    .padding(.bottom, 30)
                     
                     // Song Info & Favorite
                     HStack {
