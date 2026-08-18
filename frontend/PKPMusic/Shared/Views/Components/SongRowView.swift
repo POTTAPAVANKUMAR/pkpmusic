@@ -36,8 +36,14 @@ struct SongRowView: View {
             Spacer()
             
             if isPlaying {
-                Image(systemName: "waveform")
-                    .foregroundColor(Theme.spiderNeonRed)
+                if audioManager.isLoading && audioManager.currentSong?.id == song.id {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: Theme.spiderNeonRed))
+                        .scaleEffect(0.8)
+                } else {
+                    Image(systemName: "waveform")
+                        .foregroundColor(Theme.spiderNeonRed)
+                }
             } else {
                 Text(formatTime(song.durationMs))
                     .font(.caption)

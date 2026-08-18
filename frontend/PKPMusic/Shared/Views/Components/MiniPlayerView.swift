@@ -28,10 +28,19 @@ struct MiniPlayerView: View {
                         audioManager.resume()
                     }
                 }) {
-                    Image(systemName: audioManager.isPlaying ? "pause.fill" : "play.fill")
-                        .font(.system(size: 22))
-                        .foregroundColor(.white)
-                        .frame(width: 30, height: 30)
+                    ZStack {
+                        Image(systemName: audioManager.isPlaying ? "pause.fill" : "play.fill")
+                            .font(.system(size: 22))
+                            .foregroundColor(.white)
+                            .opacity(audioManager.isLoading ? 0.3 : 1.0)
+                        
+                        if audioManager.isLoading {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: Theme.spiderNeonRed))
+                                .scaleEffect(0.8)
+                        }
+                    }
+                    .frame(width: 30, height: 30)
                 }
                 
                 // Next Track

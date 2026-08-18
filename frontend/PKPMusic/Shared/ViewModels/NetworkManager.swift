@@ -7,6 +7,8 @@ class NetworkManager: ObservableObject {
     let baseURL = "https://pkpmusic.pottapk.win" 
     
     @Published var songs: [Song] = []
+    @Published var historySongs: [Song] = []
+    @Published var isHistoryLoading: Bool = false
     @Published var searchResults: [Song] = []
     @Published var searchAlbumResults: [AlbumSearchResult] = []
     @Published var searchArtistResults: [ArtistSearchResult] = []
@@ -46,23 +48,32 @@ class NetworkManager: ObservableObject {
         }.resume()
     }
     
-    func fetchSongs() {
+    func fetchHistory() {
         guard let request = createRequest(for: "\(baseURL)/history/") else { return }
+        DispatchQueue.main.async { self.isHistoryLoading = true }
         URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async { self.isHistoryLoading = false }
             if let data = data {
                 do {
                     struct HistoryItem: Codable {
+                        let id: Int?
                         let song: Song
+                        let played_at: String?
                     }
                     let decodedHistory = try JSONDecoder().decode([HistoryItem].self, from: data)
                     DispatchQueue.main.async {
-                        self.songs = decodedHistory.map { $0.song }
+                        self.historySongs = decodedHistory.map { $0.song }
+                        self.songs = self.historySongs
                     }
                 } catch {
                     print("Error decoding history: \(error)")
                 }
             }
         }.resume()
+    }
+    
+    func fetchSongs() {
+        fetchHistory()
     }
     
     func fetchFavorites() {

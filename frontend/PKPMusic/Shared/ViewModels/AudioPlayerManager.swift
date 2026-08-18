@@ -12,6 +12,8 @@ class AudioPlayerManager: ObservableObject {
     private var timeObserver: Any?
     
     @Published var isPlaying = false
+    @Published var isLoading = false
+    @Published var playbackError: String?
     @Published var currentSong: Song?
     @Published var progress: Double = 0.0
     @Published var duration: Double = 0.0
@@ -25,8 +27,13 @@ class AudioPlayerManager: ObservableObject {
     @Published var repeatMode: RepeatMode = .off
     
     private var originalQueue: [Song] = []
-    var queue: [Song] = []
-    private var currentIndex: Int = 0
+    @Published var queue: [Song] = []
+    @Published var currentIndex: Int = 0
+    
+    private var statusObservation: NSKeyValueObservation?
+    private var bufferObservation: NSKeyValueObservation?
+    private var likelyToKeepUpObservation: NSKeyValueObservation?
+    private var retryWorkItem: DispatchWorkItem?
     
     init() {
         setupRemoteTransportControls()
@@ -37,13 +44,36 @@ class AudioPlayerManager: ObservableObject {
         play(song: tempSong)
     }
     
+    private func cleanupCurrentPlayer() {
+        retryWorkItem?.cancel()
+        retryWorkItem = nil
+        
+        if let observer = timeObserver {
+            player?.removeTimeObserver(observer)
+            timeObserver = nil
+        }
+        
+        NotificationCenter.default.removeObserver(self, name: .AVPlayerItemDidPlayToEndTime, object: nil)
+        NotificationCenter.default.removeObserver(self, name: .AVPlayerItemFailedToPlayToEndTime, object: nil)
+        
+        statusObservation?.invalidate()
+        statusObservation = nil
+        bufferObservation?.invalidate()
+        bufferObservation = nil
+        likelyToKeepUpObservation?.invalidate()
+        likelyToKeepUpObservation = nil
+    }
+    
     func play(song: Song, in newQueue: [Song] = [], at index: Int = 0) {
+        cleanupCurrentPlayer()
+        
         let url: URL
         if let localUrl = DownloadManager.shared.localURL(for: song.id) {
             url = localUrl
         } else if let remoteUrl = NetworkManager.shared.getStreamURL(for: song.id) {
             url = remoteUrl
         } else {
+            self.playbackError = "Invalid song URL"
             return
         }
         
@@ -65,30 +95,92 @@ class AudioPlayerManager: ObservableObject {
             try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
             try AVAudioSession.sharedInstance().setActive(true)
         } catch {
-            print("Failed to set audio session category.")
-        }
-        
-        if let observer = timeObserver {
-            player?.removeTimeObserver(observer)
-            timeObserver = nil
+            print("Failed to set audio session category: \(error)")
         }
         
         let playerItem = AVPlayerItem(url: url)
+        playerItem.preferredForwardBufferDuration = 5.0
+        
         player = AVPlayer(playerItem: playerItem)
-        player?.play()
+        player?.automaticallyWaitsToMinimizeStalling = true
         
         isPlaying = true
+        isLoading = true
+        playbackError = nil
         currentSong = song
         progress = 0.0
+        duration = Double(song.durationMs ?? 0) / 1000.0
         
         updateNowPlayingInfo(song: song)
         NetworkManager.shared.recordHistory(songId: song.id)
         
+        // Observe Player Item Status (Ready, Failed)
+        statusObservation = playerItem.observe(\.status, options: [.new, .initial]) { [weak self] item, _ in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                switch item.status {
+                case .readyToPlay:
+                    self.isLoading = false
+                    self.playbackError = nil
+                    if !item.duration.isIndefinite && item.duration.seconds > 0 {
+                        self.duration = item.duration.seconds
+                    }
+                case .failed:
+                    self.isLoading = false
+                    let errMsg = item.error?.localizedDescription ?? "Unknown audio playback error"
+                    print("Playback failed for \(song.title): \(errMsg)")
+                    self.playbackError = "Could not load audio. Skipping..."
+                    
+                    // Auto-skip to next song on failure after brief pause
+                    let workItem = DispatchWorkItem { [weak self] in
+                        guard let self = self, self.currentSong?.id == song.id else { return }
+                        self.playNext(isAutoPlay: true)
+                    }
+                    self.retryWorkItem = workItem
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0, execute: workItem)
+                case .unknown:
+                    break
+                @unknown default:
+                    break
+                }
+            }
+        }
+        
+        // Observe Buffering State
+        likelyToKeepUpObservation = playerItem.observe(\.isPlaybackLikelyToKeepUp, options: [.new]) { [weak self] item, _ in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                if item.isPlaybackLikelyToKeepUp {
+                    self.isLoading = false
+                }
+            }
+        }
+        
+        bufferObservation = playerItem.observe(\.isPlaybackBufferEmpty, options: [.new]) { [weak self] item, _ in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                if item.isPlaybackBufferEmpty && self.isPlaying {
+                    self.isLoading = true
+                }
+            }
+        }
+        
         NotificationCenter.default.addObserver(self, selector: #selector(playerDidFinishPlaying), name: .AVPlayerItemDidPlayToEndTime, object: playerItem)
+        NotificationCenter.default.addObserver(self, selector: #selector(playerFailedToPlayToEnd), name: .AVPlayerItemFailedToPlayToEndTime, object: playerItem)
+        
         setupTimeObserver()
+        player?.play()
         
         // Prefetch next song stream for gapless playback
         prefetchNextSongStream()
+    }
+    
+    @objc private func playerFailedToPlayToEnd(note: NSNotification) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            print("Song failed to play to end.")
+            self.playNext(isAutoPlay: true)
+        }
     }
     
     private func prefetchNextSongStream() {
@@ -131,6 +223,38 @@ class AudioPlayerManager: ObservableObject {
             if currentIndex + 1 == queue.count - 1 {
                 prefetchNextSongStream()
             }
+        }
+    }
+    
+    func playSongInQueue(at index: Int) {
+        guard index >= 0 && index < queue.count else { return }
+        currentIndex = index
+        play(song: queue[index])
+    }
+    
+    func removeFromQueue(at index: Int) {
+        guard index >= 0 && index < queue.count else { return }
+        if index == currentIndex {
+            playNext(isAutoPlay: true)
+        } else {
+            queue.remove(at: index)
+            if index < currentIndex {
+                currentIndex -= 1
+            }
+        }
+    }
+    
+    func moveInQueue(from source: IndexSet, to destination: Int) {
+        queue.move(fromOffsets: source, toOffset: destination)
+        if let current = currentSong, let newIdx = queue.firstIndex(where: { $0.id == current.id }) {
+            currentIndex = newIdx
+        }
+    }
+    
+    func clearUpcomingQueue() {
+        guard !queue.isEmpty else { return }
+        if currentIndex < queue.count {
+            queue = Array(queue[0...currentIndex])
         }
     }
     

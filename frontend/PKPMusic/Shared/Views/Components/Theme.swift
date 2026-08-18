@@ -1,30 +1,95 @@
 import SwiftUI
 
 struct Theme {
-    static let spiderRed = Color(hex: "E23636")
-    static let spiderNeonRed = Color(hex: "FF2A2A")
-    static let spiderBlack = Color(hex: "0B0C10")
-    static let spiderDarkGrey = Color(hex: "1F2833")
+    // Dynamic accessors delegating to ThemeManager
+    static var spiderRed: Color { ThemeManager.shared.currentTheme.primaryColor }
+    static var spiderNeonRed: Color { ThemeManager.shared.currentTheme.neonAccentColor }
+    static var spiderBlack: Color { ThemeManager.shared.currentTheme.backgroundColor }
+    static var spiderDarkGrey: Color { ThemeManager.shared.currentTheme.surfaceColor }
     
-    struct SpiderBackground: View {
+    // Semantic aliases
+    static var primary: Color { ThemeManager.shared.currentTheme.primaryColor }
+    static var neonAccent: Color { ThemeManager.shared.currentTheme.neonAccentColor }
+    static var secondaryAccent: Color { ThemeManager.shared.currentTheme.secondaryColor }
+    static var background: Color { ThemeManager.shared.currentTheme.backgroundColor }
+    static var surface: Color { ThemeManager.shared.currentTheme.surfaceColor }
+    static var glow: Color { ThemeManager.shared.currentTheme.glowColor }
+    
+    // Background Aliased for compatibility
+    typealias SpiderBackground = DynamicBackground
+    typealias SwingingMilesView = DynamicHeroView
+    
+    struct DynamicBackground: View {
+        @ObservedObject private var themeManager = ThemeManager.shared
         @State private var pulse = false
+        
         var body: some View {
             ZStack {
-                Theme.spiderBlack.edgesIgnoringSafeArea(.all)
-                RadialGradient(gradient: Gradient(colors: [Theme.spiderDarkGrey.opacity(pulse ? 0.9 : 0.5), Theme.spiderBlack]),
-                               center: .top,
-                               startRadius: pulse ? 100 : 20,
-                               endRadius: pulse ? 800 : 500)
+                themeManager.currentTheme.backgroundColor.edgesIgnoringSafeArea(.all)
+                
+                switch themeManager.currentTheme {
+                case .spiderman:
+                    RadialGradient(
+                        gradient: Gradient(colors: [themeManager.currentTheme.surfaceColor.opacity(pulse ? 0.9 : 0.5), themeManager.currentTheme.backgroundColor]),
+                        center: .top,
+                        startRadius: pulse ? 100 : 20,
+                        endRadius: pulse ? 800 : 500
+                    )
                     .edgesIgnoringSafeArea(.all)
                     .animation(Animation.easeInOut(duration: 4.0).repeatForever(autoreverses: true), value: pulse)
-                    .onAppear {
-                        pulse = true
+                    
+                case .batman:
+                    // Gotham Dark Vignette with Bat-Signal spotlight beam
+                    ZStack {
+                        RadialGradient(
+                            gradient: Gradient(colors: [Color(hex: "FFE600").opacity(pulse ? 0.08 : 0.03), themeManager.currentTheme.surfaceColor.opacity(0.4), themeManager.currentTheme.backgroundColor]),
+                            center: .top,
+                            startRadius: 10,
+                            endRadius: pulse ? 700 : 450
+                        )
+                        .edgesIgnoringSafeArea(.all)
+                        .animation(Animation.easeInOut(duration: 5.0).repeatForever(autoreverses: true), value: pulse)
                     }
+                    
+                case .ironman:
+                    // Stark Tech Arc Reactor Core Glow
+                    ZStack {
+                        RadialGradient(
+                            gradient: Gradient(colors: [Color(hex: "00F5FF").opacity(pulse ? 0.12 : 0.05), Color(hex: "E62429").opacity(0.08), themeManager.currentTheme.backgroundColor]),
+                            center: .top,
+                            startRadius: pulse ? 80 : 30,
+                            endRadius: pulse ? 750 : 500
+                        )
+                        .edgesIgnoringSafeArea(.all)
+                        .animation(Animation.easeInOut(duration: 3.0).repeatForever(autoreverses: true), value: pulse)
+                    }
+                }
+            }
+            .onAppear {
+                pulse = true
             }
         }
     }
     
-    struct SwingingMilesView: View {
+    struct DynamicHeroView: View {
+        @ObservedObject private var themeManager = ThemeManager.shared
+        
+        var body: some View {
+            Group {
+                switch themeManager.currentTheme {
+                case .spiderman:
+                    MilesSwingingView()
+                case .batman:
+                    BatmanGlidingView()
+                case .ironman:
+                    IronManHoverView()
+                }
+            }
+            .allowsHitTesting(false)
+        }
+    }
+    
+    struct MilesSwingingView: View {
         @State private var swingAngle: Double = -25
         
         var body: some View {
@@ -40,21 +105,109 @@ struct Theme {
                         .resizable()
                         .scaledToFit()
                         .frame(width: 200, height: 200)
-                        .offset(y: 350) // Position him at the end of the web
-                        .rotationEffect(.degrees(-swingAngle * 0.3)) // Adjust posture slightly while swinging
-                        .shadow(color: Theme.spiderNeonRed.opacity(0.8), radius: 20, x: 0, y: 0)
+                        .offset(y: 350)
+                        .rotationEffect(.degrees(-swingAngle * 0.3))
+                        .shadow(color: Color(hex: "FF2A2A").opacity(0.8), radius: 20, x: 0, y: 0)
                 }
                 .frame(width: 250, height: 600, alignment: .top)
-                // Anchor the rotation at the very top of the web
                 .rotationEffect(.degrees(swingAngle), anchor: .top)
-                .position(x: geo.size.width / 2, y: -20) // Hang from the exact middle of the screen!
+                .position(x: geo.size.width / 2, y: -20)
                 .onAppear {
                     withAnimation(Animation.easeInOut(duration: 2.2).repeatForever(autoreverses: true)) {
                         swingAngle = 25
                     }
                 }
             }
-            .allowsHitTesting(false) // Let touches pass through to the UI below
+        }
+    }
+    
+    struct BatmanGlidingView: View {
+        @State private var glideOffset: CGFloat = -180
+        @State private var wingFlap: Double = 0
+        
+        var body: some View {
+            GeometryReader { geo in
+                ZStack {
+                    // Bat-Signal spotlight glow at top center
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                gradient: Gradient(colors: [Color(hex: "FFE600").opacity(0.18), Color.clear]),
+                                center: .center,
+                                startRadius: 10,
+                                endRadius: 80
+                            )
+                        )
+                        .frame(width: 160, height: 160)
+                        .position(x: geo.size.width / 2, y: 50)
+                    
+                    // Batman Silhouetted Emblem Glider
+                    HStack(spacing: 0) {
+                        Image(systemName: "shield.lefthalf.filled")
+                            .font(.system(size: 26, weight: .bold))
+                            .foregroundColor(Color(hex: "FFE600"))
+                            .rotationEffect(.degrees(-wingFlap))
+                        
+                        Image(systemName: "shield.righthalf.filled")
+                            .font(.system(size: 26, weight: .bold))
+                            .foregroundColor(Color(hex: "FFE600"))
+                            .rotationEffect(.degrees(wingFlap))
+                    }
+                    .shadow(color: Color(hex: "FFE600").opacity(0.9), radius: 12, x: 0, y: 0)
+                    .position(x: geo.size.width / 2 + glideOffset, y: 45)
+                    .onAppear {
+                        withAnimation(Animation.easeInOut(duration: 4.5).repeatForever(autoreverses: true)) {
+                            glideOffset = 180
+                        }
+                        withAnimation(Animation.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
+                            wingFlap = 12
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    struct IronManHoverView: View {
+        @State private var hoverY: CGFloat = 35
+        @State private var arcPulse = false
+        
+        var body: some View {
+            GeometryReader { geo in
+                ZStack {
+                    // Floating Stark Tech Arc Reactor Orb
+                    VStack(spacing: 2) {
+                        ZStack {
+                            Circle()
+                                .stroke(Color(hex: "FFD700"), lineWidth: 2)
+                                .frame(width: 28, height: 28)
+                            
+                            Circle()
+                                .fill(Color(hex: "00F5FF"))
+                                .frame(width: 14, height: 14)
+                                .shadow(color: Color(hex: "00F5FF").opacity(0.9), radius: arcPulse ? 15 : 6, x: 0, y: 0)
+                        }
+                        
+                        // Repulsor jet flame
+                        Rectangle()
+                            .fill(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [Color(hex: "00F5FF"), Color.clear]),
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                            .frame(width: 3, height: arcPulse ? 18 : 10)
+                    }
+                    .position(x: geo.size.width / 2, y: hoverY)
+                    .onAppear {
+                        withAnimation(Animation.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
+                            hoverY = 52
+                            arcPulse = true
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -76,7 +229,6 @@ struct GlitchEffect: ViewModifier {
         }
         .animation(Animation.default.speed(30), value: isGlitching)
         .onAppear {
-            // Random glitching intervals
             Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { _ in
                 if Bool.random() {
                     isGlitching = true

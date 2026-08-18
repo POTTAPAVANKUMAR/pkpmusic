@@ -98,6 +98,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 STREAM_CACHE = {}
+LYRICS_CACHE = {}
 YT_DLP_SEMAPHORE = asyncio.Semaphore(5)
 
 @router.api_route("/stream/yt/{video_id}", methods=["GET", "HEAD"])
@@ -106,26 +107,26 @@ async def stream_youtube(video_id: str, request: Request):
     url = f"https://www.youtube.com/watch?v={video_id}"
     try:
         now = time.time()
-        # Clean up old cache entries if cache grows too large
+        # Clean up old cache entries if cache grows too large (1 hour TTL)
         if len(STREAM_CACHE) > 500:
             cleaned = 0
             for k in list(STREAM_CACHE.keys()):
-                if now - STREAM_CACHE[k]['time'] > 7200:
+                if now - STREAM_CACHE[k]['time'] > 3600:
                     del STREAM_CACHE[k]
                     cleaned += 1
             if cleaned > 0:
                 logger.info(f"Cleaned {cleaned} expired entries from stream cache.")
                 
         stream_url = None
-        if video_id in STREAM_CACHE:
+        if video_id in STREAM_CACHE and (now - STREAM_CACHE[video_id]['time'] < 3600):
             stream_url = STREAM_CACHE[video_id]['url']
             logger.info(f"Cache hit for video_id: {video_id}")
         else:
             logger.info(f"Cache miss for video_id: {video_id}. Preparing yt-dlp extraction.")
             command = [
                 "yt-dlp", "--no-warnings", "--dump-json",
-                "-f", "140/bestaudio[ext=m4a]/bestaudio/18",
-                "--extractor-args", "youtube:player_client=android,web",
+                "-f", "140/bestaudio[ext=m4a]/bestaudio[acodec^=mp4a]/18/best[ext=mp4]/bestaudio/best",
+                "--extractor-args", "youtube:player_client=ios,android,web",
                 url
             ]
             
@@ -174,10 +175,38 @@ async def stream_youtube(video_id: str, request: Request):
         logger.error(f"STREAM ERROR for {video_id}: {err_msg}")
         raise HTTPException(status_code=500, detail=f"Stream error: {str(e)}")
 
+def sanitize_metadata_for_lyrics(title: str, artist: str):
+    """Clean artist and title strings for external lyrics search engines."""
+    clean_artist = artist.replace(" - Topic", "").replace("VEVO", "").replace(" Official", "").strip()
+    if "," in clean_artist:
+        clean_artist = clean_artist.split(",")[0].strip()
+    if "&" in clean_artist:
+        clean_artist = clean_artist.split("&")[0].strip()
+    
+    import re
+    clean_artist = re.split(r'\s+(?:feat\.|ft\.|featuring)\s+', clean_artist, flags=re.IGNORECASE)[0].strip()
+
+    clean_title = title
+    # Remove bracketed extras like (Official Music Video), [Lyric Video], (Audio), etc.
+    clean_title = re.sub(r'[\(\[][^\)\]]*(?:video|audio|visualizer|lyric|remaster|version|explicit|prod\.)[^\)\]]*[\)\]]', '', clean_title, flags=re.IGNORECASE)
+    clean_title = re.sub(r'[\(\[].*?[\)\]]', '', clean_title) # Remove remaining parentheses if clean
+    clean_title = clean_title.split("-")[0].strip() if "-" in clean_title and len(clean_title.split("-")[0].strip()) > 2 else clean_title.strip()
+    clean_title = clean_title.strip()
+    if not clean_title:
+        clean_title = title.split("(")[0].split("[")[0].strip()
+        
+    return clean_title, clean_artist
+
 @router.get("/lyrics/{video_id}", response_model=schemas.LyricsResponse)
 def get_lyrics(video_id: str):
+    now = time.time()
+    # Check cache first
+    if video_id in LYRICS_CACHE and (now - LYRICS_CACHE[video_id]['time'] < 86400):
+        cached = LYRICS_CACHE[video_id]
+        return schemas.LyricsResponse(lyrics=cached['lyrics'], source=cached['source'])
+
     try:
-        # First, try to get the song details to use for a fallback search
+        # 1. Fetch song details (title & artist) from YouTube
         song_title = "Unknown"
         song_artist = "Unknown"
         try:
@@ -188,36 +217,68 @@ def get_lyrics(video_id: str):
         except Exception:
             pass
 
-        # Try to use ytmusicapi to get official lyrics
+        # 2. Tier 1: Try official YouTube Music lyrics via ytmusicapi
         lyrics_id = None
         try:
             watch_playlist = yt.get_watch_playlist(videoId=video_id)
             lyrics_id = watch_playlist.get('lyrics')
-        except KeyError:
+        except Exception:
             pass
             
         if lyrics_id:
-            lyrics_data = yt.get_lyrics(lyrics_id)
-            return schemas.LyricsResponse(
-                lyrics=lyrics_data.get('lyrics', ''),
-                source=lyrics_data.get('source', 'YouTube Music')
-            )
+            try:
+                lyrics_data = yt.get_lyrics(lyrics_id)
+                lyrics_text = lyrics_data.get('lyrics', '')
+                if lyrics_text and lyrics_text.strip():
+                    source = lyrics_data.get('source', 'YouTube Music')
+                    LYRICS_CACHE[video_id] = {'lyrics': lyrics_text.strip(), 'source': source, 'time': now}
+                    return schemas.LyricsResponse(
+                        lyrics=lyrics_text.strip(),
+                        source=source
+                    )
+            except Exception:
+                pass
             
-        # Fallback to lyrics.ovh API
+        # 3. Tier 2: Try LRCLIB API
         if song_title != "Unknown" and song_artist != "Unknown":
-            # Clean up artist name (remove " - Topic" if present)
-            clean_artist = song_artist.replace(" - Topic", "").replace("VEVO", "")
-            
-            # Clean up title (remove "(Official Video)", etc.)
-            clean_title = song_title.split("(")[0].split("[")[0].strip()
+            clean_title, clean_artist = sanitize_metadata_for_lyrics(song_title, song_artist)
             
             try:
-                response = httpx.get(f"https://api.lyrics.ovh/v1/{clean_artist}/{clean_title}", timeout=5.0)
+                lrclib_url = f"https://lrclib.net/api/get?track_name={httpx.URL(clean_title).raw_path.decode()}&artist_name={httpx.URL(clean_artist).raw_path.decode()}"
+                response = httpx.get(
+                    "https://lrclib.net/api/get",
+                    params={"track_name": clean_title, "artist_name": clean_artist},
+                    headers={"User-Agent": "PKPMusic/1.0"},
+                    timeout=4.0
+                )
                 if response.status_code == 200:
                     data = response.json()
-                    if "lyrics" in data:
+                    lyrics_text = data.get("plainLyrics") or data.get("syncedLyrics")
+                    if lyrics_text and lyrics_text.strip():
+                        LYRICS_CACHE[video_id] = {'lyrics': lyrics_text.strip(), 'source': 'LRCLIB', 'time': now}
                         return schemas.LyricsResponse(
-                            lyrics=data["lyrics"],
+                            lyrics=lyrics_text.strip(),
+                            source="LRCLIB"
+                        )
+            except Exception as e:
+                logger.warning(f"LRCLIB fetch error for {clean_title} - {clean_artist}: {e}")
+
+            # 4. Tier 3: Fallback to Lyrics.ovh API
+            try:
+                clean_artist_enc = httpx.URL(clean_artist).raw_path.decode()
+                clean_title_enc = httpx.URL(clean_title).raw_path.decode()
+                response = httpx.get(
+                    f"https://api.lyrics.ovh/v1/{clean_artist}/{clean_title}",
+                    headers={"User-Agent": "PKPMusic/1.0"},
+                    timeout=4.0
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    if "lyrics" in data and data["lyrics"].strip():
+                        lyrics_text = data["lyrics"].strip()
+                        LYRICS_CACHE[video_id] = {'lyrics': lyrics_text, 'source': 'Lyrics.ovh', 'time': now}
+                        return schemas.LyricsResponse(
+                            lyrics=lyrics_text,
                             source="Lyrics.ovh"
                         )
             except Exception:
