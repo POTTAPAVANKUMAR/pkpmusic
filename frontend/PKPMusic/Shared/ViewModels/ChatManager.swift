@@ -2,6 +2,8 @@ import Foundation
 import Combine
 
 class ChatManager: ObservableObject {
+    static let shared = ChatManager()
+    
     @Published var friends: [Friendship] = []
     @Published var pendingRequests: [Friendship] = []
     @Published var searchResults: [ChatUser] = []

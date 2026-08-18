@@ -548,9 +548,10 @@ struct LyricsView: View {
                 
                 let min = Double(rawLine[minRange]) ?? 0
                 let sec = Double(rawLine[secRange]) ?? 0
-                let mil = Double(rawLine[milRange]) ?? 0
+                let milString = rawLine[milRange]
+                let mil = Double(milString) ?? 0
                 
-                let time = (min * 60) + sec + (mil / (milRange.count == 3 ? 1000.0 : 100.0))
+                let time = (min * 60) + sec + (mil / (milString.count == 3 ? 1000.0 : 100.0))
                 let text = String(rawLine[textRange]).trimmingCharacters(in: .whitespaces)
                 
                 if !text.isEmpty {
