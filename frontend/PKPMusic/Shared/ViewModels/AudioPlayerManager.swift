@@ -49,6 +49,8 @@ class AudioPlayerManager: ObservableObject {
         retryWorkItem?.cancel()
         retryWorkItem = nil
         
+        player?.pause()
+        
         if let observer = timeObserver {
             player?.removeTimeObserver(observer)
             timeObserver = nil
