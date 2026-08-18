@@ -109,33 +109,63 @@ def get_dashboard_sync(user_id: int, db: Session):
     except Exception as e:
         print(f"Error fetching moods: {e}")
 
-    # 4. Featured Playlists
+    # 4. Personalized Playlists (Replacing Featured Playlists)
     try:
-        home = yt.get_home(limit=2)
-        for section in home:
-            title = section.get('title', 'Featured')
-            items = []
-            for content in section.get('contents', [])[:10]:
-                if content.get('videoId'):
-                    items.append(schemas.DashboardItem(
-                        id=content['videoId'],
-                        title=content.get('title', 'Unknown'),
-                        subtitle=", ".join([a['name'] for a in content.get('artists', [])]) if content.get('artists') else "",
-                        image_url=upscale_thumbnail(content.get('thumbnails')[-1].get('url')) if content.get('thumbnails') else None,
-                        type="song"
-                    ))
-                elif content.get('playlistId'):
-                    items.append(schemas.DashboardItem(
-                        id=content['playlistId'],
-                        title=content.get('title', 'Unknown'),
-                        subtitle=content.get('description'),
-                        image_url=upscale_thumbnail(content.get('thumbnails')[-1].get('url')) if content.get('thumbnails') else None,
-                        type="playlist"
-                    ))
-            if items:
-                sections.append(schemas.DashboardSection(title=title, items=items))
+        history = crud.get_history(db, user_id=user_id, limit=50)
+        seed_artists = []
+        for h in history:
+            if h.song and h.song.artist:
+                first_artist = h.song.artist.split(",")[0].strip()
+                if first_artist and first_artist not in seed_artists:
+                    seed_artists.append(first_artist)
+                if len(seed_artists) >= 2:
+                    break
+        
+        if seed_artists:
+            for artist in seed_artists:
+                results = yt.search(f"{artist}", filter="playlists", limit=5)
+                items = []
+                for content in results:
+                    p_id = content.get('playlistId') or content.get('browseId')
+                    if p_id:
+                        if p_id.startswith("VL"):
+                            p_id = p_id[2:]
+                        items.append(schemas.DashboardItem(
+                            id=p_id,
+                            title=content.get('title', 'Unknown'),
+                            subtitle=content.get('author', ''),
+                            image_url=upscale_thumbnail(content.get('thumbnails')[-1].get('url')) if content.get('thumbnails') else None,
+                            type="playlist"
+                        ))
+                if items:
+                    sections.append(schemas.DashboardSection(title=f"Playlists for fans of {artist}", items=items))
+        else:
+            # Fallback to generic home
+            home = yt.get_home(limit=2)
+            for section in home:
+                title = section.get('title', 'Featured')
+                items = []
+                for content in section.get('contents', [])[:10]:
+                    if content.get('videoId'):
+                        items.append(schemas.DashboardItem(
+                            id=content['videoId'],
+                            title=content.get('title', 'Unknown'),
+                            subtitle=", ".join([a['name'] for a in content.get('artists', [])]) if content.get('artists') else "",
+                            image_url=upscale_thumbnail(content.get('thumbnails')[-1].get('url')) if content.get('thumbnails') else None,
+                            type="song"
+                        ))
+                    elif content.get('playlistId'):
+                        items.append(schemas.DashboardItem(
+                            id=content['playlistId'],
+                            title=content.get('title', 'Unknown'),
+                            subtitle=content.get('description'),
+                            image_url=upscale_thumbnail(content.get('thumbnails')[-1].get('url')) if content.get('thumbnails') else None,
+                            type="playlist"
+                        ))
+                if items:
+                    sections.append(schemas.DashboardSection(title=title, items=items))
     except Exception as e:
-        print(f"Error fetching home features: {e}")
+        print(f"Error fetching personalized playlists: {e}")
 
     # 5. Top Artists (Combined)
     try:

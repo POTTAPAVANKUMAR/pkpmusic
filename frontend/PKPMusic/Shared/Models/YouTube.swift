@@ -3,6 +3,7 @@ import Foundation
 struct LyricsResponse: Codable {
     let lyrics: String
     let source: String
+    let isSynced: Bool?
 }
 
 struct Thumbnail: Codable {

@@ -21,6 +21,7 @@ class AudioPlayerManager: ObservableObject {
     @Published var isShuffled = false
     @Published var isAutoPlayEnabled = true
     @Published var isVideoMode = false
+    @Published var videoQuality: String = UserDefaults.standard.string(forKey: "videoQuality") ?? "auto"
     
     enum RepeatMode {
         case off, all, one
@@ -38,6 +39,16 @@ class AudioPlayerManager: ObservableObject {
     
     init() {
         setupRemoteTransportControls()
+    }
+    
+    func setVideoQuality(_ quality: String) {
+        self.videoQuality = quality
+        UserDefaults.standard.set(quality, forKey: "videoQuality")
+        
+        if isPlaying, let currentSong = currentSong, isVideoMode {
+            let currentProgress = progress
+            play(song: currentSong, startTime: currentProgress)
+        }
     }
     
     func playSong(songId: String) {
@@ -73,7 +84,7 @@ class AudioPlayerManager: ObservableObject {
         let url: URL
         if let localUrl = DownloadManager.shared.localURL(for: song.id) {
             url = localUrl
-        } else if let remoteUrl = NetworkManager.shared.getStreamURL(for: song.id, video: isVideoMode) {
+        } else if let remoteUrl = NetworkManager.shared.getStreamURL(for: song.id, video: isVideoMode, quality: videoQuality) {
             url = remoteUrl
         } else {
             self.playbackError = "Invalid song URL"

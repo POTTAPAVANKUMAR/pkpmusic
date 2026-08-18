@@ -125,6 +125,7 @@ class DashboardSection(BaseModel):
 class LyricsResponse(BaseModel):
     lyrics: str
     source: str
+    isSynced: bool = False
 
 class ArtistDetail(BaseModel):
     name: str

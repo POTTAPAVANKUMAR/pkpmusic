@@ -102,7 +102,7 @@ LYRICS_CACHE = {}
 YT_DLP_SEMAPHORE = asyncio.Semaphore(5)
 
 @router.api_route("/stream/yt/{video_id}", methods=["GET", "HEAD"])
-async def stream_youtube(video_id: str, request: Request, video: bool = False):
+async def stream_youtube(video_id: str, request: Request, video: bool = False, quality: str = "auto"):
     logger.info(f"Received stream request for video_id: {video_id}")
     url = f"https://www.youtube.com/watch?v={video_id}"
     try:
@@ -118,14 +118,22 @@ async def stream_youtube(video_id: str, request: Request, video: bool = False):
                 logger.info(f"Cleaned {cleaned} expired entries from stream cache.")
                 
         stream_url = None
-        cache_key = f"{video_id}_video" if video else f"{video_id}_audio"
+        cache_key = f"{video_id}_video_{quality}" if video else f"{video_id}_audio"
         if cache_key in STREAM_CACHE and (now - STREAM_CACHE[cache_key]['time'] < 3600):
             stream_url = STREAM_CACHE[cache_key]['url']
             logger.info(f"Cache hit for {cache_key}")
         else:
             logger.info(f"Cache miss for {cache_key}. Preparing yt-dlp extraction.")
             
-            format_str = "18/best[ext=mp4]/best" if video else "140/bestaudio[ext=m4a]/bestaudio[acodec^=mp4a]/18/best[ext=mp4]/bestaudio/best"
+            if video:
+                if quality == "720p":
+                    format_str = "22/best[height<=720][ext=mp4]/best"
+                elif quality == "360p":
+                    format_str = "18/best[height<=360][ext=mp4]/best"
+                else:
+                    format_str = "22/18/b[ext=mp4]/best"
+            else:
+                format_str = "140/bestaudio[ext=m4a]/bestaudio[acodec^=mp4a]/18/best[ext=mp4]/bestaudio/best"
             
             command = [
                 "yt-dlp", "--no-warnings", "--dump-json",
@@ -207,7 +215,7 @@ def get_lyrics(video_id: str):
     # Check cache first
     if video_id in LYRICS_CACHE and (now - LYRICS_CACHE[video_id]['time'] < 86400):
         cached = LYRICS_CACHE[video_id]
-        return schemas.LyricsResponse(lyrics=cached['lyrics'], source=cached['source'])
+        return schemas.LyricsResponse(lyrics=cached['lyrics'], source=cached['source'], isSynced=cached.get('isSynced', False))
 
     try:
         # 1. Fetch song details (title & artist) from YouTube
@@ -257,12 +265,21 @@ def get_lyrics(video_id: str):
                 )
                 if response.status_code == 200:
                     data = response.json()
-                    lyrics_text = data.get("plainLyrics") or data.get("syncedLyrics")
-                    if lyrics_text and lyrics_text.strip():
-                        LYRICS_CACHE[video_id] = {'lyrics': lyrics_text.strip(), 'source': 'LRCLIB', 'time': now}
+                    synced = data.get("syncedLyrics")
+                    plain = data.get("plainLyrics")
+                    if synced and synced.strip():
+                        LYRICS_CACHE[video_id] = {'lyrics': synced.strip(), 'source': 'LRCLIB (Synced)', 'time': now, 'isSynced': True}
                         return schemas.LyricsResponse(
-                            lyrics=lyrics_text.strip(),
-                            source="LRCLIB"
+                            lyrics=synced.strip(),
+                            source="LRCLIB (Synced)",
+                            isSynced=True
+                        )
+                    elif plain and plain.strip():
+                        LYRICS_CACHE[video_id] = {'lyrics': plain.strip(), 'source': 'LRCLIB', 'time': now, 'isSynced': False}
+                        return schemas.LyricsResponse(
+                            lyrics=plain.strip(),
+                            source="LRCLIB",
+                            isSynced=False
                         )
             except Exception as e:
                 logger.warning(f"LRCLIB fetch error for {clean_title} - {clean_artist}: {e}")
