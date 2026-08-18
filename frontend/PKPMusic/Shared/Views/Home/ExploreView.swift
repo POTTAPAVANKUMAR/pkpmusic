@@ -2,7 +2,7 @@ import SwiftUI
 
 struct ExploreView: View {
     @StateObject private var networkManager = NetworkManager.shared
-    @State private var exploreData: YTExploreData?
+    @State private var exploreSections: [DashboardSection] = []
     @State private var isLoading = false
     
     var body: some View {
@@ -14,28 +14,27 @@ struct ExploreView: View {
                     VStack(alignment: .leading, spacing: 20) {
                         if isLoading {
                             ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle())
+                                .progressViewStyle(CircularProgressViewStyle(tint: Theme.neonAccent))
                                 .frame(maxWidth: .infinity, minHeight: 200)
-                        } else if exploreData != nil {
-                            // Normally we would parse exploreData and show sections
-                            Text("Explore Data Loaded (Raw parsing required)")
-                                .foregroundColor(.secondary)
-                                .padding()
+                        } else if !exploreSections.isEmpty {
+                            ForEach(exploreSections) { section in
+                                DashboardSectionView(section: section)
+                            }
                         } else {
                             Text("Failed to load explore data.")
                                 .foregroundColor(.secondary)
                                 .padding()
                         }
                     }
-                    .padding()
+                    .padding(.vertical)
                 }
                 .navigationTitle("Explore")
             }
             .onAppear {
-                if exploreData == nil && !isLoading {
+                if exploreSections.isEmpty && !isLoading {
                     isLoading = true
-                    networkManager.fetchExplore { data in
-                        self.exploreData = data
+                    networkManager.fetchExplore { sections in
+                        self.exploreSections = sections
                         self.isLoading = false
                     }
                 }

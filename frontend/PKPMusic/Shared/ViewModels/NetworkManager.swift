@@ -377,15 +377,14 @@ class NetworkManager: ObservableObject {
     
     // MARK: - New ytmusicapi Endpoints
     
-    func fetchExplore(completion: @escaping (YTExploreData?) -> Void) {
+    func fetchExplore(completion: @escaping ([DashboardSection]) -> Void) {
         guard let request = createRequest(for: "\(baseURL)/dashboard/explore/") else { return }
         URLSession.shared.dataTask(with: request) { data, _, _ in
             if let data = data {
-                // Explore is complex, just try parsing what we defined or return nil for now
-                let res = try? JSONDecoder().decode(YTExploreData.self, from: data)
-                DispatchQueue.main.async { completion(res) }
+                let res = try? JSONDecoder().decode([DashboardSection].self, from: data)
+                DispatchQueue.main.async { completion(res ?? []) }
             } else {
-                DispatchQueue.main.async { completion(nil) }
+                DispatchQueue.main.async { completion([]) }
             }
         }.resume()
     }

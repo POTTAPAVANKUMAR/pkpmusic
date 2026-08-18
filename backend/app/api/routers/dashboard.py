@@ -228,14 +228,45 @@ def get_mood_playlists(params: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/explore/", response_model=dict)
+@router.get("/explore/", response_model=List[schemas.DashboardSection])
 def get_explore():
     """
-    Get the generic explore page using yt.get_explore()
+    Get the generic explore page using yt.get_home() to show globally trending community playlists, new releases, and moods.
     """
     try:
-        explore_data = yt.get_explore()
-        return {"explore": explore_data}
+        sections = []
+        home = yt.get_home(limit=8)
+        for section in home:
+            title = section.get('title', 'Featured')
+            items = []
+            for content in section.get('contents', [])[:12]:
+                if content.get('videoId'):
+                    items.append(schemas.DashboardItem(
+                        id=content['videoId'],
+                        title=content.get('title', 'Unknown'),
+                        subtitle=", ".join([a['name'] for a in content.get('artists', [])]) if content.get('artists') else "",
+                        image_url=upscale_thumbnail(content.get('thumbnails')[-1].get('url')) if content.get('thumbnails') else None,
+                        type="song"
+                    ))
+                elif content.get('playlistId'):
+                    items.append(schemas.DashboardItem(
+                        id=content['playlistId'],
+                        title=content.get('title', 'Unknown'),
+                        subtitle=content.get('description'),
+                        image_url=upscale_thumbnail(content.get('thumbnails')[-1].get('url')) if content.get('thumbnails') else None,
+                        type="playlist"
+                    ))
+                elif content.get('browseId'):
+                    items.append(schemas.DashboardItem(
+                        id=content['browseId'],
+                        title=content.get('title', 'Unknown'),
+                        subtitle=content.get('subtitle', ''),
+                        image_url=upscale_thumbnail(content.get('thumbnails')[-1].get('url')) if content.get('thumbnails') else None,
+                        type="album" if not content.get('browseId').startswith('UC') else "artist"
+                    ))
+            if items:
+                sections.append(schemas.DashboardSection(title=title, items=items))
+        return sections
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

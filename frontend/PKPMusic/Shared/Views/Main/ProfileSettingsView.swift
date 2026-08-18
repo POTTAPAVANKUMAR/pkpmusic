@@ -3,10 +3,12 @@ import SwiftUI
 struct ProfileSettingsView: View {
     @StateObject private var authManager = AuthManager.shared
     @ObservedObject private var themeManager = ThemeManager.shared
+    @StateObject private var chatManager = ChatManager.shared
     @State private var showingImagePicker = false
     @State private var inputImage: UIImage?
     @State private var profilePictureUrl: String?
     @State private var isUploading = false
+    @State private var searchQuery: String = ""
     
     var body: some View {
         ZStack {
@@ -51,6 +53,79 @@ struct ProfileSettingsView: View {
                             .progressViewStyle(CircularProgressViewStyle(tint: Theme.neonAccent))
                             .foregroundColor(.white)
                     }
+                    
+                    // Friend Search Section
+                    VStack(alignment: .leading, spacing: 14) {
+                        HStack {
+                            Text("FIND FRIENDS")
+                                .font(.caption)
+                                .fontWeight(.bold)
+                                .foregroundColor(ThemeManager.shared.currentTheme.primaryColor)
+                                .tracking(2)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 4)
+                        
+                        HStack {
+                            Image(systemName: "magnifyingglass")
+                                .foregroundColor(.gray)
+                            TextField("Search users by name...", text: $searchQuery)
+                                .foregroundColor(.white)
+                                .onChange(of: searchQuery) { newValue in
+                                    if newValue.count >= 2 {
+                                        if let token = authManager.token {
+                                            chatManager.searchUsers(query: newValue, token: token)
+                                        }
+                                    } else {
+                                        chatManager.searchResults = []
+                                    }
+                                }
+                        }
+                        .padding(12)
+                        .background(Theme.surface)
+                        .cornerRadius(12)
+                        
+                        if !chatManager.searchResults.isEmpty {
+                            VStack(spacing: 0) {
+                                ForEach(chatManager.searchResults) { user in
+                                    HStack {
+                                        ProfileImageView(urlString: user.profilePictureUrl)
+                                            .frame(width: 40, height: 40)
+                                            .clipShape(Circle())
+                                        
+                                        Text(user.username)
+                                            .font(.subheadline)
+                                            .foregroundColor(.white)
+                                        
+                                        Spacer()
+                                        
+                                        Button(action: {
+                                            if let token = authManager.token {
+                                                chatManager.sendRequest(friendId: user.id, token: token)
+                                                let generator = UIImpactFeedbackGenerator(style: .medium)
+                                                generator.impactOccurred()
+                                                searchQuery = ""
+                                                chatManager.searchResults = []
+                                            }
+                                        }) {
+                                            Image(systemName: "person.badge.plus")
+                                                .foregroundColor(ThemeManager.shared.currentTheme.primaryColor)
+                                                .font(.title3)
+                                        }
+                                    }
+                                    .padding(.vertical, 10)
+                                    .padding(.horizontal, 12)
+                                    
+                                    if user.id != chatManager.searchResults.last?.id {
+                                        Divider().background(Color.white.opacity(0.1))
+                                    }
+                                }
+                            }
+                            .background(Theme.surface)
+                            .cornerRadius(12)
+                        }
+                    }
+                    .padding(.horizontal)
                     
                     // Theme Selection Section
                     VStack(alignment: .leading, spacing: 14) {
