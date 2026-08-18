@@ -34,3 +34,39 @@ struct AlbumDetail: Codable {
     let thumbnails: [Thumbnail]
     let songs: [Song]
 }
+
+// MARK: - New Models
+
+struct YTRelatedData: Codable {
+    let related: [Song]?
+}
+
+struct YTExploreData: Codable {
+    // Explore data is heavily nested, often just a dictionary in python.
+    // We can define a generic container or just use raw data parsing in NetworkManager
+}
+
+struct PodcastChannel: Codable {
+    let title: String?
+    let description: String?
+    let thumbnails: [Thumbnail]?
+}
+
+struct Podcast: Codable {
+    let title: String?
+    let description: String?
+    let thumbnails: [Thumbnail]?
+}
+
+struct PodcastEpisode: Codable {
+    let title: String?
+    let description: String?
+    let thumbnails: [Thumbnail]?
+    let duration: String?
+}
+
+struct YTUserProfile: Codable {
+    let name: String?
+    let thumbnails: [Thumbnail]?
+}
+

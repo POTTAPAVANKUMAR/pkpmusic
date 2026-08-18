@@ -7,6 +7,7 @@ from app.crud import crud
 from app.core import security as auth
 from app.db.database import get_db
 from app.db import models
+from app.services.youtube import yt
 
 router = APIRouter(prefix="/social", tags=["social"])
 
@@ -52,3 +53,38 @@ def get_pending_requests(current_user: models.User = Depends(auth.get_current_us
 def get_chat_history(friend_id: int, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(get_db)):
     messages = crud.get_chat_history(db, user_id=current_user.id, friend_id=friend_id)
     return messages
+
+@router.get("/yt/users/{channel_id}", response_model=dict)
+def get_yt_user(channel_id: str):
+    """
+    Get a YouTube Music user's public profile.
+    """
+    try:
+        user_info = yt.get_user(channel_id)
+        return user_info
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/yt/users/{channel_id}/playlists", response_model=dict)
+def get_yt_user_playlists(channel_id: str, params: str = ""):
+    """
+    Get a YouTube Music user's public playlists.
+    """
+    try:
+        # get_user_playlists requires channel_id and params (from get_user response)
+        playlists = yt.get_user_playlists(channel_id, params)
+        return {"playlists": playlists}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/yt/users/{channel_id}/videos", response_model=dict)
+def get_yt_user_videos(channel_id: str, params: str = ""):
+    """
+    Get a YouTube Music user's public videos.
+    """
+    try:
+        videos = yt.get_user_videos(channel_id, params)
+        return {"videos": videos}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+

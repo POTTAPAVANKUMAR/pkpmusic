@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.api.routers import auth, playlists, songs, social, dashboard
+from app.api.routers import auth, playlists, songs, social, dashboard, podcasts
 from app.services import websocket
 from app.db.database import engine
 from app.db import models
@@ -26,6 +26,7 @@ app.include_router(playlists.router)
 app.include_router(songs.router)
 app.include_router(social.router)
 app.include_router(dashboard.router)
+app.include_router(podcasts.router)
 app.include_router(websocket.router)
 
 @app.on_event("startup")

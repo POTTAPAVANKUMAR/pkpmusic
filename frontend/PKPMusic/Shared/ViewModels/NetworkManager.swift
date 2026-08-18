@@ -374,4 +374,82 @@ class NetworkManager: ObservableObject {
             }
         }.resume()
     }
+    
+    // MARK: - New ytmusicapi Endpoints
+    
+    func fetchExplore(completion: @escaping (YTExploreData?) -> Void) {
+        guard let request = createRequest(for: "\(baseURL)/dashboard/explore/") else { return }
+        URLSession.shared.dataTask(with: request) { data, _, _ in
+            if let data = data {
+                // Explore is complex, just try parsing what we defined or return nil for now
+                let res = try? JSONDecoder().decode(YTExploreData.self, from: data)
+                DispatchQueue.main.async { completion(res) }
+            } else {
+                DispatchQueue.main.async { completion(nil) }
+            }
+        }.resume()
+    }
+    
+    func fetchSongRelated(videoId: String, completion: @escaping (YTRelatedData?) -> Void) {
+        guard let request = createRequest(for: "\(baseURL)/songs/\(videoId)/related") else { return }
+        URLSession.shared.dataTask(with: request) { data, _, _ in
+            if let data = data {
+                let res = try? JSONDecoder().decode(YTRelatedData.self, from: data)
+                DispatchQueue.main.async { completion(res) }
+            } else {
+                DispatchQueue.main.async { completion(nil) }
+            }
+        }.resume()
+    }
+    
+    func fetchSongCredits(videoId: String, completion: @escaping ([String: Any]?) -> Void) {
+        guard let request = createRequest(for: "\(baseURL)/songs/\(videoId)/credits") else { return }
+        URLSession.shared.dataTask(with: request) { data, _, _ in
+            if let data = data, let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                DispatchQueue.main.async { completion(json) }
+            } else {
+                DispatchQueue.main.async { completion(nil) }
+            }
+        }.resume()
+    }
+    
+    func fetchArtistAlbums(channelId: String, params: String, completion: @escaping ([AlbumRef]?) -> Void) {
+        let url = "\(baseURL)/songs/artist/\(channelId)/albums?params=\(params)"
+        guard let request = createRequest(for: url) else { return }
+        URLSession.shared.dataTask(with: request) { data, _, _ in
+            if let data = data {
+                struct AlbumsResponse: Codable { let albums: [AlbumRef] }
+                let res = try? JSONDecoder().decode(AlbumsResponse.self, from: data)
+                DispatchQueue.main.async { completion(res?.albums) }
+            } else {
+                DispatchQueue.main.async { completion(nil) }
+            }
+        }.resume()
+    }
+    
+    func fetchYTUserProfile(channelId: String, completion: @escaping (YTUserProfile?) -> Void) {
+        guard let request = createRequest(for: "\(baseURL)/social/yt/users/\(channelId)") else { return }
+        URLSession.shared.dataTask(with: request) { data, _, _ in
+            if let data = data {
+                let res = try? JSONDecoder().decode(YTUserProfile.self, from: data)
+                DispatchQueue.main.async { completion(res) }
+            } else {
+                DispatchQueue.main.async { completion(nil) }
+            }
+        }.resume()
+    }
+    
+    func fetchPodcastChannel(channelId: String, completion: @escaping (PodcastChannel?) -> Void) {
+        guard let request = createRequest(for: "\(baseURL)/podcasts/channel/\(channelId)") else { return }
+        URLSession.shared.dataTask(with: request) { data, _, _ in
+            if let data = data {
+                struct Res: Codable { let channel: PodcastChannel }
+                let res = try? JSONDecoder().decode(Res.self, from: data)
+                DispatchQueue.main.async { completion(res?.channel) }
+            } else {
+                DispatchQueue.main.async { completion(nil) }
+            }
+        }.resume()
+    }
 }
+

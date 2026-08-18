@@ -198,6 +198,17 @@ def get_mood_playlists(params: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/explore/", response_model=dict)
+def get_explore():
+    """
+    Get the generic explore page using yt.get_explore()
+    """
+    try:
+        explore_data = yt.get_explore()
+        return {"explore": explore_data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/bookmarks/", response_model=schemas.BookmarkResponse)
 def add_bookmark(bookmark: schemas.BookmarkCreate, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(get_db)):
     # Clear dashboard cache

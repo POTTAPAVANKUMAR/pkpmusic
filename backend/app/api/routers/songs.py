@@ -457,3 +457,47 @@ def get_upnext(video_id: str):
         return formatted
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/{video_id}/related", response_model=dict)
+def get_song_related(video_id: str):
+    """
+    Get related songs for a given video ID using yt.get_song_related()
+    """
+    try:
+        watch_playlist = yt.get_watch_playlist(videoId=video_id)
+        related_browse_id = watch_playlist.get("related")
+        if not related_browse_id:
+            raise HTTPException(status_code=404, detail="No related content found for this song")
+        
+        related_data = yt.get_song_related(related_browse_id)
+        return {"related": related_data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/{video_id}/credits", response_model=dict)
+def get_song_credits(browse_id: str):
+    """
+    Get credits for a song using its credits browseId.
+    """
+    try:
+        credits_data = yt.get_song_credits(browse_id)
+        return {"credits": credits_data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/artist/{channel_id}/albums", response_model=dict)
+def get_artist_albums_endpoint(channel_id: str, params: str = ""):
+    """
+    Get all albums for an artist.
+    """
+    try:
+        if not params:
+            artist_info = yt.get_artist(channel_id)
+            if 'albums' in artist_info and 'browseId' in artist_info['albums']:
+                channel_id = artist_info['albums']['browseId']
+                params = artist_info['albums'].get('params', "")
+        
+        albums = yt.get_artist_albums(channel_id, params)
+        return {"albums": albums}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

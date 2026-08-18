@@ -19,6 +19,11 @@ struct ContentView: View {
                                 .tabItem {
                                     Label("Home", systemImage: "music.note.house.fill")
                                 }
+                                
+                            ExploreView()
+                                .tabItem {
+                                    Label("Explore", systemImage: "safari.fill")
+                                }
                             
                             LibraryView()
                                 .tabItem {

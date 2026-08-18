@@ -179,11 +179,21 @@ struct ArtistDetailView: View {
                         // Albums section
                         if let albums = detail.albums, !albums.isEmpty {
                             VStack(alignment: .leading) {
-                                Text("Albums")
-                                    .font(.title2)
-                                    .bold()
-                                    .foregroundColor(.white)
-                                    .padding(.horizontal)
+                                HStack {
+                                    Text("Albums")
+                                        .font(.title2)
+                                        .bold()
+                                        .foregroundColor(.white)
+                                    
+                                    Spacer()
+                                    
+                                    NavigationLink(destination: ArtistAlbumsView(artistId: artistId, artistName: detail.name)) {
+                                        Text("See All")
+                                            .font(.subheadline)
+                                            .foregroundColor(Theme.spiderRed)
+                                    }
+                                }
+                                .padding(.horizontal)
                                 
                                 ScrollView(.horizontal, showsIndicators: false) {
                                     HStack(spacing: 16) {
