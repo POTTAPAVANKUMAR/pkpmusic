@@ -79,8 +79,8 @@ struct MiniPlayerView: View {
                             dragOffset = .zero
                             
                             // Screen bounds to snap and prevent getting lost
-                            let screenWidth = UIScreen.main.bounds.width
-                            let screenHeight = UIScreen.main.bounds.height
+                            let screenWidth = (UIApplication.shared.connectedScenes.first as? UIWindowScene)?.screen.bounds.width ?? 400
+                            let screenHeight = (UIApplication.shared.connectedScenes.first as? UIWindowScene)?.screen.bounds.height ?? 800
                             
                             let xLimit = (screenWidth / 2) - 40
                             if position.width > xLimit { position.width = xLimit }

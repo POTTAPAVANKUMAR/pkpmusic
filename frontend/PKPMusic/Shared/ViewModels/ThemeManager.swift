@@ -34,7 +34,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     var primaryColor: Color {
         switch self {
         case .spiderman: return Color(hex: "E23636")
-        case .batman: return Color(hex: "FFE600")
+        case .batman: return Color(hex: "D4AF37") // Metallic Gold
         case .ironman: return Color(hex: "E62429")
         }
     }
@@ -42,7 +42,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     var neonAccentColor: Color {
         switch self {
         case .spiderman: return Color(hex: "FF2A2A")
-        case .batman: return Color(hex: "F5B800")
+        case .batman: return Color(hex: "FFC107") // Amber/Gold glow
         case .ironman: return Color(hex: "00F5FF")
         }
     }
@@ -50,7 +50,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     var secondaryColor: Color {
         switch self {
         case .spiderman: return Color(hex: "00F0FF")
-        case .batman: return Color(hex: "8A9BA8")
+        case .batman: return Color(hex: "222222") // Gunmetal Black
         case .ironman: return Color(hex: "FFD700")
         }
     }
@@ -58,7 +58,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     var backgroundColor: Color {
         switch self {
         case .spiderman: return Color(hex: "0B0C10")
-        case .batman: return Color(hex: "030304")
+        case .batman: return Color(hex: "000000") // Pitch Black
         case .ironman: return Color(hex: "0C0810")
         }
     }
@@ -66,7 +66,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     var surfaceColor: Color {
         switch self {
         case .spiderman: return Color(hex: "1F2833")
-        case .batman: return Color(hex: "0E1116")
+        case .batman: return Color(hex: "0A0A0C") // Deepest Grey
         case .ironman: return Color(hex: "1B1322")
         }
     }
@@ -74,7 +74,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     var glowColor: Color {
         switch self {
         case .spiderman: return Color(hex: "FF2A2A")
-        case .batman: return Color(hex: "F5B800")
+        case .batman: return Color(hex: "D4AF37") // Gold Glow
         case .ironman: return Color(hex: "00F5FF")
         }
     }
@@ -82,7 +82,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     var tabBarBgColor: UIColor {
         switch self {
         case .spiderman: return UIColor(Color(hex: "0B0C10"))
-        case .batman: return UIColor(Color(hex: "030304"))
+        case .batman: return UIColor.black
         case .ironman: return UIColor(Color(hex: "0C0810"))
         }
     }
@@ -90,7 +90,7 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     var tabBarSelectedColor: UIColor {
         switch self {
         case .spiderman: return UIColor(Color(hex: "FF2A2A"))
-        case .batman: return UIColor(Color(hex: "FFE600"))
+        case .batman: return UIColor(Color(hex: "D4AF37"))
         case .ironman: return UIColor(Color(hex: "E62429"))
         }
     }

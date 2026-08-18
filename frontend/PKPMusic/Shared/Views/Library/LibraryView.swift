@@ -12,7 +12,7 @@ struct LibraryView: View {
     
     // Segmented control state
     @State private var selectedTab = 0
-    let tabs = ["Songs", "Playlists", "Albums"]
+    let tabs = ["Songs", "Playlists", "Albums", "Artists"]
     
     @State private var showingCreateAlert = false
     @State private var newPlaylistName = ""
@@ -36,6 +36,17 @@ struct LibraryView: View {
         let allAlbums = groupedAlbums
         if localSearchText.isEmpty { return allAlbums }
         return allAlbums.filter { $0.name.lowercased().contains(localSearchText.lowercased()) }
+    }
+    
+    var groupedArtists: [(name: String, songs: [Song])] {
+        let grouped = Dictionary(grouping: networkManager.favorites) { $0.artist }
+        return grouped.map { (name: $0.key, songs: $0.value) }.sorted { $0.name < $1.name }
+    }
+    
+    var filteredArtists: [(name: String, songs: [Song])] {
+        let allArtists = groupedArtists
+        if localSearchText.isEmpty { return allArtists }
+        return allArtists.filter { $0.name.lowercased().contains(localSearchText.lowercased()) }
     }
     
     var body: some View {
@@ -132,8 +143,10 @@ struct LibraryView: View {
                         songsList
                     } else if selectedTab == 1 {
                         playlistsList
-                    } else {
+                    } else if selectedTab == 2 {
                         albumsList
+                    } else {
+                        artistsList
                     }
                 }
                 
@@ -355,6 +368,83 @@ struct LibraryView: View {
                                             .foregroundColor(.white)
                                             .lineLimit(1)
                                         Text("\(albumGroup.songs.count) songs")
+                                            .font(.caption)
+                                            .foregroundColor(.gray)
+                                    }
+                                    
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .foregroundColor(.gray)
+                                }
+                                .padding(10)
+                                .background(Color.white.opacity(0.05))
+                                .cornerRadius(12)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Theme.spiderDarkGrey, lineWidth: 1)
+                                )
+                                .padding(.horizontal)
+                            }
+                        }
+                    }
+                    .padding(.top)
+                }
+            }
+        }
+    }
+    
+    private var artistsList: some View {
+        Group {
+            if filteredArtists.isEmpty {
+                Spacer()
+                VStack(spacing: 20) {
+                    Image(systemName: "person.2.fill")
+                        .font(.system(size: 60))
+                        .foregroundColor(Theme.spiderRed)
+                    
+                    Text(localSearchText.isEmpty ? "No Artists Yet" : "No Results")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                    
+                    Text(localSearchText.isEmpty ? "Your liked songs grouped by artist will appear here." : "Try searching for something else.")
+                        .multilineTextAlignment(.center)
+                        .foregroundColor(.gray)
+                        .padding(.horizontal)
+                }
+                Spacer()
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 12) {
+                        ForEach(filteredArtists, id: \.name) { artistGroup in
+                            NavigationLink(destination: LocalArtistDetailView(artistName: artistGroup.name, songs: artistGroup.songs)) {
+                                HStack(spacing: 15) {
+                                    ZStack {
+                                        Circle()
+                                            .fill(Theme.spiderDarkGrey)
+                                            .frame(width: 60, height: 60)
+                                        
+                                        if let firstSongArt = artistGroup.songs.first?.coverArtUrl, let url = URL(string: firstSongArt) {
+                                            AsyncImage(url: url) { image in
+                                                image.resizable().aspectRatio(contentMode: .fill)
+                                            } placeholder: {
+                                                Image(systemName: "person.fill").foregroundColor(Theme.spiderRed).font(.title2)
+                                            }
+                                            .frame(width: 60, height: 60)
+                                            .clipShape(Circle())
+                                        } else {
+                                            Image(systemName: "person.fill")
+                                                .foregroundColor(Theme.spiderRed)
+                                                .font(.title2)
+                                        }
+                                    }
+                                    
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(artistGroup.name)
+                                            .font(.headline)
+                                            .foregroundColor(.white)
+                                            .lineLimit(1)
+                                        Text("\(artistGroup.songs.count) songs")
                                             .font(.caption)
                                             .foregroundColor(.gray)
                                     }

@@ -12,61 +12,11 @@ struct QueueView: View {
     }
     
     var body: some View {
-        ZStack {
-            Color.black.opacity(0.92)
-                .edgesIgnoringSafeArea(.all)
-            
-            VStack(spacing: 0) {
-                // Header
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("PLAYING QUEUE")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundColor(Theme.spiderNeonRed)
-                            .tracking(2)
-                        
-                        Text("Up Next (\(upcomingSongs.count))")
-                            .font(.title2)
-                            .bold()
-                            .foregroundColor(.white)
-                    }
-                    
-                    Spacer()
-                    
-                    if !upcomingSongs.isEmpty {
-                        Button(action: {
-                            withAnimation(.spring()) {
-                                audioManager.clearUpcomingQueue()
-                            }
-                        }) {
-                            Text("Clear")
-                                .font(.subheadline)
-                                .bold()
-                                .foregroundColor(Theme.spiderNeonRed)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(Theme.spiderNeonRed.opacity(0.15))
-                                .cornerRadius(15)
-                        }
-                    }
-                    
-                    Button(action: {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
-                            isShowing = false
-                        }
-                    }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.title2)
-                            .foregroundColor(.white.opacity(0.8))
-                            .padding(6)
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 20)
-                .padding(.bottom, 15)
+        NavigationView {
+            ZStack {
+                Theme.spiderDarkGrey.edgesIgnoringSafeArea(.all)
                 
-                Divider()
-                    .background(Color.white.opacity(0.15))
+                VStack(spacing: 0) {
                 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
@@ -234,6 +184,38 @@ struct QueueView: View {
                     }
                 }
             }
+                }
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    VStack {
+                        Text("PLAYING QUEUE")
+                            .font(.caption)
+                            .bold()
+                            .foregroundColor(Theme.spiderNeonRed)
+                        Text("Up Next (\(upcomingSongs.count))")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                    }
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        isShowing = false
+                    }
+                    .foregroundColor(Theme.spiderNeonRed)
+                }
+                ToolbarItem(placement: .navigationBarLeading) {
+                    if !upcomingSongs.isEmpty {
+                        Button("Clear") {
+                            withAnimation(.spring()) {
+                                audioManager.clearUpcomingQueue()
+                            }
+                        }
+                        .foregroundColor(Theme.spiderNeonRed)
+                    }
+                }
+            }
         }
     }
-}
+

@@ -39,10 +39,10 @@ struct Theme {
                     .animation(Animation.easeInOut(duration: 4.0).repeatForever(autoreverses: true), value: pulse)
                     
                 case .batman:
-                    // Gotham Dark Vignette with Bat-Signal spotlight beam
+                    // Gotham Noir Vignette
                     ZStack {
                         RadialGradient(
-                            gradient: Gradient(colors: [Color(hex: "FFE600").opacity(pulse ? 0.08 : 0.03), themeManager.currentTheme.surfaceColor.opacity(0.4), themeManager.currentTheme.backgroundColor]),
+                            gradient: Gradient(colors: [Color.white.opacity(pulse ? 0.05 : 0.01), themeManager.currentTheme.backgroundColor]),
                             center: .top,
                             startRadius: 10,
                             endRadius: pulse ? 700 : 450
@@ -121,9 +121,30 @@ struct Theme {
         }
     }
     
+    struct BatSymbol: Shape {
+        func path(in rect: CGRect) -> Path {
+            var path = Path()
+            let w = rect.width
+            let h = rect.height
+            
+            path.move(to: CGPoint(x: w * 0.48, y: h * 0.2))
+            path.addLine(to: CGPoint(x: w * 0.5, y: h * 0.3))
+            path.addLine(to: CGPoint(x: w * 0.52, y: h * 0.2))
+            
+            path.addQuadCurve(to: CGPoint(x: w * 0.95, y: h * 0.3), control: CGPoint(x: w * 0.75, y: h * 0.15))
+            path.addQuadCurve(to: CGPoint(x: w * 0.7, y: h * 0.9), control: CGPoint(x: w * 0.85, y: h * 0.7))
+            path.addQuadCurve(to: CGPoint(x: w * 0.5, y: h * 0.95), control: CGPoint(x: w * 0.6, y: h * 0.8))
+            
+            path.addQuadCurve(to: CGPoint(x: w * 0.3, y: h * 0.9), control: CGPoint(x: w * 0.4, y: h * 0.8))
+            path.addQuadCurve(to: CGPoint(x: w * 0.05, y: h * 0.3), control: CGPoint(x: w * 0.15, y: h * 0.7))
+            path.addQuadCurve(to: CGPoint(x: w * 0.48, y: h * 0.2), control: CGPoint(x: w * 0.25, y: h * 0.15))
+            
+            return path
+        }
+    }
+    
     struct BatmanGlidingView: View {
-        @State private var glideOffset: CGFloat = -180
-        @State private var wingFlap: Double = 0
+        @State private var pulse = false
         
         var body: some View {
             GeometryReader { geo in
@@ -132,36 +153,31 @@ struct Theme {
                     Circle()
                         .fill(
                             RadialGradient(
-                                gradient: Gradient(colors: [Color(hex: "FFE600").opacity(0.18), Color.clear]),
+                                gradient: Gradient(colors: [Color(hex: "D4AF37").opacity(0.12), Color.clear]),
                                 center: .center,
                                 startRadius: 10,
-                                endRadius: 80
+                                endRadius: 150
                             )
                         )
-                        .frame(width: 160, height: 160)
-                        .position(x: geo.size.width / 2, y: 50)
+                        .frame(width: 200, height: 200)
+                        .position(x: geo.size.width / 2, y: 70)
+                        .opacity(pulse ? 1.0 : 0.4)
                     
-                    // Batman Silhouetted Emblem Glider
-                    HStack(spacing: 0) {
-                        Image(systemName: "shield.lefthalf.filled")
-                            .font(.system(size: 26, weight: .bold))
-                            .foregroundColor(Color(hex: "FFE600"))
-                            .rotationEffect(.degrees(-wingFlap))
-                        
-                        Image(systemName: "shield.righthalf.filled")
-                            .font(.system(size: 26, weight: .bold))
-                            .foregroundColor(Color(hex: "FFE600"))
-                            .rotationEffect(.degrees(wingFlap))
-                    }
-                    .shadow(color: Color(hex: "FFE600").opacity(0.9), radius: 12, x: 0, y: 0)
-                    .position(x: geo.size.width / 2 + glideOffset, y: 45)
-                    .onAppear {
-                        withAnimation(Animation.easeInOut(duration: 4.5).repeatForever(autoreverses: true)) {
-                            glideOffset = 180
-                        }
-                        withAnimation(Animation.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
-                            wingFlap = 12
-                        }
+                    // Glowing Bat Symbol
+                    BatSymbol()
+                        .fill(Color.black)
+                        .frame(width: 120, height: 60)
+                        .overlay(
+                            BatSymbol()
+                                .stroke(Color(hex: "FFC107").opacity(0.8), lineWidth: 2)
+                                .shadow(color: Color(hex: "D4AF37"), radius: pulse ? 12 : 4, x: 0, y: 0)
+                        )
+                        .position(x: geo.size.width / 2, y: 70)
+                        .scaleEffect(pulse ? 1.02 : 0.98)
+                }
+                .onAppear {
+                    withAnimation(Animation.easeInOut(duration: 3.0).repeatForever(autoreverses: true)) {
+                        pulse = true
                     }
                 }
             }

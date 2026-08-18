@@ -28,7 +28,7 @@ struct ChatDetailView: View {
                         }
                         .padding()
                     }
-                    .onChange(of: chatManager.messages[friend.id]?.count) { _ in
+                    .onChange(of: chatManager.messages[friend.id]?.count) { _, _ in
                         if let last = chatManager.messages[friend.id]?.last {
                             withAnimation {
                                 proxy.scrollTo(last.id, anchor: .bottom)

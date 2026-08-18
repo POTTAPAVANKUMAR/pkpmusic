@@ -11,8 +11,6 @@ struct FullScreenPlayerView: View {
     
     @State private var showingLyrics = false
     @State private var showingQueue = false
-    @State private var isLoadingLyrics = false
-    @State private var currentLyrics: LyricsResponse?
     
     var body: some View {
         ZStack {
@@ -24,7 +22,7 @@ struct FullScreenPlayerView: View {
                 } placeholder: {
                     Theme.SpiderBackground()
                 }
-                .frame(width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height)
+                .frame(width: (UIApplication.shared.connectedScenes.first as? UIWindowScene)?.screen.bounds.width ?? 400, height: (UIApplication.shared.connectedScenes.first as? UIWindowScene)?.screen.bounds.height ?? 800)
                 .clipped()
                 .overlay(.ultraThinMaterial)
                 .opacity(0.8) // Darken it slightly so text pops
@@ -140,7 +138,7 @@ struct FullScreenPlayerView: View {
                     } placeholder: {
                         Rectangle().fill(Color.gray.opacity(0.2))
                     }
-                    .frame(width: UIScreen.main.bounds.width - 60, height: UIScreen.main.bounds.width - 60)
+                    .frame(width: ((UIApplication.shared.connectedScenes.first as? UIWindowScene)?.screen.bounds.width ?? 400) - 60, height: ((UIApplication.shared.connectedScenes.first as? UIWindowScene)?.screen.bounds.width ?? 400) - 60)
                     .cornerRadius(12)
                     .shadow(color: .black.opacity(0.3), radius: 20, x: 0, y: 15)
                     .scaleEffect(audioManager.isPlaying ? 1.0 : 0.85) // Apple Music style bounce
@@ -164,15 +162,7 @@ struct FullScreenPlayerView: View {
                         Spacer()
                         
                         Button(action: {
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
-                                showingLyrics.toggle()
-                                if showingLyrics {
-                                    showingQueue = false
-                                }
-                            }
-                            if showingLyrics && currentLyrics == nil {
-                                loadLyrics(for: song)
-                            }
+                            showingLyrics = true
                         }) {
                             Image(systemName: showingLyrics ? "quote.bubble.fill" : "quote.bubble")
                                 .font(.title2)
@@ -183,12 +173,7 @@ struct FullScreenPlayerView: View {
                         }
                         
                         Button(action: {
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
-                                showingQueue.toggle()
-                                if showingQueue {
-                                    showingLyrics = false
-                                }
-                            }
+                            showingQueue = true
                         }) {
                             Image(systemName: showingQueue ? "list.bullet.circle.fill" : "list.bullet")
                                 .font(.title2)
@@ -317,125 +302,13 @@ struct FullScreenPlayerView: View {
                         .foregroundColor(.gray)
                     Spacer()
                 }
-            }
-            
-            // Lyrics Overlay
-            if showingLyrics {
-                ZStack {
-                    Color.black.opacity(0.88)
-                        .edgesIgnoringSafeArea(.all)
-                        .onTapGesture {
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
-                                showingLyrics = false
-                            }
-                        }
-                    
-                    VStack(spacing: 16) {
-                        // Top Header Bar
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("LYRICS")
-                                    .font(.system(size: 11, weight: .bold))
-                                    .foregroundColor(Theme.spiderNeonRed)
-                                    .tracking(2)
-                                if let song = audioManager.currentSong {
-                                    Text(song.title)
-                                        .font(.headline)
-                                        .foregroundColor(.white)
-                                        .lineLimit(1)
-                                }
-                            }
-                            Spacer()
-                            Button(action: {
-                                withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
-                                    showingLyrics = false
-                                }
-                            }) {
-                                Image(systemName: "xmark.circle.fill")
-                                    .font(.title2)
-                                    .foregroundColor(.white.opacity(0.8))
-                                    .padding(6)
-                            }
-                        }
-                        .padding(.horizontal, 24)
-                        .padding(.top, 50)
-                        
-                        if isLoadingLyrics {
-                            Spacer()
-                            VStack(spacing: 15) {
-                                ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle(tint: Theme.spiderNeonRed))
-                                    .scaleEffect(1.6)
-                                Text("Fetching lyrics...")
-                                    .font(.subheadline)
-                                    .foregroundColor(.gray)
-                            }
-                            Spacer()
-                        } else if let lyrics = currentLyrics, !lyrics.lyrics.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                            ScrollView(showsIndicators: false) {
-                                VStack(spacing: 16) {
-                                    Text(lyrics.lyrics)
-                                        .font(.system(size: 20, weight: .semibold, design: .rounded))
-                                        .foregroundColor(.white)
-                                        .multilineTextAlignment(.center)
-                                        .padding(.horizontal, 24)
-                                        .padding(.top, 10)
-                                        .lineSpacing(12)
-                                    
-                                    HStack(spacing: 6) {
-                                        Image(systemName: "checkmark.seal.fill")
-                                            .font(.caption2)
-                                            .foregroundColor(Theme.spiderNeonRed)
-                                        Text("Source: \(lyrics.source)")
-                                            .font(.caption)
-                                            .foregroundColor(.gray)
-                                    }
-                                    .padding(.top, 20)
-                                    .padding(.bottom, 60)
-                                }
-                            }
-                        } else {
-                            Spacer()
-                            VStack(spacing: 16) {
-                                Image(systemName: "quote.bubble")
-                                    .font(.system(size: 44))
-                                    .foregroundColor(.gray.opacity(0.6))
-                                Text("No lyrics found for this song.")
-                                    .font(.headline)
-                                    .foregroundColor(.gray)
-                                
-                                if let song = audioManager.currentSong {
-                                    Button(action: {
-                                        loadLyrics(for: song)
-                                    }) {
-                                        HStack(spacing: 6) {
-                                            Image(systemName: "arrow.clockwise")
-                                            Text("Retry")
-                                        }
-                                        .font(.subheadline)
-                                        .bold()
-                                        .foregroundColor(.white)
-                                        .padding(.horizontal, 16)
-                                        .padding(.vertical, 8)
-                                        .background(Theme.spiderNeonRed.opacity(0.8))
-                                        .cornerRadius(20)
-                                    }
-                                }
-                            }
-                            Spacer()
-                        }
-                    }
-                }
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-                .zIndex(2)
-            }
-            
-            // Queue Overlay
-            if showingQueue {
-                QueueView(isShowing: $showingQueue)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                    .zIndex(3)
-            }
+        }
+        }
+        .sheet(isPresented: $showingLyrics) {
+            LyricsView(song: audioManager.currentSong, isShowing: $showingLyrics)
+        }
+        .sheet(isPresented: $showingQueue) {
+            QueueView(isShowing: $showingQueue)
         }
         // Allow swiping down to dismiss
         .gesture(DragGesture().onEnded { value in
@@ -453,9 +326,120 @@ struct FullScreenPlayerView: View {
                 }
             }
         })
-        .onChange(of: audioManager.currentSong?.id) { _ in
-            currentLyrics = nil
-            if showingLyrics, let song = audioManager.currentSong {
+    }
+    
+    private func formatTime(_ time: Double) -> String {
+        guard time.isFinite && !time.isNaN else { return "0:00" }
+        let minutes = Int(time) / 60
+        let seconds = Int(time) % 60
+        return String(format: "%d:%02d", minutes, seconds)
+    }
+}
+
+struct LyricsView: View {
+    let song: Song?
+    @Binding var isShowing: Bool
+    @StateObject private var networkManager = NetworkManager.shared
+    @State private var isLoadingLyrics = false
+    @State private var currentLyrics: LyricsResponse?
+    
+    var body: some View {
+        NavigationView {
+            ZStack {
+                Theme.spiderDarkGrey.edgesIgnoringSafeArea(.all)
+                
+                if isLoadingLyrics {
+                    VStack(spacing: 15) {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: Theme.spiderNeonRed))
+                            .scaleEffect(1.6)
+                        Text("Fetching lyrics...")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                    }
+                } else if let lyrics = currentLyrics, !lyrics.lyrics.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    ScrollView(showsIndicators: false) {
+                        VStack(spacing: 16) {
+                            Text(lyrics.lyrics)
+                                .font(.system(size: 22, weight: .bold, design: .rounded))
+                                .foregroundColor(.white)
+                                .multilineTextAlignment(.leading)
+                                .padding(.horizontal, 24)
+                                .padding(.top, 20)
+                                .lineSpacing(14)
+                            
+                            HStack(spacing: 6) {
+                                Image(systemName: "checkmark.seal.fill")
+                                    .font(.caption2)
+                                    .foregroundColor(Theme.spiderNeonRed)
+                                Text("Source: \(lyrics.source)")
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                            }
+                            .padding(.top, 30)
+                            .padding(.bottom, 60)
+                        }
+                    }
+                } else {
+                    VStack(spacing: 16) {
+                        Image(systemName: "quote.bubble")
+                            .font(.system(size: 44))
+                            .foregroundColor(.gray.opacity(0.6))
+                        Text("No lyrics found.")
+                            .font(.headline)
+                            .foregroundColor(.gray)
+                        
+                        if let song = song {
+                            Button(action: {
+                                loadLyrics(for: song)
+                            }) {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "arrow.clockwise")
+                                    Text("Retry")
+                                }
+                                .font(.subheadline)
+                                .bold()
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
+                                .background(Theme.spiderNeonRed.opacity(0.8))
+                                .cornerRadius(20)
+                            }
+                        }
+                    }
+                }
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    VStack {
+                        Text("LYRICS")
+                            .font(.caption)
+                            .bold()
+                            .foregroundColor(Theme.spiderNeonRed)
+                        if let song = song {
+                            Text(song.title)
+                                .font(.headline)
+                                .foregroundColor(.white)
+                                .lineLimit(1)
+                        }
+                    }
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        isShowing = false
+                    }
+                    .foregroundColor(Theme.spiderNeonRed)
+                }
+            }
+        }
+        .onAppear {
+            if let song = song {
+                loadLyrics(for: song)
+            }
+        }
+        .onChange(of: song?.id) { _, _ in
+            if let song = song {
                 loadLyrics(for: song)
             }
         }
@@ -467,12 +451,5 @@ struct FullScreenPlayerView: View {
             self.currentLyrics = lyrics
             self.isLoadingLyrics = false
         }
-    }
-    
-    private func formatTime(_ time: Double) -> String {
-        guard time.isFinite && !time.isNaN else { return "0:00" }
-        let minutes = Int(time) / 60
-        let seconds = Int(time) % 60
-        return String(format: "%d:%02d", minutes, seconds)
     }
 }

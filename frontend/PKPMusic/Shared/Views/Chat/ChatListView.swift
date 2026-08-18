@@ -19,7 +19,7 @@ struct ChatListView: View {
                             .foregroundColor(.gray)
                         TextField("Search users...", text: $searchText)
                             .foregroundColor(.white)
-                            .onChange(of: searchText) { newValue in
+                            .onChange(of: searchText) { _, newValue in
                                 if newValue.count > 1 {
                                     chatManager.searchUsers(query: newValue, token: authManager.token ?? "")
                                 } else {

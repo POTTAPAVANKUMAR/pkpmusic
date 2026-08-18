@@ -10,7 +10,7 @@ struct HomeView: View {
     @State private var selectedSearchType = 0 // 0: Songs, 1: Albums, 2: Artists
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 Theme.SpiderBackground()
                 
@@ -107,7 +107,7 @@ struct HomeView: View {
                             .pickerStyle(SegmentedPickerStyle())
                             .padding(.horizontal)
                             .padding(.bottom, 10)
-                            .onChange(of: selectedSearchType) { _ in
+                            .onChange(of: selectedSearchType) { _, _ in
                                 performSearch()
                             }
                             
@@ -315,47 +315,30 @@ struct DashboardSectionView: View {
             }
             
             // Programmatic Navigation Links
-            NavigationLink(
-                destination: Group {
-                    if let mood = selectedMood {
-                        MoodPlaylistsView(params: mood.id, moodTitle: mood.title)
-                    } else {
-                        EmptyView()
-                    }
-                },
-                isActive: Binding(
-                    get: { selectedMood != nil },
-                    set: { if !$0 { selectedMood = nil } }
-                )
-            ) { EmptyView() }
-            
-            NavigationLink(
-                destination: Group {
-                    if let album = selectedAlbum {
-                        AlbumDetailView(albumId: album.id)
-                    } else {
-                        EmptyView()
-                    }
-                },
-                isActive: Binding(
-                    get: { selectedAlbum != nil },
-                    set: { if !$0 { selectedAlbum = nil } }
-                )
-            ) { EmptyView() }
-            
-            NavigationLink(
-                destination: Group {
-                    if let artist = selectedArtist {
-                        ArtistDetailView(artistId: artist.id, artistName: artist.title)
-                    } else {
-                        EmptyView()
-                    }
-                },
-                isActive: Binding(
-                    get: { selectedArtist != nil },
-                    set: { if !$0 { selectedArtist = nil } }
-                )
-            ) { EmptyView() }
+        }
+        .navigationDestination(isPresented: Binding(
+            get: { selectedMood != nil },
+            set: { if !$0 { selectedMood = nil } }
+        )) {
+            if let mood = selectedMood {
+                MoodPlaylistsView(params: mood.id, moodTitle: mood.title)
+            }
+        }
+        .navigationDestination(isPresented: Binding(
+            get: { selectedAlbum != nil },
+            set: { if !$0 { selectedAlbum = nil } }
+        )) {
+            if let album = selectedAlbum {
+                AlbumDetailView(albumId: album.id)
+            }
+        }
+        .navigationDestination(isPresented: Binding(
+            get: { selectedArtist != nil },
+            set: { if !$0 { selectedArtist = nil } }
+        )) {
+            if let artist = selectedArtist {
+                ArtistDetailView(artistId: artist.id, artistName: artist.title)
+            }
         }
         .fullScreenCover(isPresented: $showFullScreenPlayer) {
             FullScreenPlayerView(isShowing: $showFullScreenPlayer)

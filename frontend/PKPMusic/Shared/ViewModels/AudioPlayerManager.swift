@@ -124,6 +124,7 @@ class AudioPlayerManager: ObservableObject {
                     self.playbackError = nil
                     if !item.duration.isIndefinite && item.duration.seconds > 0 {
                         self.duration = item.duration.seconds
+                        self.updateNowPlayingPlaybackState()
                     }
                 case .failed:
                     self.isLoading = false
@@ -295,7 +296,9 @@ class AudioPlayerManager: ObservableObject {
     }
     
     func seek(to time: Double) {
-        player?.seek(to: CMTime(seconds: time, preferredTimescale: 1000))
+        player?.seek(to: CMTime(seconds: time, preferredTimescale: 1000)) { [weak self] _ in
+            self?.updateNowPlayingPlaybackState()
+        }
     }
     
     @objc private func playerDidFinishPlaying(note: NSNotification) {
@@ -375,11 +378,13 @@ class AudioPlayerManager: ObservableObject {
     func pause() {
         player?.pause()
         isPlaying = false
+        updateNowPlayingPlaybackState()
     }
     
     func resume() {
         player?.play()
         isPlaying = true
+        updateNowPlayingPlaybackState()
     }
     
     private func setupRemoteTransportControls() {
@@ -391,6 +396,7 @@ class AudioPlayerManager: ObservableObject {
         commandCenter.nextTrackCommand.removeTarget(nil)
         commandCenter.previousTrackCommand.removeTarget(nil)
         commandCenter.changeShuffleModeCommand.removeTarget(nil)
+        commandCenter.changePlaybackPositionCommand.removeTarget(nil)
         
         commandCenter.playCommand.addTarget { [unowned self] _ in
             self.resume()
@@ -419,26 +425,46 @@ class AudioPlayerManager: ObservableObject {
             }
             return .success
         }
+        
+        commandCenter.changePlaybackPositionCommand.addTarget { [unowned self] event in
+            guard let positionEvent = event as? MPChangePlaybackPositionCommandEvent else { return .commandFailed }
+            self.seek(to: positionEvent.positionTime)
+            return .success
+        }
     }
     
     private func updateNowPlayingInfo(song: Song) {
         var nowPlayingInfo = [String: Any]()
         nowPlayingInfo[MPMediaItemPropertyTitle] = song.title
         nowPlayingInfo[MPMediaItemPropertyArtist] = song.artist
+        nowPlayingInfo[MPMediaItemPropertyPlaybackDuration] = duration
+        nowPlayingInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = progress
+        nowPlayingInfo[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? 1.0 : 0.0
+        
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
         
         #if os(iOS)
         if let urlString = song.coverArtUrl, let url = URL(string: urlString) {
             URLSession.shared.dataTask(with: url) { data, _, _ in
                 if let data = data, let image = UIImage(data: data) {
                     let artwork = MPMediaItemArtwork(boundsSize: image.size) { _ in return image }
-                    nowPlayingInfo[MPMediaItemPropertyArtwork] = artwork
                     DispatchQueue.main.async {
-                        MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
+                        var currentInfo = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [String: Any]()
+                        currentInfo[MPMediaItemPropertyArtwork] = artwork
+                        MPNowPlayingInfoCenter.default().nowPlayingInfo = currentInfo
                     }
                 }
             }.resume()
         }
         #endif
+    }
+    
+    private func updateNowPlayingPlaybackState() {
+        var nowPlayingInfo = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [String: Any]()
+        
+        nowPlayingInfo[MPMediaItemPropertyPlaybackDuration] = duration
+        nowPlayingInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = progress
+        nowPlayingInfo[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? 1.0 : 0.0
         
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
     }
