@@ -17,6 +17,14 @@ router = APIRouter(tags=["dashboard"])
 dashboard_cache = {} # user_id -> {"data": sections, "timestamp": float}
 CACHE_TTL = 1800 # 30 minutes
 
+def clear_dashboard_cache(user_id: int = None):
+    global dashboard_cache
+    if user_id is not None:
+        if user_id in dashboard_cache:
+            del dashboard_cache[user_id]
+    else:
+        dashboard_cache.clear()
+
 def get_dashboard_sync(user_id: int, db: Session):
     sections = []
     

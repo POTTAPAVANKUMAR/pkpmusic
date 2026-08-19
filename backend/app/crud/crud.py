@@ -218,7 +218,8 @@ def save_ai_recommendations(db: Session, user_id: int, recommendations: list):
     db.commit()
 
 def get_ai_recommendations(db: Session, user_id: int):
-    return db.query(models.AIRecommendation).filter(models.AIRecommendation.user_id == user_id).order_by(models.AIRecommendation.confidence_score.desc()).all()
+    return db.query(models.AIRecommendation).filter(models.AIRecommendation.user_id == user_id).order_by(models.AIRecommendation.created_at.desc(), models.AIRecommendation.id.desc()).all()
+
 
 # ML Job Runs
 def create_ml_job_run(db: Session):

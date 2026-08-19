@@ -112,6 +112,13 @@ def run_ml_pipeline():
             crud.update_ml_job_run(db, job_run.id, "Running", users_processed, recs_generated)
                 
         crud.update_ml_job_run(db, job_run.id, "Success", users_processed, recs_generated)
+        
+        # Invalidate dashboard cache so the latest recommendations appear immediately
+        try:
+            from app.api.routers.dashboard import clear_dashboard_cache
+            clear_dashboard_cache()
+        except Exception as e:
+            logger.error(f"Error clearing dashboard cache: {e}")
     except Exception as e:
         logger.error(f"Error in ML pipeline: {e}")
         crud.update_ml_job_run(db, job_run.id, "Failed", users_processed, recs_generated, str(e))

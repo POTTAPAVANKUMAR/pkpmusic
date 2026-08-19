@@ -138,7 +138,6 @@ struct HomeView: View {
                             .progressViewStyle(CircularProgressViewStyle(tint: Theme.spiderNeonRed))
                             .foregroundColor(.gray)
                         Spacer()
-                    } else {
                         ScrollView {
                             VStack(spacing: 30) {
                                 ForEach(networkManager.dashboardSections) { section in
@@ -147,6 +146,9 @@ struct HomeView: View {
                             }
                             .padding(.top, 20)
                             .padding(.bottom, 100) // Space for mini player
+                        }
+                        .refreshable {
+                            networkManager.fetchDashboard()
                         }
                     }
                 }

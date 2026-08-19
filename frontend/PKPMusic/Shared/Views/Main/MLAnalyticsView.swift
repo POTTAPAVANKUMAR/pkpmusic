@@ -188,9 +188,10 @@ struct MLAnalyticsView: View {
         
         isTriggering = true
         NetworkManager.shared.triggerMLJob { success in
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                 self.isTriggering = false
-                self.loadData() // Reload to show it running
+                self.loadData() // Reload to show the latest run
+                NetworkManager.shared.fetchDashboard() // Refresh dashboard with newly generated recommendations
             }
         }
     }
