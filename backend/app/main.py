@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.api.routers import auth, playlists, songs, social, dashboard, podcasts
+from app.api.routers import auth, playlists, songs, social, dashboard, podcasts, admin
 from app.services import websocket
 from app.db.database import engine
 from app.db import models

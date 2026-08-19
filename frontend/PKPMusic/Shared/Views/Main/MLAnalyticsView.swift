@@ -12,9 +12,39 @@ struct MLAnalyticsView: View {
             
             ScrollView {
                 VStack(spacing: 24) {
+                    
+                    // ── Trigger Button — always visible ──────────────────────
+                    Button(action: triggerJob) {
+                        HStack(spacing: 10) {
+                            if isTriggering {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            } else {
+                                Image(systemName: "wand.and.stars")
+                                    .font(.system(size: 16, weight: .bold))
+                            }
+                            Text(isTriggering ? "Running Pipeline..." : "Run AI Analysis Now")
+                                .fontWeight(.bold)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(
+                            LinearGradient(colors: [.purple, .blue], startPoint: .leading, endPoint: .trailing)
+                                .opacity(isTriggering ? 0.6 : 1.0)
+                        )
+                        .foregroundColor(.white)
+                        .cornerRadius(16)
+                        .shadow(color: .purple.opacity(0.4), radius: 12, x: 0, y: 6)
+                        .animation(.easeInOut(duration: 0.2), value: isTriggering)
+                    }
+                    .padding(.horizontal)
+                    .padding(.top, 8)
+                    .disabled(isTriggering || runs.first?.status == "Running")
+                    
+                    // ── Content ───────────────────────────────────────────────
                     if isLoading {
                         ProgressView("Loading Analytics...")
-                            .padding(.top, 50)
+                            .padding(.top, 40)
                             .foregroundColor(.white)
                     } else if runs.isEmpty {
                         VStack(spacing: 16) {
@@ -24,8 +54,13 @@ struct MLAnalyticsView: View {
                             Text("No ML Jobs Run Yet")
                                 .font(.title3)
                                 .foregroundColor(.gray)
+                            Text("Tap the button above to run the AI pipeline\nand generate personalised recommendations.")
+                                .font(.subheadline)
+                                .foregroundColor(.gray.opacity(0.7))
+                                .multilineTextAlignment(.center)
                         }
-                        .padding(.top, 100)
+                        .padding(.top, 60)
+                        .padding(.horizontal)
                     } else {
                         // Top Stats Row
                         HStack(spacing: 16) {
@@ -46,30 +81,6 @@ struct MLAnalyticsView: View {
                         }
                         .padding(.horizontal)
                         
-                        // Action Button
-                        Button(action: triggerJob) {
-                            HStack {
-                                if isTriggering {
-                                    ProgressView()
-                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                } else {
-                                    Image(systemName: "play.fill")
-                                }
-                                Text(isTriggering ? "Triggering..." : "Trigger ML Pipeline Now")
-                                    .fontWeight(.bold)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(
-                                LinearGradient(colors: [.purple, .blue], startPoint: .leading, endPoint: .trailing)
-                            )
-                            .foregroundColor(.white)
-                            .cornerRadius(16)
-                            .shadow(color: .purple.opacity(0.5), radius: 10, x: 0, y: 5)
-                        }
-                        .padding(.horizontal)
-                        .disabled(isTriggering || runs.first?.status == "Running")
-                        
                         // Chart: Recommendations Over Time
                         VStack(alignment: .leading) {
                             Text("Recommendations Generated")
@@ -79,10 +90,9 @@ struct MLAnalyticsView: View {
                                 .padding(.top, 10)
                             
                             Chart {
-                                ForEach(runs.reversed().suffix(10)) { run in
-                                    let date = Date(timeIntervalSince1970: run.started_at)
+                                ForEach(Array(runs.suffix(10))) { run in
                                     BarMark(
-                                        x: .value("Time", date, unit: .hour),
+                                        x: .value("Time", Date(timeIntervalSince1970: run.started_at), unit: .hour),
                                         y: .value("Count", run.recommendations_generated)
                                     )
                                     .foregroundStyle(LinearGradient(colors: [.purple, .blue], startPoint: .bottom, endPoint: .top))
@@ -106,12 +116,7 @@ struct MLAnalyticsView: View {
                             ForEach(runs) { run in
                                 HStack {
                                     VStack(alignment: .leading, spacing: 4) {
-                                        let date = Date(timeIntervalSince1970: run.started_at)
-                                        let formatter = DateFormatter()
-                                        formatter.dateStyle = .short
-                                        formatter.timeStyle = .short
-                                        
-                                        Text(formatter.string(from: date))
+                                        Text(formatDate(run.started_at))
                                             .font(.subheadline)
                                             .foregroundColor(.white)
                                         
@@ -167,6 +172,14 @@ struct MLAnalyticsView: View {
             self.runs = fetchedRuns
             self.isLoading = false
         }
+    }
+    
+    private func formatDate(_ timestamp: Double) -> String {
+        let date = Date(timeIntervalSince1970: timestamp)
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
     }
     
     private func triggerJob() {

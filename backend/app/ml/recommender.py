@@ -19,32 +19,39 @@ def run_ml_pipeline():
     try:
         # 1. Fetch all songs
         songs = db.query(models.Song).all()
-        if not songs:
-            logger.info("No songs found in DB. Exiting ML pipeline.")
+        if not songs or len(songs) < 2:
+            logger.info("Not enough songs found in DB (< 2). Exiting ML pipeline.")
             crud.update_ml_job_run(db, job_run.id, "Success", users_processed, recs_generated)
             return
 
         # 2. Build DataFrame
         song_data = []
         for s in songs:
+            text_features = f"{s.title or ''} {s.artist or ''} {s.album or ''}".strip()
+            if not text_features:
+                text_features = "music track song"
             song_data.append({
                 'song_id': s.id,
-                'title': s.title or "",
-                'artist': s.artist or "",
-                'text': f"{s.title} {s.artist} {s.album}"
+                'title': s.title or "Unknown Title",
+                'artist': s.artist or "Unknown Artist",
+                'text': text_features
             })
         
         df = pd.DataFrame(song_data)
         
-        # 3. Compute TF-IDF
-        tfidf = TfidfVectorizer(stop_words='english')
-        tfidf_matrix = tfidf.fit_transform(df['text'])
+        # 3. Compute TF-IDF safely
+        try:
+            tfidf = TfidfVectorizer(stop_words='english', token_pattern=r'(?u)\b\w+\b')
+            tfidf_matrix = tfidf.fit_transform(df['text'])
+        except Exception:
+            tfidf = TfidfVectorizer(token_pattern=r'(?u)\b\w+\b')
+            tfidf_matrix = tfidf.fit_transform(df['text'])
         
         # 4. Compute Cosine Similarity
         cosine_sim = linear_kernel(tfidf_matrix, tfidf_matrix)
         
-        # Helper to get indices
-        indices = pd.Series(df.index, index=df['song_id']).drop_duplicates()
+        # Fast song_id -> index dictionary
+        song_to_idx = {sid: i for i, sid in enumerate(df['song_id'])}
         
         # 5. Get all users
         users = db.query(models.User).all()
@@ -55,7 +62,7 @@ def run_ml_pipeline():
             if not history:
                 continue
                 
-            played_song_ids = [h.song_id for h in history if h.song_id in indices]
+            played_song_ids = [h.song_id for h in history if h.song_id in song_to_idx]
             if not played_song_ids:
                 continue
                 
@@ -70,7 +77,7 @@ def run_ml_pipeline():
                     
             user_scores = pd.Series(0.0, index=df.index)
             for sid in unique_recent:
-                idx = indices[sid]
+                idx = song_to_idx[sid]
                 sim_scores = pd.Series(cosine_sim[idx])
                 user_scores = user_scores + sim_scores
                 
@@ -82,15 +89,17 @@ def run_ml_pipeline():
             
             # Filter out songs already played
             recommendations = []
+            primary_artist = df.iloc[song_to_idx[unique_recent[0]]]['artist'] if unique_recent else "your favorites"
+            
             for idx in top_indices:
                 rec_song_id = df.iloc[idx]['song_id']
                 if rec_song_id not in played_song_ids:
                     score = float(user_scores[idx])
-                    if score > 0.1: # Threshold
+                    if score > 0.05: # Threshold
                         recommendations.append({
                             "song_id": rec_song_id,
                             "confidence_score": score,
-                            "reason": f"Based on your recent listens to {df.iloc[indices[unique_recent[0]]]['artist']}"
+                            "reason": f"Based on your recent listens to {primary_artist}"
                         })
                 if len(recommendations) >= 20:
                     break
@@ -109,3 +118,4 @@ def run_ml_pipeline():
     finally:
         db.close()
         logger.info("Nightly ML Pipeline finished.")
+

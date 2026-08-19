@@ -71,7 +71,7 @@ struct ProfileSettingsView: View {
                                 .foregroundColor(.gray)
                             TextField("Search users by name...", text: $searchQuery)
                                 .foregroundColor(.white)
-                                .onChange(of: searchQuery) { newValue in
+                                .onChange(of: searchQuery) { _, newValue in
                                     if newValue.count >= 2 {
                                         if let token = authManager.token {
                                             chatManager.searchUsers(query: newValue, token: token)

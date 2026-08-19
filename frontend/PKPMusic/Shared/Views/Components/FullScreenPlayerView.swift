@@ -1,5 +1,5 @@
 import SwiftUI
-import AVKit
+import AVFoundation
 
 enum PlayerSheet: Identifiable {
     case upNext, lyrics, related, album, options, playlists, videoQuality
@@ -23,6 +23,14 @@ struct FullScreenPlayerView: View {
     
     @State private var activeSheet: PlayerSheet? = nil
     
+    /// Real status-bar / Dynamic-Island height from UIKit — works inside
+    /// fullScreenCover where SwiftUI's safeAreaInsets can report 0.
+    private var statusBarHeight: CGFloat {
+        (UIApplication.shared.connectedScenes.first as? UIWindowScene)?
+            .statusBarManager?.statusBarFrame.height ?? 50
+    }
+    
+    
     var body: some View {
         ZStack {
             // Blurred Background
@@ -45,7 +53,10 @@ struct FullScreenPlayerView: View {
             }
             
             VStack(spacing: 0) {
-                // Header
+                // ── Header ────────────────────────────────────────────────────
+                // padding(.top, statusBarHeight) keeps the row below the
+                // status bar / Dynamic Island on every iPhone, regardless of
+                // how fullScreenCover positions the view.
                 HStack {
                     Button(action: { isShowing = false }) {
                         Image(systemName: "chevron.down")
@@ -92,37 +103,58 @@ struct FullScreenPlayerView: View {
                             .padding()
                     }
                 }
-                .padding(.top, 10)
+                .padding(.top, statusBarHeight + 4)
                 
                 Spacer(minLength: 20)
                 
-                // Media Area (16:9 for Video, Square for Song)
+                // ── Media Area ────────────────────────────────────────────────
+                // Both Song artwork and Video player sit in the same fixed-height
+                // container — switching modes never shifts anything below.
                 if let song = audioManager.currentSong {
-                    if audioManager.isVideoMode, let player = audioManager.player {
-                        VideoPlayer(player: player)
-                            .frame(width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.width * (9/16))
-                            .shadow(color: .black.opacity(0.5), radius: 10, x: 0, y: 10)
-                            .disabled(true)
-                    } else {
+                    // ── Artwork / Video — SAME square frame in both modes ──────
+                    // VideoPlayer gets the same frame as the artwork so zero
+                    // layout shift occurs when toggling Song ↔ Video.
+                    let side = UIScreen.main.bounds.width - 60
+                    
+                    // Both artwork and video are always in the layout tree
+                    // (prevents any frame shift), but only one is visible at
+                    // a time via opacity. No ugly overlap.
+                    ZStack {
+                        // Artwork — visible in Song mode
                         AsyncImage(url: URL(string: song.coverArtUrl ?? "")) { image in
                             image.resizable().aspectRatio(contentMode: .fill)
                         } placeholder: {
                             Rectangle().fill(Color.gray.opacity(0.2))
                         }
-                        .frame(width: UIScreen.main.bounds.width - 60, height: UIScreen.main.bounds.width - 60)
+                        .frame(width: side, height: side)
                         .cornerRadius(12)
-                        .shadow(color: .black.opacity(0.4), radius: 20, x: 0, y: 15)
-                        .scaleEffect(audioManager.isPlaying ? 1.0 : 0.95)
+                        .scaleEffect(audioManager.isPlaying && !audioManager.isVideoMode ? 1.0 : 0.95)
                         .animation(.spring(response: 0.5, dampingFraction: 0.6), value: audioManager.isPlaying)
+                        .opacity(audioManager.isVideoMode ? 0 : 1)
+                        
+                        // Video — visible in Video mode, invisible in Song mode
+                        if let player = audioManager.player {
+                            AVPlayerLayerView(player: player)
+                                .frame(width: side, height: side)
+                                .cornerRadius(12)
+                                .clipped()
+                                .opacity(audioManager.isVideoMode ? 1 : 0)
+                        }
                     }
+                    .frame(width: side, height: side)
+                    .shadow(color: .black.opacity(0.4), radius: 20, x: 0, y: 15)
+                    .animation(.easeInOut(duration: 0.25), value: audioManager.isVideoMode)
+
+
                     
                     Spacer(minLength: 30)
+
                     
-                    // Song Info
-                    HStack {
+                    // Song Info & Action Icons
+                    HStack(spacing: 0) {
                         VStack(alignment: .leading, spacing: 6) {
                             Text(song.title)
-                                .font(.system(size: 24, weight: .bold))
+                                .font(.system(size: 22, weight: .bold))
                                 .foregroundColor(.white)
                                 .lineLimit(1)
                             
@@ -133,12 +165,49 @@ struct FullScreenPlayerView: View {
                         }
                         Spacer()
                         
+                        // Queue / Up Next
+                        Button(action: { activeSheet = .upNext }) {
+                            Image(systemName: "list.bullet")
+                                .font(.title2)
+                                .foregroundColor(.white.opacity(0.85))
+                                .padding(8)
+                                .background(Color.white.opacity(0.12))
+                                .clipShape(Circle())
+                        }
+                        .padding(.leading, 8)
+                        
+                        // Lyrics
+                        Button(action: { activeSheet = .lyrics }) {
+                            Image(systemName: "quote.bubble")
+                                .font(.title2)
+                                .foregroundColor(.white.opacity(0.85))
+                                .padding(8)
+                                .background(Color.white.opacity(0.12))
+                                .clipShape(Circle())
+                        }
+                        .padding(.leading, 8)
+                        
+                        // Related
+                        Button(action: { activeSheet = .related }) {
+                            Image(systemName: "text.magnifyingglass")
+                                .font(.title2)
+                                .foregroundColor(.white.opacity(0.85))
+                                .padding(8)
+                                .background(Color.white.opacity(0.12))
+                                .clipShape(Circle())
+                        }
+                        .padding(.leading, 8)
+                        
+                        // Favorite
                         Button(action: { networkManager.addToFavorites(songId: song.id) }) {
                             Image(systemName: networkManager.favorites.contains(where: { $0.id == song.id }) ? "heart.fill" : "heart")
-                                .font(.title)
+                                .font(.title2)
                                 .foregroundColor(Theme.spiderNeonRed)
-                                .padding(10)
+                                .padding(8)
+                                .background(Color.white.opacity(0.12))
+                                .clipShape(Circle())
                         }
+                        .padding(.leading, 8)
                     }
                     .padding(.horizontal, 30)
                     
@@ -221,32 +290,9 @@ struct FullScreenPlayerView: View {
                     .padding(.top, 20)
                     
                     Spacer()
-                    
-                    // Bottom Tabs
-                    HStack {
-                        Button(action: { activeSheet = .upNext }) {
-                            Text("UP NEXT")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(.gray)
-                        }
-                        Spacer()
-                        Button(action: { activeSheet = .lyrics }) {
-                            Text("LYRICS")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(.gray)
-                        }
-                        Spacer()
-                        Button(action: { activeSheet = .related }) {
-                            Text("RELATED")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(.gray)
-                        }
-                    }
-                    .padding(.horizontal, 40)
-                    .padding(.bottom, 30)
                 }
-            }
-        }
+            } // end VStack
+        } // end ZStack
         .gesture(DragGesture().onEnded { value in
             if value.translation.height > 100 {
                 isShowing = false
@@ -351,6 +397,7 @@ struct FullScreenPlayerView: View {
         return String(format: "%d:%02d", minutes, seconds)
     }
 }
+
 
 struct LyricLine: Identifiable, Equatable {
     let id = UUID()
@@ -560,5 +607,43 @@ struct LyricsView: View {
             }
         }
         return lines
+    }
+}
+
+/// Bare-metal video renderer using AVPlayerLayer.
+/// Unlike SwiftUI's VideoPlayer, this has NO native controls bar,
+/// so it fills the exact frame you give it without any internal shifts.
+struct AVPlayerLayerView: UIViewRepresentable {
+    let player: AVPlayer
+    
+    func makeUIView(context: Context) -> PlayerLayerUIView {
+        PlayerLayerUIView(player: player)
+    }
+    
+    func updateUIView(_ uiView: PlayerLayerUIView, context: Context) {
+        uiView.player = player
+    }
+    
+    class PlayerLayerUIView: UIView {
+        private var playerLayer = AVPlayerLayer()
+        
+        var player: AVPlayer? {
+            get { playerLayer.player }
+            set { playerLayer.player = newValue }
+        }
+        
+        init(player: AVPlayer) {
+            super.init(frame: .zero)
+            playerLayer.player = player
+            playerLayer.videoGravity = .resizeAspect   // letterbox inside square
+            layer.addSublayer(playerLayer)
+        }
+        
+        required init?(coder: NSCoder) { fatalError() }
+        
+        override func layoutSubviews() {
+            super.layoutSubviews()
+            playerLayer.frame = bounds   // always fill our exact bounds
+        }
     }
 }
