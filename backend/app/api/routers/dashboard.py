@@ -82,27 +82,43 @@ def get_dashboard_sync(user_id: int, db: Session):
                 seed_video_id = history[0].song_id
                 
         if seed_video_id:
+            rec_songs = []
             try:
                 watch_playlist = yt.get_watch_playlist(videoId=seed_video_id, radio=True, limit=25)
+                tracks = watch_playlist.get('tracks', []) if isinstance(watch_playlist, dict) else []
+                for track in tracks[:10]:
+                    if isinstance(track, dict) and track.get('videoId') and track['videoId'] != seed_video_id:
+                        artist_names = [a['name'] for a in track.get('artists', []) if isinstance(a, dict) and 'name' in a]
+                        rec_songs.append(schemas.SongBase(
+                            id=track['videoId'],
+                            title=track.get('title', 'Unknown'),
+                            artist=", ".join(artist_names) if artist_names else "Unknown Artist",
+                            album=track.get('album', {}).get('name') if isinstance(track.get('album'), dict) else None,
+                            duration_ms=track.get('lengthSeconds', 0) * 1000 if track.get('lengthSeconds') else 0,
+                            cover_art_url=extract_thumbnail_url(track)
+                        ))
             except Exception:
+                pass
+                
+            # If watch_playlist fails, fall back to searching related music by seed song details
+            if not rec_songs:
+                seed_song = db.query(models.Song).filter(models.Song.id == seed_video_id).first()
+                query = f"{seed_song.artist or ''} {seed_song.title or ''}".strip() if seed_song else "top music"
                 try:
-                    watch_playlist = yt.get_watch_playlist(videoId=seed_video_id)
+                    search_tracks = yt.search(query, filter="songs", limit=10)
+                    for track in search_tracks:
+                        if isinstance(track, dict) and track.get('videoId') and track['videoId'] != seed_video_id:
+                            artist_names = [a['name'] for a in track.get('artists', []) if isinstance(a, dict) and 'name' in a]
+                            rec_songs.append(schemas.SongBase(
+                                id=track['videoId'],
+                                title=track.get('title', 'Unknown'),
+                                artist=", ".join(artist_names) if artist_names else "Unknown Artist",
+                                album=track.get('album', {}).get('name') if isinstance(track.get('album'), dict) else None,
+                                duration_ms=track.get('duration_seconds', 0) * 1000 if track.get('duration_seconds') else 0,
+                                cover_art_url=extract_thumbnail_url(track)
+                            ))
                 except Exception:
-                    watch_playlist = {}
-                    
-            rec_songs = []
-            tracks = watch_playlist.get('tracks', []) if isinstance(watch_playlist, dict) else []
-            for track in tracks[:10]:
-                if isinstance(track, dict) and track.get('videoId') and track['videoId'] != seed_video_id:
-                    artist_names = [a['name'] for a in track.get('artists', []) if isinstance(a, dict) and 'name' in a]
-                    rec_songs.append(schemas.SongBase(
-                        id=track['videoId'],
-                        title=track.get('title', 'Unknown'),
-                        artist=", ".join(artist_names) if artist_names else "Unknown Artist",
-                        album=track.get('album', {}).get('name') if isinstance(track.get('album'), dict) else None,
-                        duration_ms=track.get('lengthSeconds', 0) * 1000 if track.get('lengthSeconds') else 0,
-                        cover_art_url=extract_thumbnail_url(track)
-                    ))
+                    pass
             
             if rec_songs:
                 sections.append(schemas.DashboardSection(
@@ -110,27 +126,27 @@ def get_dashboard_sync(user_id: int, db: Session):
                     items=[schemas.DashboardItem(id=s.id, title=s.title, subtitle=s.artist, image_url=s.cover_art_url, type="song") for s in rec_songs]
                 ))
     except Exception as e:
-        print(f"Error fetching recommendations for seed {seed_video_id}: {e}")
+        print(f"Error fetching recommendations: {e}")
             
-    # 2. Trending Songs (Charts)
+    # 2. Trending Songs (Hits)
     try:
-        charts = yt.get_charts(country='US')
+        trending_tracks = yt.search("Top trending hits", filter="songs", limit=10)
         trending_items = []
-        if isinstance(charts, dict) and 'trending' in charts and 'items' in charts['trending']:
-            for track in charts['trending']['items'][:10]:
-                if isinstance(track, dict):
-                    artist_names = [a['name'] for a in track.get('artists', []) if isinstance(a, dict) and 'name' in a]
-                    trending_items.append(schemas.DashboardItem(
-                        id=track.get('videoId', ''),
-                        title=track.get('title', 'Unknown'),
-                        subtitle=", ".join(artist_names) if artist_names else "Unknown Artist",
-                        image_url=extract_thumbnail_url(track),
-                        type="song"
-                    ))
-            if trending_items:
-                sections.append(schemas.DashboardSection(title="Trending Hits", items=trending_items))
+        for track in trending_tracks:
+            if isinstance(track, dict) and track.get('videoId'):
+                artist_names = [a['name'] for a in track.get('artists', []) if isinstance(a, dict) and 'name' in a]
+                trending_items.append(schemas.DashboardItem(
+                    id=track.get('videoId', ''),
+                    title=track.get('title', 'Unknown'),
+                    subtitle=", ".join(artist_names) if artist_names else "Trending",
+                    image_url=extract_thumbnail_url(track),
+                    type="song"
+                ))
+        if trending_items:
+            sections.append(schemas.DashboardSection(title="Trending Hits", items=trending_items))
     except Exception as e:
-        print(f"Error fetching charts: {e}")
+        print(f"Error fetching trending hits: {e}")
+
 
     # 3. Moods & Genres
     try:
