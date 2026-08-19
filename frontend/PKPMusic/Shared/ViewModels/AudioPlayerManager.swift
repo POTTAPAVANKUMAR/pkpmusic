@@ -38,7 +38,52 @@ class AudioPlayerManager: ObservableObject {
     private var retryWorkItem: DispatchWorkItem?
     
     init() {
+        setupAudioSession()
         setupRemoteTransportControls()
+        setupInterruptionObserver()
+    }
+    
+    private func setupAudioSession() {
+        do {
+            let session = AVAudioSession.sharedInstance()
+            if #available(iOS 11.0, *) {
+                try session.setCategory(.playback, mode: .default, policy: .longFormAudio)
+            } else {
+                try session.setCategory(.playback, mode: .default)
+            }
+            try session.setActive(true)
+        } catch {
+            print("Failed to configure audio session: \(error)")
+        }
+    }
+    
+    private func setupInterruptionObserver() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAudioSessionInterruption(_:)),
+            name: AVAudioSession.interruptionNotification,
+            object: AVAudioSession.sharedInstance()
+        )
+    }
+    
+    @objc private func handleAudioSessionInterruption(_ notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let typeValue = userInfo[AVAudioSessionInterruptionTypeKey] as? UInt,
+              let type = AVAudioSession.InterruptionType(rawValue: typeValue) else { return }
+        
+        switch type {
+        case .began:
+            DispatchQueue.main.async { self.pause() }
+        case .ended:
+            if let optionsValue = userInfo[AVAudioSessionInterruptionOptionKey] as? UInt {
+                let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue)
+                if options.contains(.shouldResume) {
+                    DispatchQueue.main.async { self.resume() }
+                }
+            }
+        @unknown default:
+            break
+        }
     }
     
     func setVideoQuality(_ quality: String) {
@@ -105,18 +150,17 @@ class AudioPlayerManager: ObservableObject {
             self.currentIndex = 0
         }
         
-        do {
-            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
-            try AVAudioSession.sharedInstance().setActive(true)
-        } catch {
-            print("Failed to set audio session category: \(error)")
-        }
+        setupAudioSession()
         
         let playerItem = AVPlayerItem(url: url)
-        playerItem.preferredForwardBufferDuration = 5.0
+        playerItem.preferredForwardBufferDuration = 10.0
         
         player = AVPlayer(playerItem: playerItem)
         player?.automaticallyWaitsToMinimizeStalling = true
+        if #available(iOS 15.0, *) {
+            player?.audiovisualBackgroundPlaybackPolicy = .continuesIfPossible
+        }
+        player?.preventsDisplaySleepDuringVideoPlayback = false
         
         isPlaying = true
         isLoading = true

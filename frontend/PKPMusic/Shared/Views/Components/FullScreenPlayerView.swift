@@ -626,17 +626,39 @@ struct AVPlayerLayerView: UIViewRepresentable {
     
     class PlayerLayerUIView: UIView {
         private var playerLayer = AVPlayerLayer()
+        private var attachedPlayer: AVPlayer?
         
         var player: AVPlayer? {
-            get { playerLayer.player }
-            set { playerLayer.player = newValue }
+            get { attachedPlayer }
+            set {
+                attachedPlayer = newValue
+                if UIApplication.shared.applicationState != .background {
+                    playerLayer.player = newValue
+                }
+            }
         }
         
         init(player: AVPlayer) {
             super.init(frame: .zero)
+            self.attachedPlayer = player
             playerLayer.player = player
             playerLayer.videoGravity = .resizeAspect   // letterbox inside square
             layer.addSublayer(playerLayer)
+            
+            NotificationCenter.default.addObserver(self, selector: #selector(didEnterBackground), name: UIApplication.didEnterBackgroundNotification, object: nil)
+            NotificationCenter.default.addObserver(self, selector: #selector(willEnterForeground), name: UIApplication.willEnterForegroundNotification, object: nil)
+        }
+        
+        @objc private func didEnterBackground() {
+            playerLayer.player = nil
+        }
+        
+        @objc private func willEnterForeground() {
+            playerLayer.player = attachedPlayer
+        }
+        
+        deinit {
+            NotificationCenter.default.removeObserver(self)
         }
         
         required init?(coder: NSCoder) { fatalError() }
