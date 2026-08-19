@@ -10,7 +10,7 @@ from app.core import security as auth
 from app.db.database import get_db, SessionLocal
 from app.services.youtube import yt
 from app.db import models
-from app.api.image_utils import upscale_thumbnail
+from app.api.image_utils import upscale_thumbnail, extract_thumbnail_url
 
 router = APIRouter(tags=["dashboard"])
 
@@ -82,17 +82,26 @@ def get_dashboard_sync(user_id: int, db: Session):
                 seed_video_id = history[0].song_id
                 
         if seed_video_id:
-            watch_playlist = yt.get_watch_playlist(videoId=seed_video_id)
+            try:
+                watch_playlist = yt.get_watch_playlist(videoId=seed_video_id, radio=True, limit=25)
+            except Exception:
+                try:
+                    watch_playlist = yt.get_watch_playlist(videoId=seed_video_id)
+                except Exception:
+                    watch_playlist = {}
+                    
             rec_songs = []
-            for track in watch_playlist.get('tracks', [])[:10]:
-                if track.get('videoId') and track['videoId'] != seed_video_id:
+            tracks = watch_playlist.get('tracks', []) if isinstance(watch_playlist, dict) else []
+            for track in tracks[:10]:
+                if isinstance(track, dict) and track.get('videoId') and track['videoId'] != seed_video_id:
+                    artist_names = [a['name'] for a in track.get('artists', []) if isinstance(a, dict) and 'name' in a]
                     rec_songs.append(schemas.SongBase(
                         id=track['videoId'],
                         title=track.get('title', 'Unknown'),
-                        artist=", ".join([a['name'] for a in track.get('artists', [])]),
-                        album=track.get('album', {}).get('name') if track.get('album') else None,
+                        artist=", ".join(artist_names) if artist_names else "Unknown Artist",
+                        album=track.get('album', {}).get('name') if isinstance(track.get('album'), dict) else None,
                         duration_ms=track.get('lengthSeconds', 0) * 1000 if track.get('lengthSeconds') else 0,
-                        cover_art_url=upscale_thumbnail(track.get('thumbnail', [{}])[-1].get('url')) if track.get('thumbnail') else None
+                        cover_art_url=extract_thumbnail_url(track)
                     ))
             
             if rec_songs:
@@ -107,15 +116,17 @@ def get_dashboard_sync(user_id: int, db: Session):
     try:
         charts = yt.get_charts(country='US')
         trending_items = []
-        if 'trending' in charts and 'items' in charts['trending']:
+        if isinstance(charts, dict) and 'trending' in charts and 'items' in charts['trending']:
             for track in charts['trending']['items'][:10]:
-                trending_items.append(schemas.DashboardItem(
-                    id=track['videoId'],
-                    title=track.get('title', 'Unknown'),
-                    subtitle=", ".join([a['name'] for a in track.get('artists', [])]),
-                    image_url=upscale_thumbnail(track.get('thumbnails', [{}])[-1].get('url')) if track.get('thumbnails') else None,
-                    type="song"
-                ))
+                if isinstance(track, dict):
+                    artist_names = [a['name'] for a in track.get('artists', []) if isinstance(a, dict) and 'name' in a]
+                    trending_items.append(schemas.DashboardItem(
+                        id=track.get('videoId', ''),
+                        title=track.get('title', 'Unknown'),
+                        subtitle=", ".join(artist_names) if artist_names else "Unknown Artist",
+                        image_url=extract_thumbnail_url(track),
+                        type="song"
+                    ))
             if trending_items:
                 sections.append(schemas.DashboardSection(title="Trending Hits", items=trending_items))
     except Exception as e:
@@ -125,15 +136,18 @@ def get_dashboard_sync(user_id: int, db: Session):
     try:
         moods = yt.get_mood_categories()
         mood_items = []
-        for category_group in moods.values():
-            for mood in category_group[:5]:
-                mood_items.append(schemas.DashboardItem(
-                    id=mood['params'],
-                    title=mood['title'],
-                    type="mood"
-                ))
-            if len(mood_items) > 15:
-                break
+        if isinstance(moods, dict):
+            for category_group in moods.values():
+                if isinstance(category_group, list):
+                    for mood in category_group[:5]:
+                        if isinstance(mood, dict) and 'params' in mood:
+                            mood_items.append(schemas.DashboardItem(
+                                id=mood['params'],
+                                title=mood.get('title', 'Unknown'),
+                                type="mood"
+                            ))
+                if len(mood_items) > 15:
+                    break
         if mood_items:
             sections.append(schemas.DashboardSection(title="Moods & Genres", items=mood_items))
     except Exception as e:
@@ -164,7 +178,7 @@ def get_dashboard_sync(user_id: int, db: Session):
                             id=p_id,
                             title=content.get('title', 'Unknown'),
                             subtitle=content.get('author', ''),
-                            image_url=upscale_thumbnail(content.get('thumbnails')[-1].get('url')) if content.get('thumbnails') else None,
+                            image_url=extract_thumbnail_url(content),
                             type="playlist"
                         ))
                 if items:
@@ -177,11 +191,12 @@ def get_dashboard_sync(user_id: int, db: Session):
                 items = []
                 for content in section.get('contents', [])[:10]:
                     if content.get('videoId'):
+                        artist_names = [a['name'] for a in content.get('artists', []) if isinstance(a, dict) and 'name' in a]
                         items.append(schemas.DashboardItem(
                             id=content['videoId'],
                             title=content.get('title', 'Unknown'),
-                            subtitle=", ".join([a['name'] for a in content.get('artists', [])]) if content.get('artists') else "",
-                            image_url=upscale_thumbnail(content.get('thumbnails')[-1].get('url')) if content.get('thumbnails') else None,
+                            subtitle=", ".join(artist_names) if artist_names else "",
+                            image_url=extract_thumbnail_url(content),
                             type="song"
                         ))
                     elif content.get('playlistId'):
@@ -189,7 +204,7 @@ def get_dashboard_sync(user_id: int, db: Session):
                             id=content['playlistId'],
                             title=content.get('title', 'Unknown'),
                             subtitle=content.get('description'),
-                            image_url=upscale_thumbnail(content.get('thumbnails')[-1].get('url')) if content.get('thumbnails') else None,
+                            image_url=extract_thumbnail_url(content),
                             type="playlist"
                         ))
                 if items:
@@ -213,11 +228,10 @@ def get_dashboard_sync(user_id: int, db: Session):
                         id=r['browseId'],
                         title=r.get('artist', 'Unknown'),
                         subtitle="Artist",
-                        image_url=upscale_thumbnail(r.get('thumbnails', [{}])[-1].get('url')) if r.get('thumbnails') else None,
+                        image_url=extract_thumbnail_url(r),
                         type="artist"
                     ))
         if combined_items:
-            # Shuffle or just return them
             import random
             random.shuffle(combined_items)
             sections.append(schemas.DashboardSection(title="Top Artists", items=combined_items))
@@ -251,7 +265,7 @@ def get_mood_playlists(params: str):
                     id=p.get('playlistId') or p.get('videoId'),
                     title=p.get('title', 'Unknown'),
                     subtitle=p.get('description') or p.get('subtitle', ''),
-                    image_url=upscale_thumbnail(p.get('thumbnails', [{}])[-1].get('url')),
+                    image_url=extract_thumbnail_url(p),
                     type="playlist"
                 ))
         return items
@@ -271,11 +285,12 @@ def get_explore():
             items = []
             for content in section.get('contents', [])[:12]:
                 if content.get('videoId'):
+                    artist_names = [a['name'] for a in content.get('artists', []) if isinstance(a, dict) and 'name' in a]
                     items.append(schemas.DashboardItem(
                         id=content['videoId'],
                         title=content.get('title', 'Unknown'),
-                        subtitle=", ".join([a['name'] for a in content.get('artists', [])]) if content.get('artists') else "",
-                        image_url=upscale_thumbnail(content.get('thumbnails')[-1].get('url')) if content.get('thumbnails') else None,
+                        subtitle=", ".join(artist_names) if artist_names else "",
+                        image_url=extract_thumbnail_url(content),
                         type="song"
                     ))
                 elif content.get('playlistId'):
@@ -283,7 +298,7 @@ def get_explore():
                         id=content['playlistId'],
                         title=content.get('title', 'Unknown'),
                         subtitle=content.get('description'),
-                        image_url=upscale_thumbnail(content.get('thumbnails')[-1].get('url')) if content.get('thumbnails') else None,
+                        image_url=extract_thumbnail_url(content),
                         type="playlist"
                     ))
                 elif content.get('browseId'):
@@ -291,7 +306,7 @@ def get_explore():
                         id=content['browseId'],
                         title=content.get('title', 'Unknown'),
                         subtitle=content.get('subtitle', ''),
-                        image_url=upscale_thumbnail(content.get('thumbnails')[-1].get('url')) if content.get('thumbnails') else None,
+                        image_url=extract_thumbnail_url(content),
                         type="album" if not content.get('browseId').startswith('UC') else "artist"
                     ))
             if items:
@@ -299,6 +314,7 @@ def get_explore():
         return sections
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.post("/bookmarks/", response_model=schemas.BookmarkResponse)
 def add_bookmark(bookmark: schemas.BookmarkCreate, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(get_db)):

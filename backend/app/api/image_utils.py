@@ -16,3 +16,17 @@ def upscale_thumbnail(url: str) -> str:
                 return url.replace(quality, 'maxresdefault.jpg')
                 
     return url
+
+def extract_thumbnail_url(item: dict) -> str:
+    """Safely extract and upscale thumbnail url from any ytmusic dictionary."""
+    if not item or not isinstance(item, dict):
+        return None
+    thumbs = item.get('thumbnails') or item.get('thumbnail')
+    if thumbs and isinstance(thumbs, list) and len(thumbs) > 0:
+        for t in reversed(thumbs):
+            if isinstance(t, dict) and t.get('url'):
+                return upscale_thumbnail(t['url'])
+    elif isinstance(thumbs, str):
+        return upscale_thumbnail(thumbs)
+    return None
+
