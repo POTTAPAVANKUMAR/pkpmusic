@@ -138,6 +138,7 @@ struct HomeView: View {
                             .progressViewStyle(CircularProgressViewStyle(tint: Theme.spiderNeonRed))
                             .foregroundColor(.gray)
                         Spacer()
+                    } else {
                         ScrollView {
                             VStack(spacing: 30) {
                                 ForEach(networkManager.dashboardSections) { section in
