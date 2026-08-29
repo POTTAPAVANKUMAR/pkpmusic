@@ -557,13 +557,31 @@ export class App implements OnInit {
 
   // --- OFFLINE DOWNLOAD ---
   downloadForOffline(song: Song) {
-    this.showToast(`Downloading "${song.title}" for offline play...`);
+    this.showToast(`Downloading "${song.title}"...`);
     this.api.downloadAudioBlob(song.id).subscribe({
       next: (blob) => {
+        // 1. Save to IndexedDB offline storage
         this.storage.saveOfflineSong(song, blob);
-        this.showToast(`"${song.title}" saved to Offline Library! 📥`);
+        
+        // 2. Trigger browser download file
+        try {
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          const safeName = `${song.artist} - ${song.title}`.replace(/[\\/:*?"<>|]/g, '_');
+          a.download = `${safeName}.m4a`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+        } catch (e) {
+          console.warn('Direct file download error:', e);
+        }
+
+        this.showToast(`"${song.title}" downloaded & saved to Offline Library! 📥`);
       },
-      error: () => {
+      error: (err) => {
+        console.error('Download error:', err);
         this.showToast('Download failed. Please check network.');
       }
     });

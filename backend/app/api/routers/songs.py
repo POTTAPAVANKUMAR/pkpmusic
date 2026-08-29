@@ -179,6 +179,53 @@ async def stream_youtube(video_id: str, request: Request, video: bool = False, q
             STREAM_CACHE[cache_key] = {'url': stream_url, 'time': now}
             logger.info(f"Successfully extracted and cached stream URL for {cache_key}")
             
+        # Check if proxying is needed (for web browsers to bypass CORS)
+        is_web_or_proxy = (
+            request.query_params.get("proxy", "").lower() in ["1", "true"]
+            or request.headers.get("origin") is not None
+            or "sec-fetch-dest" in request.headers
+        )
+        
+        if is_web_or_proxy:
+            logger.info(f"Proxying stream for {video_id} directly to web client with CORS headers.")
+            client = httpx.AsyncClient(follow_redirects=True, timeout=None)
+            
+            headers_to_forward = {}
+            if "range" in request.headers:
+                headers_to_forward["range"] = request.headers["range"]
+            
+            req = client.build_request("GET", stream_url, headers=headers_to_forward)
+            upstream_resp = await client.send(req, stream=True)
+            
+            response_headers = {
+                "Accept-Ranges": "bytes",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
+                "Access-Control-Allow-Headers": "*",
+                "Access-Control-Expose-Headers": "Content-Range, Content-Length, Accept-Ranges",
+            }
+            if "content-type" in upstream_resp.headers:
+                response_headers["Content-Type"] = upstream_resp.headers["content-type"]
+            if "content-length" in upstream_resp.headers:
+                response_headers["Content-Length"] = upstream_resp.headers["content-length"]
+            if "content-range" in upstream_resp.headers:
+                response_headers["Content-Range"] = upstream_resp.headers["content-range"]
+                
+            async def audio_stream_generator():
+                try:
+                    async for chunk in upstream_resp.aiter_bytes(chunk_size=65536):
+                        yield chunk
+                finally:
+                    await upstream_resp.aclose()
+                    await client.aclose()
+
+            return StreamingResponse(
+                audio_stream_generator(),
+                status_code=upstream_resp.status_code,
+                headers=response_headers,
+                media_type=upstream_resp.headers.get("content-type", "audio/mp4")
+            )
+
         logger.info(f"Redirecting {video_id} to stream URL.")
         return RedirectResponse(url=stream_url)
     except Exception as e:
@@ -305,12 +352,21 @@ def get_lyrics(video_id: str):
             except Exception:
                 pass
 
-        raise HTTPException(status_code=404, detail="Lyrics not found for this song")
+        # Return empty lyrics with 200 OK so web clients don't log 404 network errors
+        return schemas.LyricsResponse(
+            lyrics="",
+            source="None",
+            isSynced=False
+        )
         
     except Exception as e:
         if isinstance(e, HTTPException):
             raise e
-        raise HTTPException(status_code=500, detail=str(e))
+        return schemas.LyricsResponse(
+            lyrics="",
+            source="None",
+            isSynced=False
+        )
 
 def extract_duration_ms(item):
     dur = item.get('duration_seconds')

@@ -190,11 +190,11 @@ export class ApiService {
 
   // --- STREAMING & DOWNLOADS ---
   getStreamUrl(videoId: string, quality: string = 'auto'): string {
-    return `${this.baseUrl}/stream/yt/${videoId}?quality=${quality}`;
+    return `${this.baseUrl}/stream/yt/${videoId}?quality=${quality}&proxy=true`;
   }
 
   downloadAudioBlob(videoId: string): Observable<Blob> {
-    return this.http.get(`${this.baseUrl}/stream/yt/${videoId}`, { responseType: 'blob' });
+    return this.http.get(`${this.baseUrl}/stream/yt/${videoId}?proxy=true`, { responseType: 'blob' });
   }
 
   // --- LYRICS ---

@@ -4,16 +4,16 @@ def upscale_thumbnail(url: str) -> str:
     if not url:
         return url
     
-    # Google User Content URLs (replace =w120-h120... with =w1080-h1080...)
+    # Google User Content URLs (replace with optimal high-res 544x544 or 800x800 square cover art)
     if "ggpht.com" in url or "googleusercontent.com" in url:
-        # Match the resolution part and replace it
-        return re.sub(r'=w\d+-h\d+', '=w1080-h1080', url)
+        return re.sub(r'=w\d+-h\d+[^\s]*', '=w544-h544-l90-rj', url)
     
-    # YouTube standard thumbnails (upgrade to maxresdefault)
+    # YouTube standard thumbnails (use reliable hqdefault.jpg which is guaranteed 100% available without 404)
     if "i.ytimg.com" in url or "img.youtube.com" in url:
-        for quality in ['hqdefault.jpg', 'sddefault.jpg', 'mqdefault.jpg', 'default.jpg']:
+        # Upgrade lower-res thumbnails to hqdefault
+        for quality in ['sddefault.jpg', 'mqdefault.jpg', 'default.jpg']:
             if quality in url:
-                return url.replace(quality, 'maxresdefault.jpg')
+                return url.replace(quality, 'hqdefault.jpg')
                 
     return url
 
@@ -29,4 +29,3 @@ def extract_thumbnail_url(item: dict) -> str:
     elif isinstance(thumbs, str):
         return upscale_thumbnail(thumbs)
     return None
-
