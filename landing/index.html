@@ -628,10 +628,22 @@
       <!-- Core Services Grid -->
       <div class="section-header">
         <span class="section-title">Core Services & Applications</span>
-        <div class="section-line"></div>
-      </div>
+           <div class="grid">
+        <!-- PKP Music Web Player -->
+        <a class="card card-music" href="https://pkpmusicweb.pottapk.win" target="_blank">
+          <div class="card-top">
+            <div class="card-icon" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">🎧</div>
+            <span class="badge badge-red">Angular Web App</span>
+          </div>
+          <div class="card-title">PKP Music Web Player</div>
+          <div class="card-domain">pkpmusicweb.pottapk.win</div>
+          <div class="card-desc">Full-featured music streaming web app with synced lyrics, offline downloads, playlist manager, and audio visualizer.</div>
+          <div class="card-bottom">
+            <span class="card-meta">Port 3001 · Angular 19</span>
+            <span class="arrow-icon">→</span>
+          </div>
+        </a>
 
-      <div class="grid">
         <!-- PKP Music API -->
         <a class="card card-music" href="https://pkpmusic.pottapk.win/docs" target="_blank">
           <div class="card-top">
@@ -730,6 +742,12 @@
               <td><code>pottapk.win</code></td>
               <td><code>http://localhost:3000</code></td>
               <td>Nginx Web Portal</td>
+            </tr>
+            <tr>
+              <td style="color: #fff; font-weight: 600;">PKP Music Web App</td>
+              <td><code>pkpmusicweb.pottapk.win</code></td>
+              <td><code>http://localhost:3001</code></td>
+              <td>Angular 19 Web Player</td>
             </tr>
             <tr>
               <td style="color: #fff; font-weight: 600;">PKP Music Core</td>
