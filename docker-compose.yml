@@ -37,12 +37,6 @@ services:
       - db
     restart: unless-stopped
 
-  web:
-    build: ./webfrontend
-    ports:
-      - "3001:80"
-    restart: unless-stopped
-
   dozzle:
     image: amir20/dozzle:latest
     volumes:

@@ -312,7 +312,6 @@ def prune_docker_system() -> Dict[str, Any]:
 MONITORED_SERVICES = [
     {"name": "Landing Dashboard", "url": "https://pottapk.win", "service": "Landing Page", "port": 3000, "icon": "house.fill"},
     {"name": "PKP Music API", "url": "https://pkpmusic.pottapk.win/docs", "service": "FastAPI Backend", "port": 8000, "icon": "music.note"},
-    {"name": "PKP Music Web", "url": "https://pkpmusicweb.pottapk.win", "service": "React Web App", "port": 3001, "icon": "globe"},
     {"name": "Live Server Logs", "url": "https://pkpmusiclogs.pottapk.win", "service": "Dozzle Log Viewer", "port": 8888, "icon": "terminal.fill"},
     {"name": "PostgreSQL pgAdmin", "url": "https://postgresql.pottapk.win", "service": "pgAdmin DB GUI", "port": 5050, "icon": "cylinder.split.1x2"},
     {"name": "Portainer Docker GUI", "url": "https://portainer.pottapk.win", "service": "Portainer CE", "port": 9000, "icon": "shippingbox.fill"},
