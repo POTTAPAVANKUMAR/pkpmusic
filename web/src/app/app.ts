@@ -18,7 +18,7 @@ import {
   UserPlaylist
 } from './models/music.model';
 
-type AppTab = 'home' | 'explore' | 'library' | 'history' | 'offline' | 'server';
+type AppTab = 'home' | 'explore' | 'library' | 'history' | 'server';
 type SearchType = 'songs' | 'albums' | 'artists';
 type PlayerDisplayMode = 'docked' | 'floating';
 
@@ -559,15 +559,15 @@ export class App implements OnInit {
     this.showToast(isLiked ? 'Removed from Liked Songs' : 'Added to Liked Songs ❤️');
   }
 
-  // --- OFFLINE DOWNLOAD ---
-  downloadForOffline(song: Song) {
-    this.showToast(`Downloading "${song.title}"...`);
+  // --- DEVICE DOWNLOAD ---
+  downloadSong(song: Song) {
+    this.showToast(`Downloading "${song.title}" to device...`);
     this.api.downloadAudioBlob(song.id).subscribe({
       next: (blob) => {
-        // 1. Save to IndexedDB offline storage
+        // 1. Save to browser offline storage
         this.storage.saveOfflineSong(song, blob);
         
-        // 2. Trigger browser download file
+        // 2. Trigger direct browser file download to local device
         try {
           const url = window.URL.createObjectURL(blob);
           const a = document.createElement('a');
@@ -582,13 +582,17 @@ export class App implements OnInit {
           console.warn('Direct file download error:', e);
         }
 
-        this.showToast(`"${song.title}" downloaded & saved to Offline Library! 📥`);
+        this.showToast(`"${song.title}" downloaded to device! 📥`);
       },
       error: (err) => {
         console.error('Download error:', err);
         this.showToast('Download failed. Please check network.');
       }
     });
+  }
+
+  downloadForOffline(song: Song) {
+    this.downloadSong(song);
   }
 
   // --- ADD TO PLAYLIST MODAL ---

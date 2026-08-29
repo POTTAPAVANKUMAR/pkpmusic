@@ -206,11 +206,6 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
           <span>History</span>
         </button>
-
-        <button class="nav-btn" [class.active]="selectedTab() === 'offline' && !isSearching()" (click)="setTab('offline')">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-          <span>Offline</span>
-        </button>
       </div>
 
       <!-- Playlists Section in Sidebar -->
@@ -365,7 +360,7 @@
               </span>
             </button>
             <button class="btn-row-action" (click)="openAddToPlaylist(song)" title="Add to Playlist">+</button>
-            <button class="btn-row-action" (click)="downloadForOffline(song)" title="Download">↓</button>
+            <button class="btn-row-action" (click)="downloadSong(song)" title="Download to Device">↓</button>
           </div>
         </div>
       </div>
@@ -557,7 +552,7 @@
               <span style="color: var(--accent-red)">♥</span>
             </button>
             <button class="btn-row-action" (click)="openAddToPlaylist(song)" title="Add to Playlist">+</button>
-            <button class="btn-row-action" (click)="downloadForOffline(song)" title="Download">↓</button>
+            <button class="btn-row-action" (click)="downloadSong(song)" title="Download to Device">↓</button>
           </div>
         </div>
       </div>
@@ -611,8 +606,8 @@
                 {{ storage.isSongLiked(song.id) ? '♥' : '♡' }}
               </span>
             </button>
-            <button class="btn-row-action" (click)="openAddToPlaylist(song)">+</button>
-            <button class="btn-row-action" (click)="downloadForOffline(song)">↓</button>
+            <button class="btn-row-action" (click)="openAddToPlaylist(song)" title="Add to Playlist">+</button>
+            <button class="btn-row-action" (click)="downloadSong(song)" title="Download to Device">↓</button>
           </div>
         </div>
       </div>
@@ -622,51 +617,7 @@
       </div>
     </div>
 
-    <!-- ==================== TAB 4: OFFLINE ==================== -->
-    <div class="page-content" *ngIf="selectedTab() === 'offline' && !isSearching() && !selectedArtist() && !selectedAlbum() && !selectedMoodTitle()">
-      <div class="content-header-row">
-        <div>
-          <h1 class="content-title">Offline Downloads</h1>
-          <p class="content-sub">Cached songs stored in your browser for offline playback</p>
-        </div>
-        <button class="btn-topbar-pill" *ngIf="storage.downloads().length > 0" (click)="playAllSongs(storage.downloads())">
-          <span>▶ Play Offline</span>
-        </button>
-      </div>
-
-      <div class="track-table" *ngIf="storage.downloads().length > 0">
-        <div class="table-header-row">
-          <span class="col-num">#</span>
-          <span class="col-main">TITLE</span>
-          <span class="col-album">STATUS</span>
-          <span class="col-actions"></span>
-        </div>
-
-        <div class="table-body-row" 
-             *ngFor="let song of storage.downloads(); let idx = index"
-             [class.active]="player.currentSong()?.id === song.id"
-             (click)="playSongNow(song, storage.downloads())">
-          <span class="col-num">{{ idx + 1 }}</span>
-          <div class="col-main">
-            <img [src]="song.cover_art_url || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=120&auto=format&fit=crop&q=80'" class="table-thumb" />
-            <div class="table-titles">
-              <span class="title-primary">{{ song.title }}</span>
-              <span class="title-secondary">{{ song.artist }}</span>
-            </div>
-          </div>
-          <span class="col-album" style="color: #10b981;">Downloaded</span>
-          <div class="col-actions" (click)="$event.stopPropagation()">
-            <button class="btn-row-action delete" (click)="storage.removeDownload(song.id)" title="Remove Download">✕</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="empty-state-clean" *ngIf="storage.downloads().length === 0">
-        <p>No offline tracks saved. Tap the download icon (↓) on any song to listen without connection.</p>
-      </div>
-    </div>
-
-    <!-- ==================== TAB 5: SERVER HUD ==================== -->
+    <!-- ==================== TAB 4: SERVER HUD ==================== -->
     <div class="page-content" *ngIf="selectedTab() === 'server' && !isSearching() && !selectedArtist() && !selectedAlbum() && !selectedMoodTitle()">
       <div class="content-header-row">
         <div>
@@ -746,7 +697,8 @@
                 {{ storage.isSongLiked(song.id) ? '♥' : '♡' }}
               </span>
             </button>
-            <button class="btn-row-action" (click)="openAddToPlaylist(song)">+</button>
+            <button class="btn-row-action" (click)="openAddToPlaylist(song)" title="Add to Playlist">+</button>
+            <button class="btn-row-action" (click)="downloadSong(song)" title="Download to Device">↓</button>
           </div>
         </div>
       </div>
@@ -782,7 +734,8 @@
                 {{ storage.isSongLiked(song.id) ? '♥' : '♡' }}
               </span>
             </button>
-            <button class="btn-row-action" (click)="openAddToPlaylist(song)">+</button>
+            <button class="btn-row-action" (click)="openAddToPlaylist(song)" title="Add to Playlist">+</button>
+            <button class="btn-row-action" (click)="downloadSong(song)" title="Download to Device">↓</button>
           </div>
         </div>
       </div>
