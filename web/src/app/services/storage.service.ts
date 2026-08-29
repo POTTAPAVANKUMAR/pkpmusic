@@ -96,6 +96,21 @@ export class StorageService {
     });
   }
 
+  deletePlaylist(playlistId: number): void {
+    this.customPlaylists.set(this.customPlaylists().filter(p => p.id !== playlistId));
+    this.api.deletePlaylist(playlistId).subscribe({
+      next: () => this.loadPlaylists(),
+      error: () => this.loadPlaylists()
+    });
+  }
+
+  removeSongFromPlaylist(playlistId: number, songId: string): void {
+    this.api.removeSongFromPlaylist(playlistId, songId).subscribe({
+      next: () => this.loadPlaylists(),
+      error: () => this.loadPlaylists()
+    });
+  }
+
   // --- HISTORY ---
   addToHistory(song: Song): void {
     // Optimistically update signal

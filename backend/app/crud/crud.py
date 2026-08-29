@@ -71,6 +71,36 @@ def add_song_to_playlist(db: Session, playlist_id: int, item: schemas.PlaylistIt
     db.refresh(db_item)
     return db_item
 
+def delete_user_playlist(db: Session, playlist_id: int, user_id: int):
+    db_playlist = db.query(models.Playlist).filter(
+        models.Playlist.id == playlist_id,
+        models.Playlist.owner_id == user_id
+    ).first()
+    if not db_playlist:
+        return False
+    # Remove associated items first
+    db.query(models.PlaylistItem).filter(models.PlaylistItem.playlist_id == playlist_id).delete()
+    db.delete(db_playlist)
+    db.commit()
+    return True
+
+def remove_song_from_playlist(db: Session, playlist_id: int, song_id: str, user_id: int):
+    db_playlist = db.query(models.Playlist).filter(
+        models.Playlist.id == playlist_id,
+        models.Playlist.owner_id == user_id
+    ).first()
+    if not db_playlist:
+        return False
+    item = db.query(models.PlaylistItem).filter(
+        models.PlaylistItem.playlist_id == playlist_id,
+        models.PlaylistItem.song_id == song_id
+    ).first()
+    if item:
+        db.delete(item)
+        db.commit()
+        return True
+    return False
+
 # History
 def add_to_history(db: Session, history: schemas.HistoryCreate, user_id: int):
     db_history = models.History(**history.dict(), user_id=user_id)

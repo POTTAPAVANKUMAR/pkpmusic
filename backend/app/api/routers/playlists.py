@@ -44,6 +44,20 @@ def add_song_to_playlist(playlist_id: int, item: schemas.PlaylistItemCreate, cur
             
     return crud.add_song_to_playlist(db, playlist_id=playlist_id, item=item)
 
+@router.delete("/{playlist_id}")
+def delete_playlist(playlist_id: int, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(get_db)):
+    success = crud.delete_user_playlist(db, playlist_id=playlist_id, user_id=current_user.id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Playlist not found or unauthorized")
+    return {"message": "Playlist deleted successfully"}
+
+@router.delete("/{playlist_id}/items/{song_id}")
+def remove_song_from_playlist(playlist_id: int, song_id: str, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(get_db)):
+    success = crud.remove_song_from_playlist(db, playlist_id=playlist_id, song_id=song_id, user_id=current_user.id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Song or playlist not found")
+    return {"message": "Song removed from playlist"}
+
 @router.post("/import/csv")
 async def import_playlist_csv(background_tasks: BackgroundTasks, file: UploadFile = File(...), current_user: models.User = Depends(auth.get_current_user)):
     content = await file.read()

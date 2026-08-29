@@ -143,6 +143,42 @@ class NetworkManager: ObservableObject {
             }
         }.resume()
     }
+
+    func deletePlaylist(playlistId: Int, completion: ((Bool) -> Void)? = nil) {
+        guard let request = createRequest(for: "\(baseURL)/playlists/\(playlistId)", method: "DELETE") else {
+            completion?(false)
+            return
+        }
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if let httpResp = response as? HTTPURLResponse, httpResp.statusCode == 200 {
+                    self.playlists.removeAll(where: { $0.id == playlistId })
+                    completion?(true)
+                } else {
+                    completion?(false)
+                }
+            }
+        }.resume()
+    }
+
+    func removeSongFromPlaylist(songId: String, playlistId: Int, completion: ((Bool) -> Void)? = nil) {
+        guard let request = createRequest(for: "\(baseURL)/playlists/\(playlistId)/items/\(songId)", method: "DELETE") else {
+            completion?(false)
+            return
+        }
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if let httpResp = response as? HTTPURLResponse, httpResp.statusCode == 200 {
+                    self.fetchPlaylists()
+                    completion?(true)
+                } else {
+                    completion?(false)
+                }
+            }
+        }.resume()
+    }
     
     func searchYouTube(query: String) {
         guard let escapedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),

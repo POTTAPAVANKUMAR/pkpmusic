@@ -305,8 +305,15 @@ struct LibraryView: View {
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 12)
                                         .stroke(Theme.spiderDarkGrey, lineWidth: 1)
-                                )
+                                        )
                                 .padding(.horizontal)
+                            }
+                            .contextMenu {
+                                Button(role: .destructive) {
+                                    networkManager.deletePlaylist(playlistId: playlist.id)
+                                } label: {
+                                    Label("Delete Playlist", systemImage: "trash")
+                                }
                             }
                         }
                     }

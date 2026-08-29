@@ -2,13 +2,20 @@ import SwiftUI
 
 struct PlaylistDetailView: View {
     let playlist: Playlist
+    @Environment(\.dismiss) private var dismiss
+    @StateObject private var networkManager = NetworkManager.shared
     @StateObject private var audioManager = AudioPlayerManager.shared
     @State private var showFullScreenPlayer = false
-    
+    @State private var showDeletePlaylistAlert = false
     @State private var localSearchText = ""
     
+    // Live items if updated in networkManager
+    private var currentPlaylist: Playlist {
+        networkManager.playlists.first(where: { $0.id == playlist.id }) ?? playlist
+    }
+    
     var filteredItems: [PlaylistItem] {
-        guard let items = playlist.items else { return [] }
+        guard let items = currentPlaylist.items else { return [] }
         if localSearchText.isEmpty { return items }
         return items.filter { $0.song.title.lowercased().contains(localSearchText.lowercased()) || $0.song.artist.lowercased().contains(localSearchText.lowercased()) }
     }
@@ -47,7 +54,7 @@ struct PlaylistDetailView: View {
                     HStack(spacing: 20) {
                         Button(action: {
                             audioManager.isShuffled = false
-                            let songs = playlist.items?.map { $0.song } ?? []
+                            let songs = currentPlaylist.items?.map { $0.song } ?? []
                             if !songs.isEmpty {
                                 audioManager.play(song: songs[0], in: songs, at: 0)
                                 showFullScreenPlayer = true
@@ -68,7 +75,7 @@ struct PlaylistDetailView: View {
                         
                         Button(action: {
                             audioManager.isShuffled = true
-                            let songs = playlist.items?.map { $0.song } ?? []
+                            let songs = currentPlaylist.items?.map { $0.song } ?? []
                             if let randomSong = songs.randomElement() {
                                 audioManager.play(song: randomSong, in: songs, at: 0)
                                 showFullScreenPlayer = true
@@ -98,13 +105,31 @@ struct PlaylistDetailView: View {
                         LazyVStack(spacing: 12) {
                             ForEach(filteredItems.indices, id: \.self) { index in
                                 let item = filteredItems[index]
-                                SongRowView(song: item.song, isPlaying: audioManager.currentSong?.id == item.song.id)
-                                    .onTapGesture {
-                                        let songs = filteredItems.map { $0.song }
-                                        audioManager.play(song: item.song, in: songs, at: index)
-                                        showFullScreenPlayer = true
+                                HStack {
+                                    SongRowView(song: item.song, isPlaying: audioManager.currentSong?.id == item.song.id)
+                                        .onTapGesture {
+                                            let songs = filteredItems.map { $0.song }
+                                            audioManager.play(song: item.song, in: songs, at: index)
+                                            showFullScreenPlayer = true
+                                        }
+                                    
+                                    Button(action: {
+                                        networkManager.removeSongFromPlaylist(songId: item.song.id, playlistId: currentPlaylist.id)
+                                    }) {
+                                        Image(systemName: "minus.circle")
+                                            .font(.system(size: 18))
+                                            .foregroundColor(.gray.opacity(0.6))
                                     }
-                                    .padding(.horizontal)
+                                    .padding(.trailing, 4)
+                                }
+                                .padding(.horizontal)
+                                .contextMenu {
+                                    Button(role: .destructive) {
+                                        networkManager.removeSongFromPlaylist(songId: item.song.id, playlistId: currentPlaylist.id)
+                                    } label: {
+                                        Label("Remove from Playlist", systemImage: "trash")
+                                    }
+                                }
                             }
                         }
                         .padding(.vertical)
@@ -126,7 +151,29 @@ struct PlaylistDetailView: View {
                 }
             }
         }
-        .navigationTitle(playlist.name)
+        .navigationTitle(currentPlaylist.name)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: {
+                    showDeletePlaylistAlert = true
+                }) {
+                    Image(systemName: "trash")
+                        .foregroundColor(Theme.spiderRed)
+                }
+            }
+        }
+        .alert("Delete Playlist", isPresented: $showDeletePlaylistAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
+                networkManager.deletePlaylist(playlistId: currentPlaylist.id) { success in
+                    if success {
+                        dismiss()
+                    }
+                }
+            }
+        } message: {
+            Text("Are you sure you want to delete '\(currentPlaylist.name)'? This action cannot be undone.")
+        }
         .fullScreenCover(isPresented: $showFullScreenPlayer) {
             FullScreenPlayerView(isShowing: $showFullScreenPlayer)
         }

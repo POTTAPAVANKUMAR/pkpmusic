@@ -647,7 +647,7 @@ export class App implements OnInit {
     }
   }
 
-  // --- CUSTOM PLAYLIST CREATOR ---
+  // --- CUSTOM PLAYLIST CREATOR & MANAGEMENT ---
   createPlaylist() {
     const name = this.newPlaylistName().trim();
     if (name) {
@@ -656,6 +656,25 @@ export class App implements OnInit {
       this.showNewPlaylistModal.set(false);
       this.showToast(`Playlist "${name}" created! 📁`);
     }
+  }
+
+  deletePlaylist(playlist: UserPlaylist, event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    const confirmed = confirm(`Are you sure you want to delete the playlist "${playlist.name}"?`);
+    if (confirmed) {
+      this.storage.deletePlaylist(playlist.id);
+      this.showToast(`Playlist "${playlist.name}" deleted 🗑`);
+    }
+  }
+
+  removeSongFromPlaylist(playlist: UserPlaylist, song: Song, event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.storage.removeSongFromPlaylist(playlist.id, song.id);
+    this.showToast(`Removed "${song.title}" from ${playlist.name}`);
   }
 
   toggleSheet(sheet: 'lyrics' | 'queue' | 'related' | 'options') {

@@ -118,8 +118,16 @@ export class ApiService {
     return this.http.post<UserPlaylist>(`${this.baseUrl}/playlists/`, { name, description }, { headers: this.getAuthHeaders() });
   }
 
+  deletePlaylist(playlistId: number): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/playlists/${playlistId}`, { headers: this.getAuthHeaders() });
+  }
+
   addSongToPlaylist(playlistId: number, songId: string): Observable<any> {
     return this.http.post(`${this.baseUrl}/playlists/${playlistId}/items`, { song_id: songId, position: 0 }, { headers: this.getAuthHeaders() });
+  }
+
+  removeSongFromPlaylist(playlistId: number, songId: string): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/playlists/${playlistId}/items/${songId}`, { headers: this.getAuthHeaders() });
   }
 
   // --- USER LISTENING HISTORY ---

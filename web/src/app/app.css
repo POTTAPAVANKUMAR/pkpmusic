@@ -1206,9 +1206,63 @@
   border-color: var(--border-hover);
 }
 
+.pl-box-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
 .pl-box-icon {
   color: var(--accent-red);
-  margin-bottom: 10px;
+}
+
+.pl-delete-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-muted);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: all 0.2s ease;
+}
+
+.playlist-box-card:hover .pl-delete-btn {
+  opacity: 1;
+}
+
+.pl-delete-btn:hover {
+  background: rgba(229, 9, 20, 0.2);
+  border-color: var(--accent-red);
+  color: var(--accent-red);
+  transform: scale(1.1);
+}
+
+.sidebar-pl-del-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease, color 0.2s ease;
+  margin-left: auto;
+}
+
+.playlist-nav-item:hover .sidebar-pl-del-btn {
+  opacity: 0.8;
+}
+
+.sidebar-pl-del-btn:hover {
+  opacity: 1 !important;
+  color: var(--accent-red);
 }
 
 .pl-box-name {
