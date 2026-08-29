@@ -403,6 +403,7 @@ def get_album(browse_id: str):
                     title=track.get('title', 'Unknown'),
                     artist=", ".join([a['name'] for a in track.get('artists', [])]) if track.get('artists') else "Unknown Artist",
                     album=album.get('title'),
+                    album_id=browse_id,
                     duration_ms=extract_duration_ms(track),
                     cover_art_url=cover_url
                 ))
@@ -416,6 +417,67 @@ def get_album(browse_id: str):
     except Exception as e:
         import traceback
         traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/songs/{video_id}/album", response_model=dict)
+def get_song_album(video_id: str, db: Session = Depends(get_db)):
+    """
+    Resolve album browse_id for a given song video ID.
+    """
+    try:
+        db_song = crud.get_song(db, song_id=video_id)
+        if db_song and db_song.album_id:
+            return {"album_id": db_song.album_id, "album_name": db_song.album}
+            
+        # Try getting watch playlist
+        try:
+            watch_playlist = yt.get_watch_playlist(videoId=video_id, limit=5)
+            if watch_playlist and 'tracks' in watch_playlist and len(watch_playlist['tracks']) > 0:
+                track = watch_playlist['tracks'][0]
+                album_info = track.get('album')
+                if album_info and isinstance(album_info, dict) and album_info.get('id'):
+                    album_id = album_info.get('id')
+                    album_name = album_info.get('name')
+                    if db_song:
+                        db_song.album_id = album_id
+                        if not db_song.album and album_name:
+                            db_song.album = album_name
+                        db.commit()
+                    return {"album_id": album_id, "album_name": album_name}
+        except Exception:
+            pass
+
+        # Fallback: search for album by title / artist
+        song_title = db_song.title if db_song else None
+        song_artist = db_song.artist if db_song else None
+        if not song_title:
+            try:
+                info = yt.get_song(video_id)
+                details = info.get('videoDetails', {})
+                song_title = details.get('title')
+                song_artist = details.get('author')
+            except Exception:
+                pass
+
+        if song_title:
+            query = f"{song_title} {song_artist or ''}".strip()
+            album_results = yt.search(query, filter="albums", limit=5)
+            if album_results:
+                top_album = album_results[0]
+                album_id = top_album.get('browseId')
+                album_name = top_album.get('title')
+                if album_id:
+                    if db_song:
+                        db_song.album_id = album_id
+                        if not db_song.album and album_name:
+                            db_song.album = album_name
+                        db.commit()
+                    return {"album_id": album_id, "album_name": album_name}
+
+        raise HTTPException(status_code=404, detail="Album not found for this song")
+    except HTTPException:
+        raise
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/history/", response_model=schemas.History)

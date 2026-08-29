@@ -6,7 +6,14 @@ struct SongRowView: View {
     @ObservedObject var downloadManager = DownloadManager.shared
     @StateObject private var audioManager = AudioPlayerManager.shared
     @StateObject private var networkManager = NetworkManager.shared
-    @State private var showingPlaylists = false
+    @State private var activeSheet: SongRowSheet? = nil
+    
+    enum SongRowSheet: Identifiable {
+        case playlists
+        case album
+        
+        var id: Int { hashValue }
+    }
     
     var body: some View {
         HStack(spacing: 15) {
@@ -67,6 +74,17 @@ struct SongRowView: View {
                 }
                 .buttonStyle(PlainButtonStyle())
             }
+            
+            // Options Menu button
+            Menu {
+                menuOptions
+            } label: {
+                Image(systemName: "ellipsis")
+                    .foregroundColor(.gray)
+                    .frame(width: 24, height: 24)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(PlainButtonStyle())
         }
         .padding(10)
         .background(Color.white.opacity(0.05))
@@ -76,68 +94,94 @@ struct SongRowView: View {
                 .stroke(isPlaying ? Theme.spiderNeonRed.opacity(0.5) : Theme.spiderDarkGrey, lineWidth: 1)
         )
         .contextMenu {
-            Button(action: {
-                AudioPlayerManager.shared.insertNext(song: song)
-            }) {
-                Label("Play Next", systemImage: "text.insert")
-            }
-            
-            Button(action: {
-                AudioPlayerManager.shared.addToQueue(song: song)
-            }) {
-                Label("Add to Queue", systemImage: "text.badge.plus")
-            }
-            
-            Divider()
-            
-            Button(action: {
-                if downloadManager.isDownloaded(songId: song.id) {
-                    downloadManager.removeDownload(songId: song.id)
-                } else {
-                    downloadManager.download(song: song)
-                }
-            }) {
-                Label(downloadManager.isDownloaded(songId: song.id) ? "Remove Download" : "Download", 
-                      systemImage: downloadManager.isDownloaded(songId: song.id) ? "trash" : "arrow.down.circle")
-            }
-            
-            Button(action: {
-                networkManager.addToFavorites(songId: song.id)
-            }) {
-                Label(networkManager.favorites.contains(where: { $0.id == song.id }) ? "Remove from Favorites" : "Add to Favorites", 
-                      systemImage: networkManager.favorites.contains(where: { $0.id == song.id }) ? "heart.fill" : "heart")
-            }
-            
-            Button(action: {
-                networkManager.fetchPlaylists()
-                showingPlaylists = true
-            }) {
-                Label("Add to Playlist", systemImage: "music.note.list")
-            }
+            menuOptions
         }
-        .sheet(isPresented: $showingPlaylists) {
-            NavigationView {
-                List {
-                    if networkManager.playlists.isEmpty {
-                        Text("No playlists found. Create one in the Playlists tab!")
-                            .foregroundColor(.gray)
-                    } else {
-                        ForEach(networkManager.playlists, id: \.id) { playlist in
-                            Button(action: {
-                                networkManager.addSongToPlaylist(songId: song.id, playlistId: playlist.id)
-                                showingPlaylists = false
-                            }) {
-                                Text(playlist.name)
-                                    .foregroundColor(.primary)
+        .sheet(item: $activeSheet) { sheet in
+            switch sheet {
+            case .playlists:
+                NavigationView {
+                    List {
+                        if networkManager.playlists.isEmpty {
+                            Text("No playlists found. Create one in the Playlists tab!")
+                                .foregroundColor(.gray)
+                        } else {
+                            ForEach(networkManager.playlists, id: \.id) { playlist in
+                                Button(action: {
+                                    networkManager.addSongToPlaylist(songId: song.id, playlistId: playlist.id)
+                                    activeSheet = nil
+                                }) {
+                                    Text(playlist.name)
+                                        .foregroundColor(.primary)
+                                }
                             }
                         }
                     }
+                    .navigationTitle("Select Playlist")
+                    .navigationBarItems(trailing: Button("Cancel") {
+                        activeSheet = nil
+                    })
                 }
-                .navigationTitle("Select Playlist")
-                .navigationBarItems(trailing: Button("Cancel") {
-                    showingPlaylists = false
-                })
+            case .album:
+                NavigationView {
+                    AlbumDetailView(albumId: song.albumId ?? "", song: song)
+                        .toolbar {
+                            ToolbarItem(placement: .navigationBarTrailing) {
+                                Button("Done") {
+                                    activeSheet = nil
+                                }
+                                .foregroundColor(Theme.spiderNeonRed)
+                            }
+                        }
+                }
             }
+        }
+    }
+    
+    @ViewBuilder
+    private var menuOptions: some View {
+        Button(action: {
+            AudioPlayerManager.shared.insertNext(song: song)
+        }) {
+            Label("Play Next", systemImage: "text.insert")
+        }
+        
+        Button(action: {
+            AudioPlayerManager.shared.addToQueue(song: song)
+        }) {
+            Label("Add to Queue", systemImage: "text.badge.plus")
+        }
+        
+        Button(action: {
+            activeSheet = .album
+        }) {
+            Label("Go to Album", systemImage: "opticaldisc")
+        }
+        
+        Divider()
+        
+        Button(action: {
+            if downloadManager.isDownloaded(songId: song.id) {
+                downloadManager.removeDownload(songId: song.id)
+            } else {
+                downloadManager.download(song: song)
+            }
+        }) {
+            Label(downloadManager.isDownloaded(songId: song.id) ? "Remove Download" : "Download", 
+                  systemImage: downloadManager.isDownloaded(songId: song.id) ? "trash" : "arrow.down.circle")
+        }
+        
+        Button(action: {
+            networkManager.addToFavorites(songId: song.id)
+        }) {
+            Label(networkManager.favorites.contains(where: { $0.id == song.id }) ? "Remove from Favorites" : "Add to Favorites", 
+                  systemImage: networkManager.favorites.contains(where: { $0.id == song.id }) ? "heart.fill" : "heart")
+        }
+        
+        Button(action: {
+            networkManager.fetchPlaylists()
+            activeSheet = .playlists
+        }) {
+            Label("Add to Playlist", systemImage: "music.note.list")
         }
     }
     

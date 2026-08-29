@@ -2,6 +2,7 @@ import SwiftUI
 
 struct AlbumDetailView: View {
     let albumId: String
+    var song: Song? = nil
     
     @StateObject private var networkManager = NetworkManager.shared
     @StateObject private var audioManager = AudioPlayerManager.shared
@@ -9,6 +10,8 @@ struct AlbumDetailView: View {
     @State private var albumDetail: AlbumDetail?
     @State private var isLoading = true
     @State private var showFullScreenPlayer = false
+    @State private var currentAlbumId: String = ""
+    @State private var errorMessage: String? = nil
     
     @State private var searchText = ""
     
@@ -55,7 +58,8 @@ struct AlbumDetailView: View {
                                     .multilineTextAlignment(.center)
                                 
                                 Button(action: {
-                                    networkManager.addBookmark(itemId: albumId, itemType: "album", title: detail.title, coverArtUrl: detail.thumbnails.last?.url)
+                                    let activeId = !currentAlbumId.isEmpty ? currentAlbumId : albumId
+                                    networkManager.addBookmark(itemId: activeId, itemType: "album", title: detail.title, coverArtUrl: detail.thumbnails.last?.url)
                                 }) {
                                     Image(systemName: "bookmark")
                                         .font(.title2)
@@ -169,19 +173,71 @@ struct AlbumDetailView: View {
                     }
                 }
             } else {
-                Text("Failed to load album.")
-                    .foregroundColor(.gray)
+                VStack(spacing: 12) {
+                    Image(systemName: "opticaldisc")
+                        .font(.system(size: 50))
+                        .foregroundColor(.gray)
+                    Text(errorMessage ?? "Failed to load album.")
+                        .foregroundColor(.gray)
+                        .font(.headline)
+                    if errorMessage != nil {
+                        Button(action: {
+                            isLoading = true
+                            errorMessage = nil
+                            loadAlbum()
+                        }) {
+                            Text("Retry")
+                                .font(.subheadline)
+                                .foregroundColor(Theme.spiderNeonRed)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
+                                .background(Theme.spiderDarkGrey)
+                                .cornerRadius(20)
+                        }
+                    }
+                }
+                .padding()
             }
         }
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            networkManager.fetchAlbum(browseId: albumId) { detail in
-                self.albumDetail = detail
-                self.isLoading = false
-            }
+            loadAlbum()
         }
         .fullScreenCover(isPresented: $showFullScreenPlayer) {
             FullScreenPlayerView(isShowing: $showFullScreenPlayer)
+        }
+    }
+    
+    private func loadAlbum() {
+        let initialId = !albumId.isEmpty ? albumId : (song?.albumId ?? "")
+        if !initialId.isEmpty {
+            self.currentAlbumId = initialId
+            networkManager.fetchAlbum(browseId: initialId) { detail in
+                self.albumDetail = detail
+                self.isLoading = false
+                if detail == nil {
+                    self.errorMessage = "Failed to load album."
+                }
+            }
+        } else if let song = song {
+            networkManager.resolveAlbumForSong(songId: song.id) { resolvedId in
+                if let resolvedId = resolvedId, !resolvedId.isEmpty {
+                    self.currentAlbumId = resolvedId
+                    networkManager.fetchAlbum(browseId: resolvedId) { detail in
+                        self.albumDetail = detail
+                        self.isLoading = false
+                        if detail == nil {
+                            self.errorMessage = "Failed to load album."
+                        }
+                    }
+                } else {
+                    self.isLoading = false
+                    self.errorMessage = "No album found for this song."
+                }
+            }
+        } else {
+            self.isLoading = false
+            self.errorMessage = "Invalid album ID."
         }
     }
 }

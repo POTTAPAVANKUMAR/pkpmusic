@@ -83,6 +83,7 @@ def process_csv_import(csv_text: str, user_id: int):
                         title=top_hit.get('title', title),
                         artist=top_hit['artists'][0]['name'] if top_hit.get('artists') else artist,
                         album=top_hit['album']['name'] if top_hit.get('album') else None,
+                        album_id=top_hit['album'].get('id') if (top_hit.get('album') and isinstance(top_hit['album'], dict)) else None,
                         duration_ms=top_hit.get('duration_seconds', 0) * 1000 if top_hit.get('duration_seconds') else None,
                         cover_art_url=upscale_thumbnail(top_hit['thumbnails'][-1]['url']) if top_hit.get('thumbnails') else None
                     )

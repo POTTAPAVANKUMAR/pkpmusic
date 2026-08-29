@@ -94,6 +94,7 @@ def get_dashboard_sync(user_id: int, db: Session):
                             title=track.get('title', 'Unknown'),
                             artist=", ".join(artist_names) if artist_names else "Unknown Artist",
                             album=track.get('album', {}).get('name') if isinstance(track.get('album'), dict) else None,
+                            album_id=track.get('album', {}).get('id') if isinstance(track.get('album'), dict) else None,
                             duration_ms=track.get('lengthSeconds', 0) * 1000 if track.get('lengthSeconds') else 0,
                             cover_art_url=extract_thumbnail_url(track)
                         ))
@@ -114,6 +115,7 @@ def get_dashboard_sync(user_id: int, db: Session):
                                 title=track.get('title', 'Unknown'),
                                 artist=", ".join(artist_names) if artist_names else "Unknown Artist",
                                 album=track.get('album', {}).get('name') if isinstance(track.get('album'), dict) else None,
+                                album_id=track.get('album', {}).get('id') if isinstance(track.get('album'), dict) else None,
                                 duration_ms=track.get('duration_seconds', 0) * 1000 if track.get('duration_seconds') else 0,
                                 cover_art_url=extract_thumbnail_url(track)
                             ))

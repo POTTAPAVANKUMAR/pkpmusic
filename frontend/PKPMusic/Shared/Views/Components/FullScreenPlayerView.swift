@@ -2,16 +2,14 @@ import SwiftUI
 import AVFoundation
 
 enum PlayerSheet: Identifiable {
-    case upNext, lyrics, related, album, options, playlists, videoQuality
+    case upNext, lyrics, related, album, playlists
     var id: Int {
         switch self {
         case .upNext: return 1
         case .lyrics: return 2
         case .related: return 3
         case .album: return 4
-        case .options: return 5
-        case .playlists: return 6
-        case .videoQuality: return 7
+        case .playlists: return 5
         }
     }
 }
@@ -22,6 +20,8 @@ struct FullScreenPlayerView: View {
     @Binding var isShowing: Bool
     
     @State private var activeSheet: PlayerSheet? = nil
+    @State private var showingOptionsDialog: Bool = false
+    @State private var showingVideoQualityDialog: Bool = false
     
     /// Real status-bar / Dynamic-Island height from UIKit — works inside
     /// fullScreenCover where SwiftUI's safeAreaInsets can report 0.
@@ -96,7 +96,7 @@ struct FullScreenPlayerView: View {
                     
                     Spacer()
                     
-                    Button(action: { activeSheet = .options }) {
+                    Button(action: { showingOptionsDialog = true }) {
                         Image(systemName: "ellipsis")
                             .font(.title2)
                             .foregroundColor(.white)
@@ -298,16 +298,13 @@ struct FullScreenPlayerView: View {
                 isShowing = false
             }
         })
-        .confirmationDialog("Options", isPresented: Binding(
-            get: { activeSheet == .options },
-            set: { if !$0 { activeSheet = nil } }
-        ), titleVisibility: .visible) {
+        .confirmationDialog("Options", isPresented: $showingOptionsDialog, titleVisibility: .visible) {
             if let song = audioManager.currentSong {
                 if audioManager.isVideoMode {
                     Button("Video Quality") {
                         // Using a slight delay to allow the first dialog to dismiss fully
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            activeSheet = .videoQuality
+                            showingVideoQualityDialog = true
                         }
                     }
                 }
@@ -320,20 +317,21 @@ struct FullScreenPlayerView: View {
                         DownloadManager.shared.download(song: song)
                     }
                 }
-                if song.albumId != nil {
-                    Button("Go to Album") { activeSheet = .album }
+                Button("Go to Album") {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        activeSheet = .album
+                    }
                 }
                 Button("Add to Playlist") {
                     networkManager.fetchPlaylists()
-                    activeSheet = .playlists
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        activeSheet = .playlists
+                    }
                 }
                 Button("Cancel", role: .cancel) {}
             }
         }
-        .confirmationDialog("Video Quality", isPresented: Binding(
-            get: { activeSheet == .videoQuality },
-            set: { if !$0 { activeSheet = nil } }
-        ), titleVisibility: .visible) {
+        .confirmationDialog("Video Quality", isPresented: $showingVideoQualityDialog, titleVisibility: .visible) {
             Button("Auto (720p Recommended)" + (audioManager.videoQuality == "auto" ? " ✓" : "")) { audioManager.setVideoQuality("auto") }
             Button("720p" + (audioManager.videoQuality == "720p" ? " ✓" : "")) { audioManager.setVideoQuality("720p") }
             Button("360p" + (audioManager.videoQuality == "360p" ? " ✓" : "")) { audioManager.setVideoQuality("360p") }
@@ -357,9 +355,9 @@ struct FullScreenPlayerView: View {
                 }
                 .presentationDetents([.medium, .large])
             case .album:
-                if let song = audioManager.currentSong, let albumId = song.albumId {
+                if let song = audioManager.currentSong {
                     NavigationView {
-                        AlbumDetailView(albumId: albumId)
+                        AlbumDetailView(albumId: song.albumId ?? "", song: song)
                             .navigationBarItems(leading: Button("Close") { activeSheet = nil })
                     }
                 }
@@ -384,8 +382,6 @@ struct FullScreenPlayerView: View {
                     .navigationTitle("Select Playlist")
                     .navigationBarItems(trailing: Button("Cancel") { activeSheet = nil })
                 }
-            case .options, .videoQuality:
-                EmptyView() // Handled by confirmationDialog
             }
         }
     }

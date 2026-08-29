@@ -3,6 +3,7 @@ import SwiftUI
 struct QueueView: View {
     @ObservedObject var audioManager = AudioPlayerManager.shared
     @Binding var isShowing: Bool
+    @State private var selectedAlbumSong: Song? = nil
     
     var upcomingSongs: [(index: Int, song: Song)] {
         guard !audioManager.queue.isEmpty else { return [] }
@@ -73,6 +74,13 @@ struct QueueView: View {
                                     RoundedRectangle(cornerRadius: 12)
                                         .stroke(Theme.spiderNeonRed.opacity(0.6), lineWidth: 1)
                                 )
+                                .contextMenu {
+                                    Button(action: {
+                                        selectedAlbumSong = currentSong
+                                    }) {
+                                        Label("Go to Album", systemImage: "opticaldisc")
+                                    }
+                                }
                             }
                             .padding(.horizontal, 20)
                             .padding(.top, 15)
@@ -176,6 +184,21 @@ struct QueueView: View {
                                     .onTapGesture {
                                         audioManager.playSongInQueue(at: actualIndex)
                                     }
+                                    .contextMenu {
+                                        Button(action: {
+                                            selectedAlbumSong = song
+                                        }) {
+                                            Label("Go to Album", systemImage: "opticaldisc")
+                                        }
+                                        
+                                        Button(action: {
+                                            withAnimation(.spring()) {
+                                                audioManager.removeFromQueue(at: actualIndex)
+                                            }
+                                        }) {
+                                            Label("Remove from Queue", systemImage: "trash")
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -187,6 +210,19 @@ struct QueueView: View {
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
+            .sheet(item: $selectedAlbumSong) { song in
+                NavigationView {
+                    AlbumDetailView(albumId: song.albumId ?? "", song: song)
+                        .toolbar {
+                            ToolbarItem(placement: .navigationBarTrailing) {
+                                Button("Done") {
+                                    selectedAlbumSong = nil
+                                }
+                                .foregroundColor(Theme.spiderNeonRed)
+                            }
+                        }
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     VStack {

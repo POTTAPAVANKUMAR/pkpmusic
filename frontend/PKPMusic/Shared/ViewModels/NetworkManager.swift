@@ -320,6 +320,26 @@ class NetworkManager: ObservableObject {
         }.resume()
     }
     
+    func resolveAlbumForSong(songId: String, completion: @escaping (String?) -> Void) {
+        guard let request = createRequest(for: "\(baseURL)/songs/\(songId)/album") else {
+            completion(nil)
+            return
+        }
+        URLSession.shared.dataTask(with: request) { data, _, error in
+            if let data = data {
+                struct AlbumResolveResponse: Codable {
+                    let album_id: String?
+                    let album_name: String?
+                }
+                if let res = try? JSONDecoder().decode(AlbumResolveResponse.self, from: data), let albumId = res.album_id {
+                    DispatchQueue.main.async { completion(albumId) }
+                    return
+                }
+            }
+            DispatchQueue.main.async { completion(nil) }
+        }.resume()
+    }
+    
     func fetchMoodPlaylists(params: String, completion: @escaping ([DashboardItem]) -> Void) {
         guard let request = createRequest(for: "\(baseURL)/moods/\(params)") else { return }
         URLSession.shared.dataTask(with: request) { data, _, _ in
