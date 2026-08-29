@@ -2,21 +2,23 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Pavan Kumar Potta — Server Hub</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Pavan Kumar Potta — Infrastructure Hub</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-base: #090a0f;
-      --bg-card: rgba(18, 22, 32, 0.75);
-      --bg-card-hover: rgba(26, 32, 48, 0.9);
-      --border: rgba(255, 255, 255, 0.08);
-      --border-hover: rgba(255, 255, 255, 0.2);
+      --bg-base: #06080d;
+      --bg-card: rgba(14, 18, 28, 0.7);
+      --bg-card-hover: rgba(22, 28, 44, 0.85);
+      --border-subtle: rgba(255, 255, 255, 0.06);
+      --border-glow: rgba(255, 255, 255, 0.15);
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
+      --text-sub: #64748b;
       --accent-red: #ef4444;
+      --accent-orange: #f97316;
       --accent-cyan: #06b6d4;
       --accent-purple: #a855f7;
       --accent-emerald: #10b981;
@@ -30,249 +32,312 @@
       font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
       background-color: var(--bg-base);
       background-image: 
-        radial-gradient(at 5% 5%, rgba(239, 68, 68, 0.12) 0px, transparent 45%),
-        radial-gradient(at 95% 5%, rgba(6, 182, 212, 0.12) 0px, transparent 45%),
-        radial-gradient(at 50% 95%, rgba(168, 85, 247, 0.08) 0px, transparent 50%);
+        radial-gradient(at 0% 0%, rgba(239, 68, 68, 0.15) 0px, transparent 45%),
+        radial-gradient(at 100% 0%, rgba(6, 182, 212, 0.15) 0px, transparent 45%),
+        radial-gradient(at 50% 100%, rgba(168, 85, 247, 0.12) 0px, transparent 50%);
       color: var(--text-main);
       min-height: 100vh;
-      padding: 2.5rem 1.25rem;
+      display: flex;
+      flex-direction: column;
       line-height: 1.5;
+      overflow-x: hidden;
     }
-    
+
+    .ambient-glow {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+      background: radial-gradient(circle at 50% 20%, rgba(239, 68, 68, 0.04) 0%, transparent 60%);
+      z-index: 0;
+    }
+
     .container {
-      max-width: 1040px;
+      max-width: 1100px;
       margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+      width: 100%;
+      position: relative;
+      z-index: 1;
     }
-    
-    /* Header */
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 2rem;
-      flex-wrap: wrap;
-      gap: 1.25rem;
-    }
-    
-    .brand-title {
-      font-size: 28px;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    
-    .brand-subtitle {
-      font-size: 13px;
-      color: var(--text-muted);
-      margin-top: 4px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .pulse-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--accent-emerald);
-      box-shadow: 0 0 10px var(--accent-emerald);
-      animation: pulse 2s infinite ease-in-out;
-    }
-    
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.5; transform: scale(0.85); }
-    }
-    
-    .header-actions {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-    
-    .btn {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 0.55rem 1rem;
-      font-family: 'Outfit', sans-serif;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-main);
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      cursor: pointer;
-      backdrop-filter: blur(10px);
-      transition: all 0.15s ease;
-      text-decoration: none;
-    }
-    
-    .btn:hover {
-      background: rgba(255, 255, 255, 0.1);
-      border-color: var(--border-hover);
-      transform: translateY(-1px);
-    }
-    
-    .btn-lock {
-      background: rgba(239, 68, 68, 0.12);
-      border-color: rgba(239, 68, 68, 0.25);
-      color: #f87171;
-    }
-    
-    .btn-lock:hover {
-      background: rgba(239, 68, 68, 0.25);
-    }
-    
+
     /* ==========================================
-       PASSCODE LOCK CARD
+       PASSCODE GATE (APPLE / CYBERPUNK STYLE)
        ========================================== */
+    .lock-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 80vh;
+      max-width: 400px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
     .lock-card {
       background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      padding: 3rem 2rem;
-      backdrop-filter: blur(24px);
-      text-align: center;
-      max-width: 420px;
-      margin: 4.5rem auto;
-      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+      border: 1px solid var(--border-subtle);
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      border-radius: 28px;
+      padding: 3rem 2.25rem;
+      width: 100%;
+      box-shadow: 0 30px 70px rgba(0, 0, 0, 0.7), 0 0 1px 1px rgba(255, 255, 255, 0.1);
       position: relative;
       overflow: hidden;
-      transition: transform 0.2s ease;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    
+
     .lock-card::before {
       content: "";
       position: absolute;
       top: 0;
       left: 0;
       right: 0;
-      height: 3px;
-      background: linear-gradient(90deg, #ef4444, #06b6d4, #a855f7);
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #ef4444, #06b6d4, transparent);
     }
-    
-    .lock-icon-wrap {
-      width: 68px;
-      height: 68px;
-      border-radius: 20px;
-      background: rgba(239, 68, 68, 0.12);
-      border: 1px solid rgba(239, 68, 68, 0.25);
-      color: #ef4444;
+
+    .avatar-badge {
+      width: 72px;
+      height: 72px;
+      border-radius: 24px;
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(249, 115, 22, 0.2));
+      border: 1px solid rgba(239, 68, 68, 0.4);
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 32px;
       margin: 0 auto 1.5rem;
-      box-shadow: 0 0 25px rgba(239, 68, 68, 0.2);
+      box-shadow: 0 12px 30px rgba(239, 68, 68, 0.25);
     }
-    
+
     .lock-title {
-      font-size: 22px;
+      font-size: 24px;
       font-weight: 800;
+      letter-spacing: -0.02em;
       color: #fff;
       margin-bottom: 6px;
     }
-    
-    .lock-subtitle {
+
+    .lock-desc {
       font-size: 13px;
       color: var(--text-muted);
       margin-bottom: 2rem;
     }
-    
-    .passcode-input-wrapper {
-      position: relative;
-      margin-bottom: 1.25rem;
-    }
-    
-    .passcode-input {
-      width: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      border: 2px solid var(--border);
-      border-radius: 14px;
-      padding: 0.9rem 1.25rem;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 20px;
-      font-weight: 700;
-      letter-spacing: 0.25em;
-      text-align: center;
-      color: #fff;
-      outline: none;
-      transition: all 0.2s ease;
-    }
-    
-    .passcode-input:focus {
-      border-color: #06b6d4;
-      box-shadow: 0 0 20px rgba(6, 182, 212, 0.25);
-    }
-    
-    .passcode-input.error {
-      border-color: #ef4444;
-      box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
-      animation: shake 0.4s ease;
-    }
-    
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      20%, 60% { transform: translateX(-8px); }
-      40%, 80% { transform: translateX(8px); }
-    }
-    
-    .btn-unlock {
-      width: 100%;
-      background: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
-      border: none;
-      color: #fff;
-      padding: 0.9rem;
-      border-radius: 12px;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-      box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
-      transition: all 0.15s ease;
-    }
-    
-    .btn-unlock:hover {
-      opacity: 0.92;
-      transform: translateY(-1px);
-    }
-    
-    .lock-error-msg {
-      color: #f87171;
-      font-size: 13px;
-      font-weight: 600;
-      margin-top: 12px;
-      display: none;
+
+    /* PIN Dots Display */
+    .pin-dots-row {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 2rem;
     }
 
-    /* Telemetry HUD */
+    .pin-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      background: transparent;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .pin-dot.filled {
+      background: #ef4444;
+      border-color: #ef4444;
+      box-shadow: 0 0 14px rgba(239, 68, 68, 0.8);
+      transform: scale(1.15);
+    }
+
+    /* Touch Keypad */
+    .keypad-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 1rem;
+    }
+
+    .key-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      border-radius: 18px;
+      height: 58px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      font-family: 'Outfit', sans-serif;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.12s ease;
+    }
+
+    .key-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: var(--border-glow);
+      transform: scale(1.04);
+    }
+
+    .key-btn:active {
+      transform: scale(0.96);
+      background: rgba(239, 68, 68, 0.25);
+    }
+
+    .key-sub {
+      font-size: 9px;
+      font-weight: 600;
+      color: var(--text-sub);
+      letter-spacing: 0.1em;
+      margin-top: -2px;
+    }
+
+    .hidden-input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .error-shake {
+      animation: shake 0.4s ease;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-10px); }
+      40%, 80% { transform: translateX(10px); }
+    }
+
+    /* ==========================================
+       DASHBOARD HEADER & TELEMETRY
+       ========================================== */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2.5rem;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+    }
+
+    .pill-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      border-radius: 999px;
+      padding: 4px 12px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 8px;
+    }
+
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent-emerald);
+      box-shadow: 0 0 10px var(--accent-emerald);
+      animation: pulse 2s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .brand-title {
+      font-size: 34px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 60%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1.1;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 0.6rem 1.1rem;
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-main);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      backdrop-filter: blur(16px);
+      transition: all 0.15s ease;
+      text-decoration: none;
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: var(--border-glow);
+      transform: translateY(-1px);
+    }
+
+    .btn-lock {
+      background: rgba(239, 68, 68, 0.12);
+      border-color: rgba(239, 68, 68, 0.25);
+      color: #f87171;
+    }
+
+    .btn-lock:hover {
+      background: rgba(239, 68, 68, 0.22);
+    }
+
+    /* Telemetry HUD Grid */
     .telemetry-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 12px;
-      margin-bottom: 2.25rem;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 14px;
+      margin-bottom: 2.75rem;
     }
-    
+
     .telem-card {
       background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 1.1rem 1.25rem;
-      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-subtle);
+      border-radius: 18px;
+      padding: 1.25rem 1.35rem;
+      backdrop-filter: blur(20px);
       display: flex;
       flex-direction: column;
       gap: 6px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.2s ease;
     }
-    
+
+    .telem-card:hover {
+      border-color: var(--border-glow);
+      transform: translateY(-2px);
+    }
+
     .telem-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-    
+
     .telem-label {
       font-size: 11px;
       font-weight: 700;
@@ -280,91 +345,214 @@
       letter-spacing: 0.08em;
       color: #64748b;
     }
-    
-    .telem-icon {
-      font-size: 14px;
-    }
-    
+
     .telem-value {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 20px;
-      font-weight: 700;
+      font-size: 22px;
+      font-weight: 800;
       color: #fff;
     }
-    
+
     .telem-sub {
       font-size: 11px;
       color: var(--text-muted);
       font-family: 'JetBrains Mono', monospace;
     }
-    
+
     .progress-bar-bg {
       width: 100%;
       height: 4px;
-      background: rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.06);
       border-radius: 2px;
       overflow: hidden;
-      margin-top: 4px;
+      margin-top: 6px;
     }
-    
+
     .progress-bar-fill {
       height: 100%;
       border-radius: 2px;
       transition: width 0.4s ease;
     }
-    
-    /* Section Divider */
-    .section-header {
+
+    /* ==========================================
+       HERO SERVICE CARD (PKP MUSIC WEB APP)
+       ========================================== */
+    .hero-service-banner {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(249, 115, 22, 0.08) 50%, rgba(18, 22, 32, 0.8) 100%);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 24px;
+      padding: 2.25rem 2.5rem;
+      margin-bottom: 2.75rem;
+      backdrop-filter: blur(24px);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 2rem;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 20px 50px rgba(239, 68, 68, 0.15);
+    }
+
+    .hero-service-banner::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #ef4444, #f97316, #06b6d4);
+    }
+
+    .hero-info-left {
+      max-width: 600px;
+    }
+
+    .hero-badge-row {
       display: flex;
       align-items: center;
       gap: 10px;
-      margin-bottom: 1.1rem;
+      margin-bottom: 10px;
     }
-    
+
+    .badge-primary {
+      background: rgba(239, 68, 68, 0.25);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      padding: 3px 10px;
+      border-radius: 999px;
+      text-transform: uppercase;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .hero-title {
+      font-size: 26px;
+      font-weight: 900;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .hero-desc {
+      font-size: 14px;
+      color: #cbd5e1;
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-launch-btn {
+      background: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
+      color: #fff;
+      padding: 0.75rem 1.6rem;
+      border-radius: 14px;
+      font-size: 14px;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      box-shadow: 0 10px 25px rgba(239, 68, 68, 0.4);
+      transition: all 0.2s ease;
+    }
+
+    .hero-launch-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 32px rgba(239, 68, 68, 0.55);
+      opacity: 0.95;
+    }
+
+    /* Equalizer Animation */
+    .equalizer-anim {
+      display: flex;
+      align-items: flex-end;
+      gap: 5px;
+      height: 48px;
+      padding-right: 1.5rem;
+    }
+
+    .eq-bar {
+      width: 6px;
+      background: linear-gradient(to top, #ef4444, #f97316);
+      border-radius: 999px;
+      animation: eqDance 1.2s infinite ease-in-out alternate;
+    }
+
+    .eq-bar:nth-child(1) { height: 35%; animation-delay: 0.1s; }
+    .eq-bar:nth-child(2) { height: 80%; animation-delay: 0.3s; }
+    .eq-bar:nth-child(3) { height: 50%; animation-delay: 0.5s; }
+    .eq-bar:nth-child(4) { height: 95%; animation-delay: 0.2s; }
+    .eq-bar:nth-child(5) { height: 40%; animation-delay: 0.4s; }
+
+    @keyframes eqDance {
+      0% { transform: scaleY(0.3); }
+      100% { transform: scaleY(1); }
+    }
+
+    @media (max-width: 768px) {
+      .hero-service-banner {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 1.75rem;
+      }
+      .equalizer-anim {
+        display: none;
+      }
+    }
+
+    /* ==========================================
+       SECTION & CARD GRID
+       ========================================== */
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 1.25rem;
+    }
+
     .section-title {
-      font-size: 12px;
-      font-weight: 700;
+      font-size: 13px;
+      font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.12em;
       color: #94a3b8;
     }
-    
+
     .section-line {
       flex: 1;
       height: 1px;
       background: rgba(255, 255, 255, 0.06);
     }
-    
-    /* App Grid */
+
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
       gap: 16px;
-      margin-bottom: 2.5rem;
+      margin-bottom: 3rem;
     }
-    
+
     .card {
       background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 1.35rem;
+      border: 1px solid var(--border-subtle);
+      border-radius: 18px;
+      padding: 1.5rem;
       text-decoration: none;
       color: inherit;
-      backdrop-filter: blur(16px);
+      backdrop-filter: blur(20px);
       transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
       display: flex;
       flex-direction: column;
       position: relative;
       overflow: hidden;
     }
-    
+
     .card:hover {
       background: var(--bg-card-hover);
-      border-color: var(--border-hover);
-      transform: translateY(-2px);
-      box-shadow: 0 14px 32px rgba(0, 0, 0, 0.45);
+      border-color: var(--border-glow);
+      transform: translateY(-3px);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5);
     }
-    
+
     .card::before {
       content: "";
       position: absolute;
@@ -375,30 +563,30 @@
       opacity: 0;
       transition: opacity 0.2s ease;
     }
-    
+
     .card-music:hover::before { background: linear-gradient(90deg, #ef4444, #f97316); opacity: 1; }
     .card-logs:hover::before { background: linear-gradient(90deg, #f59e0b, #eab308); opacity: 1; }
     .card-db:hover::before { background: linear-gradient(90deg, #06b6d4, #3b82f6); opacity: 1; }
     .card-docker:hover::before { background: linear-gradient(90deg, #10b981, #06b6d4); opacity: 1; }
     .card-os:hover::before { background: linear-gradient(90deg, #a855f7, #ec4899); opacity: 1; }
-    
+
     .card-top {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 0.9rem;
+      margin-bottom: 1rem;
     }
-    
+
     .card-icon {
-      width: 42px;
-      height: 42px;
-      border-radius: 12px;
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 19px;
+      font-size: 20px;
     }
-    
+
     .badge {
       font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
@@ -406,107 +594,108 @@
       padding: 3px 9px;
       border-radius: 999px;
     }
-    
+
     .badge-red { background: rgba(239, 68, 68, 0.12); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
     .badge-amber { background: rgba(245, 158, 11, 0.12); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.2); }
     .badge-cyan { background: rgba(6, 182, 212, 0.12); color: #67e8f9; border: 1px solid rgba(6, 182, 212, 0.2); }
     .badge-emerald { background: rgba(16, 185, 129, 0.12); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.2); }
     .badge-purple { background: rgba(168, 85, 247, 0.12); color: #d8b4fe; border: 1px solid rgba(168, 85, 247, 0.2); }
-    
+
     .card-title {
-      font-size: 17px;
-      font-weight: 700;
+      font-size: 18px;
+      font-weight: 800;
       color: #fff;
       margin-bottom: 3px;
     }
-    
+
     .card-domain {
       font-family: 'JetBrains Mono', monospace;
       font-size: 12px;
       color: #64748b;
       margin-bottom: 8px;
     }
-    
+
     .card-desc {
       font-size: 13px;
       color: var(--text-muted);
       line-height: 1.5;
-      margin-bottom: 1.1rem;
+      margin-bottom: 1.25rem;
       flex-grow: 1;
     }
-    
+
     .card-bottom {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-top: auto;
-      padding-top: 0.75rem;
+      padding-top: 0.85rem;
       border-top: 1px solid rgba(255, 255, 255, 0.04);
     }
-    
+
     .card-meta {
       font-size: 12px;
       color: #64748b;
       font-family: 'JetBrains Mono', monospace;
     }
-    
+
     .arrow-icon {
-      font-size: 14px;
+      font-size: 15px;
       color: #94a3b8;
       transition: transform 0.2s ease, color 0.2s ease;
     }
-    
+
     .card:hover .arrow-icon {
       color: #fff;
       transform: translateX(4px);
     }
-    
+
     /* Reference Table */
     .reference-box {
       background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
       padding: 1.5rem;
-      backdrop-filter: blur(16px);
-      margin-bottom: 2.5rem;
+      backdrop-filter: blur(20px);
+      margin-bottom: 3rem;
+      overflow-x: auto;
     }
-    
+
     .ref-table {
       width: 100%;
       border-collapse: collapse;
       font-size: 13px;
       text-align: left;
     }
-    
+
     .ref-table th {
-      padding: 8px 12px;
+      padding: 10px 14px;
       color: #64748b;
-      font-weight: 600;
+      font-weight: 700;
       font-size: 11px;
       text-transform: uppercase;
       letter-spacing: 0.08em;
       border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     }
-    
+
     .ref-table td {
-      padding: 12px;
+      padding: 14px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.03);
       color: var(--text-muted);
     }
-    
+
     .ref-table tr:last-child td {
       border-bottom: none;
     }
-    
+
     .ref-table code {
       font-family: 'JetBrains Mono', monospace;
       color: #38bdf8;
       font-size: 12px;
       background: rgba(56, 189, 248, 0.08);
-      padding: 2px 6px;
-      border-radius: 4px;
+      padding: 3px 8px;
+      border-radius: 6px;
     }
-    
+
     /* Footer */
     .footer {
       display: flex;
@@ -514,60 +703,91 @@
       align-items: center;
       font-size: 12px;
       color: #475569;
-      padding-top: 1.5rem;
+      padding-top: 2rem;
       border-top: 1px solid rgba(255, 255, 255, 0.04);
       flex-wrap: wrap;
-      gap: 10px;
+      gap: 12px;
     }
   </style>
 </head>
 <body>
+  <div class="ambient-glow"></div>
   <div class="container">
 
-    <!-- Header -->
-    <header class="header">
-      <div>
-        <h1 class="brand-title">Pavan Kumar Potta</h1>
-        <div class="brand-subtitle">
-          <span class="pulse-dot"></span>
-          <span>Raspberry Pi Server · pottapk.win</span>
+    <!-- ==========================================
+         PASSCODE AUTHENTICATION GATE
+         ========================================== -->
+    <div id="passcodeGateSection" class="lock-container">
+      <div class="lock-card" id="lockCardElement">
+        <div class="avatar-badge">🔐</div>
+        <h1 class="lock-title">Pavan Kumar Potta</h1>
+        <p class="lock-desc">Enter 10-digit authorization passcode to unlock the infrastructure hub.</p>
+        
+        <!-- Interactive PIN Dots -->
+        <div class="pin-dots-row" id="pinDotsRow">
+          <div class="pin-dot"></div>
+          <div class="pin-dot"></div>
+          <div class="pin-dot"></div>
+          <div class="pin-dot"></div>
+          <div class="pin-dot"></div>
+          <div class="pin-dot"></div>
+          <div class="pin-dot"></div>
+          <div class="pin-dot"></div>
+          <div class="pin-dot"></div>
+          <div class="pin-dot"></div>
         </div>
-      </div>
-      <div class="header-actions" id="headerActions">
-        <!-- Injected upon unlock -->
-      </div>
-    </header>
 
-    <!-- PASSCODE GATE (Visible when locked) -->
-    <div id="passcodeGateSection" class="lock-card" style="display: block;">
-      <div class="lock-icon-wrap">🔐</div>
-      <div class="lock-title">Enter Server Passcode</div>
-      <div class="lock-subtitle">Enter your 10-digit authorization passcode to access the dashboard.</div>
-      
-      <form onsubmit="handlePasscodeSubmit(event)">
-        <div class="passcode-input-wrapper">
-          <input type="password" 
-                 id="passcodeInput" 
-                 class="passcode-input" 
-                 placeholder="••••••••••" 
-                 maxlength="10" 
-                 autocomplete="off" 
-                 autofocus />
+        <!-- Hidden input for keyboard / autofill -->
+        <input type="password" id="hiddenPassInput" class="hidden-input" maxlength="10" autocomplete="off" autofocus />
+
+        <!-- On-Screen Keypad -->
+        <div class="keypad-grid">
+          <button class="key-btn" onclick="pressDigit('1')">1</button>
+          <button class="key-btn" onclick="pressDigit('2')">2 <span class="key-sub">ABC</span></button>
+          <button class="key-btn" onclick="pressDigit('3')">3 <span class="key-sub">DEF</span></button>
+          <button class="key-btn" onclick="pressDigit('4')">4 <span class="key-sub">GHI</span></button>
+          <button class="key-btn" onclick="pressDigit('5')">5 <span class="key-sub">JKL</span></button>
+          <button class="key-btn" onclick="pressDigit('6')">6 <span class="key-sub">MNO</span></button>
+          <button class="key-btn" onclick="pressDigit('7')">7 <span class="key-sub">PQRS</span></button>
+          <button class="key-btn" onclick="pressDigit('8')">8 <span class="key-sub">TUV</span></button>
+          <button class="key-btn" onclick="pressDigit('9')">9 <span class="key-sub">WXYZ</span></button>
+          <button class="key-btn" style="background: transparent; border: none; font-size: 12px; color: var(--text-sub);" onclick="clearPin()">Clear</button>
+          <button class="key-btn" onclick="pressDigit('0')">0</button>
+          <button class="key-btn" style="font-size: 16px;" onclick="deleteDigit()">⌫</button>
         </div>
-        <button type="submit" class="btn-unlock">Unlock Dashboard</button>
-        <div id="passcodeError" class="lock-error-msg">⚠️ Incorrect passcode. Please try again.</div>
-      </form>
+      </div>
     </div>
 
-    <!-- MAIN DASHBOARD CONTENT (Visible when unlocked) -->
+    <!-- ==========================================
+         MAIN SERVER HUB (UNLOCKED)
+         ========================================== -->
     <div id="dashboardContent" style="display: none;">
-      
+
+      <!-- Header -->
+      <header class="header">
+        <div>
+          <div class="pill-badge">
+            <span class="pulse-dot"></span>
+            <span>Raspberry Pi · 192.168.1.151</span>
+          </div>
+          <h1 class="brand-title">Pavan Kumar Potta</h1>
+        </div>
+
+        <div class="header-actions">
+          <button class="btn" id="sshBtn" onclick="copySSH()">
+            <span id="sshIcon">📋</span>
+            <span id="sshText">ssh pavankumarpotta@192.168.1.151</span>
+          </button>
+          <button class="btn btn-lock" onclick="lockDashboard()">🔒 Lock</button>
+        </div>
+      </header>
+
       <!-- Live Telemetry HUD -->
       <div class="telemetry-grid">
         <div class="telem-card">
           <div class="telem-header">
             <span class="telem-label">SoC Temp</span>
-            <span class="telem-icon">🌡️</span>
+            <span style="font-size: 14px;">🌡️</span>
           </div>
           <div class="telem-value" id="tempVal">-- °C</div>
           <div class="telem-sub">Thermal Target &lt; 70°C</div>
@@ -579,7 +799,7 @@
         <div class="telem-card">
           <div class="telem-header">
             <span class="telem-label">CPU Load</span>
-            <span class="telem-icon">⚡</span>
+            <span style="font-size: 14px;">⚡</span>
           </div>
           <div class="telem-value" id="cpuVal">-- %</div>
           <div class="telem-sub">4 Cores · ARM64</div>
@@ -591,10 +811,10 @@
         <div class="telem-card">
           <div class="telem-header">
             <span class="telem-label">Memory</span>
-            <span class="telem-icon">💾</span>
+            <span style="font-size: 14px;">💾</span>
           </div>
           <div class="telem-value" id="ramVal">2.2 GB</div>
-          <div class="telem-sub" id="ramPct">28% Used of 7.9 GB</div>
+          <div class="telem-sub" id="ramPct">28% of 7.9 GB</div>
           <div class="progress-bar-bg">
             <div class="progress-bar-fill" id="ramBar" style="width: 28%; background: var(--accent-purple);"></div>
           </div>
@@ -603,10 +823,10 @@
         <div class="telem-card">
           <div class="telem-header">
             <span class="telem-label">Storage</span>
-            <span class="telem-icon">💽</span>
+            <span style="font-size: 14px;">💽</span>
           </div>
           <div class="telem-value" id="diskVal">19.3 GB</div>
-          <div class="telem-sub" id="diskPct">2.1% Used of 937 GB</div>
+          <div class="telem-sub" id="diskPct">2.1% of 937 GB</div>
           <div class="progress-bar-bg">
             <div class="progress-bar-fill" id="diskBar" style="width: 2.1%; background: var(--accent-emerald);"></div>
           </div>
@@ -615,7 +835,7 @@
         <div class="telem-card">
           <div class="telem-header">
             <span class="telem-label">Uptime</span>
-            <span class="telem-icon">⏱️</span>
+            <span style="font-size: 14px;">⏱️</span>
           </div>
           <div class="telem-value" id="uptimeVal">83d 3h</div>
           <div class="telem-sub">Continuous Active</div>
@@ -625,25 +845,39 @@
         </div>
       </div>
 
-      <!-- Core Services Grid -->
-      <div class="section-header">
-        <span class="section-title">Core Services & Applications</span>
-           <div class="grid">
-        <!-- PKP Music Web Player -->
-        <a class="card card-music" href="https://pkpmusicweb.pottapk.win" target="_blank">
-          <div class="card-top">
-            <div class="card-icon" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">🎧</div>
-            <span class="badge badge-red">Angular Web App</span>
+      <!-- FEATURED HERO BANNER: PKP MUSIC WEB PLAYER -->
+      <div class="hero-service-banner">
+        <div class="hero-info-left">
+          <div class="hero-badge-row">
+            <span class="badge-primary">NEW ANGULAR 19 WEB APP</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-sub);">Port 3001</span>
           </div>
-          <div class="card-title">PKP Music Web Player</div>
-          <div class="card-domain">pkpmusicweb.pottapk.win</div>
-          <div class="card-desc">Full-featured music streaming web app with synced lyrics, offline downloads, playlist manager, and audio visualizer.</div>
-          <div class="card-bottom">
-            <span class="card-meta">Port 3001 · Angular 19</span>
-            <span class="arrow-icon">→</span>
-          </div>
-        </a>
+          <h2 class="hero-title">PKP Music Web Player</h2>
+          <p class="hero-desc">
+            Next-generation high-fidelity music streaming app featuring synchronized scrolling lyrics, IndexedDB offline downloads, custom playlist manager, and real-time audio visualizer.
+          </p>
+          <a href="https://pkpmusicweb.pottapk.win" target="_blank" class="hero-launch-btn">
+            <span>Launch Web Player</span>
+            <span style="font-size: 16px;">→</span>
+          </a>
+        </div>
 
+        <div class="equalizer-anim">
+          <div class="eq-bar"></div>
+          <div class="eq-bar"></div>
+          <div class="eq-bar"></div>
+          <div class="eq-bar"></div>
+          <div class="eq-bar"></div>
+        </div>
+      </div>
+
+      <!-- Core Infrastructure Stack -->
+      <div class="section-header">
+        <span class="section-title">Core Services & Operations</span>
+        <div class="section-line"></div>
+      </div>
+
+      <div class="grid">
         <!-- PKP Music API -->
         <a class="card card-music" href="https://pkpmusic.pottapk.win/docs" target="_blank">
           <div class="card-top">
@@ -720,7 +954,7 @@
         </a>
       </div>
 
-      <!-- Quick Reference Table -->
+      <!-- Ingress Routing Table -->
       <div class="section-header">
         <span class="section-title">Network & Ingress Routing</span>
         <div class="section-line"></div>
@@ -732,72 +966,80 @@
             <tr>
               <th>Service</th>
               <th>Subdomain</th>
-              <th>Local Target</th>
+              <th>Local Port</th>
               <th>Type</th>
+              <th>Status</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td style="color: #fff; font-weight: 600;">Landing Portal</td>
+              <td style="color: #fff; font-weight: 700;">Landing Portal</td>
               <td><code>pottapk.win</code></td>
-              <td><code>http://localhost:3000</code></td>
+              <td><code>:3000</code></td>
               <td>Nginx Web Portal</td>
+              <td><span class="badge badge-emerald">Online</span></td>
             </tr>
             <tr>
-              <td style="color: #fff; font-weight: 600;">PKP Music Web App</td>
+              <td style="color: #fff; font-weight: 700;">PKP Music Web App</td>
               <td><code>pkpmusicweb.pottapk.win</code></td>
-              <td><code>http://localhost:3001</code></td>
-              <td>Angular 19 Web Player</td>
+              <td><code>:3001</code></td>
+              <td>Angular 19 SPA</td>
+              <td><span class="badge badge-emerald">Online</span></td>
             </tr>
             <tr>
-              <td style="color: #fff; font-weight: 600;">PKP Music Core</td>
+              <td style="color: #fff; font-weight: 700;">PKP Music Core</td>
               <td><code>pkpmusic.pottapk.win</code></td>
-              <td><code>http://localhost:8000</code></td>
+              <td><code>:8000</code></td>
               <td>FastAPI Backend</td>
+              <td><span class="badge badge-emerald">Online</span></td>
             </tr>
             <tr>
-              <td style="color: #fff; font-weight: 600;">Dozzle Logs</td>
+              <td style="color: #fff; font-weight: 700;">Dozzle Logs</td>
               <td><code>pkpmusiclogs.pottapk.win</code></td>
-              <td><code>http://localhost:8888</code></td>
+              <td><code>:8888</code></td>
               <td>Realtime Docker Logs</td>
+              <td><span class="badge badge-emerald">Online</span></td>
             </tr>
             <tr>
-              <td style="color: #fff; font-weight: 600;">pgAdmin DB GUI</td>
+              <td style="color: #fff; font-weight: 700;">pgAdmin DB GUI</td>
               <td><code>postgresql.pottapk.win</code></td>
-              <td><code>http://localhost:5050</code></td>
+              <td><code>:5050</code></td>
               <td>PostgreSQL Web GUI</td>
+              <td><span class="badge badge-emerald">Online</span></td>
             </tr>
             <tr>
-              <td style="color: #fff; font-weight: 600;">Portainer CE</td>
+              <td style="color: #fff; font-weight: 700;">Portainer CE</td>
               <td><code>portainer.pottapk.win</code></td>
-              <td><code>http://localhost:9000</code></td>
+              <td><code>:9000</code></td>
               <td>Container Operations</td>
+              <td><span class="badge badge-emerald">Online</span></td>
             </tr>
             <tr>
-              <td style="color: #fff; font-weight: 600;">CasaOS Dashboard</td>
+              <td style="color: #fff; font-weight: 700;">CasaOS Dashboard</td>
               <td><code>cloud.pottapk.win</code></td>
-              <td><code>http://localhost:80</code></td>
+              <td><code>:80</code></td>
               <td>Home Server Dashboard</td>
+              <td><span class="badge badge-emerald">Online</span></td>
             </tr>
           </tbody>
         </table>
       </div>
 
-    </div>
+      <!-- Footer -->
+      <footer class="footer">
+        <div>Host: <strong>pavankumarpotta</strong> · Raspberry Pi 5 ARM64</div>
+        <div>Secured via Cloudflare Zero-Trust Tunnel</div>
+      </footer>
 
-    <!-- Footer -->
-    <footer class="footer">
-      <div>Host: <strong>pavankumarpotta</strong> (192.168.1.151)</div>
-      <div>Secured via Cloudflare Zero-Trust Tunnel</div>
-    </footer>
+    </div>
 
   </div>
 
   <script>
     const CORRECT_PASSCODE = "5139147720";
+    let currentInput = "";
     let isUnlocked = false;
 
-    // Check if previously authorized in this session or browser
     function initLock() {
       const stored = localStorage.getItem("pkp_server_unlocked");
       if (stored === "true") {
@@ -805,80 +1047,97 @@
       } else {
         lockDashboard();
       }
+
+      // Listen for physical keyboard input
+      document.addEventListener("keydown", (e) => {
+        if (isUnlocked) return;
+        if (e.key >= "0" && e.key <= "9") {
+          pressDigit(e.key);
+        } else if (e.key === "Backspace") {
+          deleteDigit();
+        } else if (e.key === "Escape") {
+          clearPin();
+        }
+      });
     }
 
-    // Handle Passcode Form Submission
-    function handlePasscodeSubmit(e) {
-      e.preventDefault();
-      const input = document.getElementById("passcodeInput");
-      const err = document.getElementById("passcodeError");
-      const entered = input.value.trim();
-
-      if (entered === CORRECT_PASSCODE) {
-        err.style.display = "none";
-        input.classList.remove("error");
-        localStorage.setItem("pkp_server_unlocked", "true");
-        unlockDashboard();
-      } else {
-        input.classList.add("error");
-        err.style.display = "block";
-        input.value = "";
-        input.focus();
-        setTimeout(() => input.classList.remove("error"), 500);
+    function pressDigit(digit) {
+      if (currentInput.length < 10) {
+        currentInput += digit;
+        updateDots();
+        if (currentInput.length === 10) {
+          validatePasscode();
+        }
       }
     }
 
-    // Unlock Dashboard
+    function deleteDigit() {
+      if (currentInput.length > 0) {
+        currentInput = currentInput.slice(0, -1);
+        updateDots();
+      }
+    }
+
+    function clearPin() {
+      currentInput = "";
+      updateDots();
+    }
+
+    function updateDots() {
+      const dots = document.querySelectorAll(".pin-dot");
+      dots.forEach((dot, idx) => {
+        if (idx < currentInput.length) {
+          dot.classList.add("filled");
+        } else {
+          dot.classList.remove("filled");
+        }
+      });
+    }
+
+    function validatePasscode() {
+      if (currentInput === CORRECT_PASSCODE) {
+        localStorage.setItem("pkp_server_unlocked", "true");
+        unlockDashboard();
+      } else {
+        const card = document.getElementById("lockCardElement");
+        card.classList.add("error-shake");
+        setTimeout(() => {
+          card.classList.remove("error-shake");
+          clearPin();
+        }, 400);
+      }
+    }
+
     function unlockDashboard() {
       isUnlocked = true;
       document.getElementById("passcodeGateSection").style.display = "none";
       document.getElementById("dashboardContent").style.display = "block";
-
-      const headerActions = document.getElementById("headerActions");
-      headerActions.innerHTML = `
-        <button class="btn" id="sshBtn" onclick="copySSH()">
-          <span id="sshIcon">📋</span>
-          <span id="sshText">ssh pavankumarpotta@192.168.1.151</span>
-        </button>
-        <button class="btn btn-lock" onclick="lockDashboard()">🔒 Lock</button>
-      `;
-
       fetchTelemetry();
     }
 
-    // Lock Dashboard
     function lockDashboard() {
       isUnlocked = false;
       localStorage.removeItem("pkp_server_unlocked");
-      document.getElementById("passcodeGateSection").style.display = "block";
+      document.getElementById("passcodeGateSection").style.display = "flex";
       document.getElementById("dashboardContent").style.display = "none";
-      document.getElementById("headerActions").innerHTML = "";
-      const input = document.getElementById("passcodeInput");
-      if (input) {
-        input.value = "";
-        input.focus();
-      }
+      clearPin();
     }
 
-    // Copy SSH Command
     function copySSH() {
       const text = "ssh pavankumarpotta@192.168.1.151";
       navigator.clipboard.writeText(text).then(() => {
         const btn = document.getElementById("sshBtn");
         const icon = document.getElementById("sshIcon");
         const sshText = document.getElementById("sshText");
-        btn.classList.add("copied");
         icon.textContent = "✓";
         sshText.textContent = "Copied!";
         setTimeout(() => {
-          btn.classList.remove("copied");
           icon.textContent = "📋";
           sshText.textContent = text;
         }, 2000);
       });
     }
 
-    // Dynamic Live Telemetry Fetch
     async function fetchTelemetry() {
       if (!isUnlocked) return;
       try {
@@ -914,7 +1173,7 @@
       } catch (e) {}
     }
 
-    // Start
+    // Initialize
     initLock();
     setInterval(fetchTelemetry, 6000);
   </script>
