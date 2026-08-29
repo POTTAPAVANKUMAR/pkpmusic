@@ -1,6 +1,7 @@
 export interface User {
   id: number;
   email: string;
+  username?: string;
   name?: string;
   profile_picture_url?: string;
   is_active?: boolean;
@@ -22,8 +23,40 @@ export interface Song {
   downloaded?: boolean;
 }
 
+export interface FavoriteItem {
+  id: number;
+  user_id: number;
+  song_id: string;
+  song: Song;
+}
+
+export interface PlaylistItem {
+  id: number;
+  playlist_id: number;
+  song_id: string;
+  position: number;
+  song: Song;
+}
+
+export interface UserPlaylist {
+  id: number;
+  name: string;
+  description?: string | null;
+  owner_id: number;
+  items: PlaylistItem[];
+}
+
+export interface HistoryItem {
+  id: number;
+  user_id: number;
+  song_id: string;
+  played_at: string;
+  song: Song;
+}
+
 export interface AlbumSearchResult {
   id: string;
+  browseId?: string;
   title: string;
   artist: string;
   cover_art_url?: string | null;
@@ -31,6 +64,7 @@ export interface AlbumSearchResult {
 
 export interface ArtistSearchResult {
   id: string;
+  browseId?: string;
   artist: string;
   cover_art_url?: string | null;
 }
@@ -75,14 +109,6 @@ export interface AlbumDetail {
   trackCount?: number;
   thumbnails: any[];
   songs: Song[];
-}
-
-export interface CustomPlaylist {
-  id: string;
-  name: string;
-  description?: string;
-  created_at: number;
-  tracks: Song[];
 }
 
 export interface ServerTelemetry {

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 import { 
   Song, 
   DashboardSection, 
@@ -12,8 +12,11 @@ import {
   ServerTelemetry, 
   User, 
   AuthResponse,
-  AlbumSearchResult,
-  ArtistSearchResult 
+  AlbumSearchResult, 
+  ArtistSearchResult,
+  FavoriteItem,
+  UserPlaylist,
+  HistoryItem
 } from '../models/music.model';
 
 @Injectable({
@@ -39,8 +42,8 @@ export class ApiService {
     return this.http.post<AuthResponse>(`${this.baseUrl}/auth/login`, { email, password });
   }
 
-  register(name: string, email: string, password: string): Observable<User> {
-    return this.http.post<User>(`${this.baseUrl}/auth/register`, { name, email, password });
+  register(username: string, email: string, password: string): Observable<User> {
+    return this.http.post<User>(`${this.baseUrl}/auth/register`, { username, email, password });
   }
 
   forgotPassword(email: string): Observable<any> {
@@ -57,7 +60,17 @@ export class ApiService {
     );
   }
 
-  // --- DASHBOARD & EXPLORE ---
+  // --- USER DASHBOARD (PERSONALIZED FOR LOGGED-IN USER) ---
+  getDashboard(): Observable<DashboardSection[]> {
+    return this.http.get<DashboardSection[]>(`${this.baseUrl}/dashboard/`, { headers: this.getAuthHeaders() }).pipe(
+      catchError(err => {
+        console.error('Error fetching user dashboard:', err);
+        return of([]);
+      })
+    );
+  }
+
+  // --- GLOBAL EXPLORE ---
   getExplore(): Observable<DashboardSection[]> {
     return this.http.get<DashboardSection[]>(`${this.baseUrl}/dashboard/explore/`, { headers: this.getAuthHeaders() }).pipe(
       catchError(err => {
@@ -73,6 +86,66 @@ export class ApiService {
     );
   }
 
+  // --- USER FAVORITES (LIBRARY) ---
+  getFavorites(): Observable<Song[]> {
+    return this.http.get<FavoriteItem[]>(`${this.baseUrl}/favorites/`, { headers: this.getAuthHeaders() }).pipe(
+      map(items => items.map(f => f.song)),
+      catchError(err => {
+        console.error('Error fetching favorites:', err);
+        return of([]);
+      })
+    );
+  }
+
+  addFavorite(songId: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/favorites/`, { song_id: songId }, { headers: this.getAuthHeaders() });
+  }
+
+  // --- USER PLAYLISTS (LIBRARY) ---
+  getPlaylists(): Observable<UserPlaylist[]> {
+    return this.http.get<UserPlaylist[]>(`${this.baseUrl}/playlists/`, { headers: this.getAuthHeaders() }).pipe(
+      catchError(err => {
+        console.error('Error fetching playlists:', err);
+        return of([]);
+      })
+    );
+  }
+
+  createPlaylist(name: string, description: string = ''): Observable<UserPlaylist> {
+    return this.http.post<UserPlaylist>(`${this.baseUrl}/playlists/`, { name, description }, { headers: this.getAuthHeaders() });
+  }
+
+  addSongToPlaylist(playlistId: number, songId: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/playlists/${playlistId}/items`, { song_id: songId, position: 0 }, { headers: this.getAuthHeaders() });
+  }
+
+  // --- USER LISTENING HISTORY ---
+  getHistory(): Observable<Song[]> {
+    return this.http.get<HistoryItem[]>(`${this.baseUrl}/history/`, { headers: this.getAuthHeaders() }).pipe(
+      map(items => items.map(h => h.song)),
+      catchError(err => {
+        console.error('Error fetching history:', err);
+        return of([]);
+      })
+    );
+  }
+
+  recordHistory(songId: string): Observable<any> {
+    const timestamp = new Date().toISOString();
+    return this.http.post(`${this.baseUrl}/history/`, { song_id: songId, played_at: timestamp }, { headers: this.getAuthHeaders() });
+  }
+
+  // --- BOOKMARKS ---
+  addBookmark(itemId: string, itemType: string, title: string, coverArtUrl?: string): Observable<any> {
+    const body = {
+      item_id: itemId,
+      item_type: itemType,
+      title: title,
+      cover_art_url: coverArtUrl || null
+    };
+    return this.http.post(`${this.baseUrl}/bookmarks/`, body, { headers: this.getAuthHeaders() });
+  }
+
   // --- SEARCH ---
   searchSongs(query: string): Observable<Song[]> {
     const params = new HttpParams().set('query', query);
@@ -84,6 +157,13 @@ export class ApiService {
   searchAlbums(query: string): Observable<AlbumSearchResult[]> {
     const params = new HttpParams().set('query', query);
     return this.http.get<AlbumSearchResult[]>(`${this.baseUrl}/search/yt/albums`, { params, headers: this.getAuthHeaders() }).pipe(
+      map(items => items.map(a => ({
+        id: a.browseId || (a as any).id,
+        browseId: a.browseId,
+        title: a.title,
+        artist: a.artist,
+        cover_art_url: a.cover_art_url
+      }))),
       catchError(() => of([]))
     );
   }
@@ -91,6 +171,12 @@ export class ApiService {
   searchArtists(query: string): Observable<ArtistSearchResult[]> {
     const params = new HttpParams().set('query', query);
     return this.http.get<ArtistSearchResult[]>(`${this.baseUrl}/search/yt/artists`, { params, headers: this.getAuthHeaders() }).pipe(
+      map(items => items.map(a => ({
+        id: a.browseId || (a as any).id,
+        browseId: a.browseId,
+        artist: a.artist,
+        cover_art_url: a.cover_art_url
+      }))),
       catchError(() => of([]))
     );
   }

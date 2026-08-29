@@ -1,5 +1,6 @@
 import { Injectable, signal } from '@angular/core';
-import { Song, CustomPlaylist } from '../models/music.model';
+import { Song, UserPlaylist } from '../models/music.model';
+import { ApiService } from './api.service';
 
 @Injectable({
   providedIn: 'root'
@@ -11,17 +12,39 @@ export class StorageService {
 
   // Reactive signals for components
   likedSongs = signal<Song[]>([]);
-  customPlaylists = signal<CustomPlaylist[]>([]);
+  customPlaylists = signal<UserPlaylist[]>([]);
   history = signal<Song[]>([]);
   downloads = signal<Song[]>([]);
 
-  constructor() {
+  constructor(private api: ApiService) {
     this.initDB().then(() => {
       this.refreshDownloads();
     });
-    this.likedSongs.set(this.getFavorites());
-    this.customPlaylists.set(this.getPlaylists());
-    this.history.set(this.getHistory());
+  }
+
+  // --- SYNC WITH USER BACKEND DATABASE ---
+  syncUserData() {
+    this.loadFavorites();
+    this.loadPlaylists();
+    this.loadHistory();
+  }
+
+  loadFavorites() {
+    this.api.getFavorites().subscribe(songs => {
+      this.likedSongs.set(songs);
+    });
+  }
+
+  loadPlaylists() {
+    this.api.getPlaylists().subscribe(pls => {
+      this.customPlaylists.set(pls);
+    });
+  }
+
+  loadHistory() {
+    this.api.getHistory().subscribe(hist => {
+      this.history.set(hist);
+    });
   }
 
   private initDB(): Promise<IDBDatabase> {
@@ -49,21 +72,17 @@ export class StorageService {
   }
 
   // --- FAVORITES / LIKED SONGS ---
-  getFavorites(): Song[] {
-    const data = localStorage.getItem('pkp_favorites');
-    return data ? JSON.parse(data) : [];
-  }
-
   toggleLikedSong(song: Song): void {
-    let favs = this.getFavorites();
-    const idx = favs.findIndex(f => f.id === song.id);
-    if (idx >= 0) {
-      favs.splice(idx, 1);
+    const isLiked = this.isSongLiked(song.id);
+    if (isLiked) {
+      this.likedSongs.set(this.likedSongs().filter(s => s.id !== song.id));
     } else {
-      favs.unshift(song);
+      this.likedSongs.set([song, ...this.likedSongs()]);
     }
-    localStorage.setItem('pkp_favorites', JSON.stringify(favs));
-    this.likedSongs.set(favs);
+    this.api.addFavorite(song.id).subscribe({
+      next: () => this.loadFavorites(),
+      error: () => this.loadFavorites()
+    });
   }
 
   isSongLiked(songId: string): boolean {
@@ -71,45 +90,23 @@ export class StorageService {
   }
 
   // --- CUSTOM PLAYLISTS ---
-  getPlaylists(): CustomPlaylist[] {
-    const data = localStorage.getItem('pkp_playlists');
-    return data ? JSON.parse(data) : [];
-  }
-
-  createPlaylist(name: string, description: string = ''): CustomPlaylist {
-    const playlists = this.getPlaylists();
-    const newPlaylist: CustomPlaylist = {
-      id: 'pl_' + Date.now(),
-      name,
-      description,
-      created_at: Date.now(),
-      tracks: []
-    };
-    playlists.push(newPlaylist);
-    localStorage.setItem('pkp_playlists', JSON.stringify(playlists));
-    this.customPlaylists.set(playlists);
-    return newPlaylist;
-  }
-
-  deletePlaylist(playlistId: string): void {
-    const playlists = this.getPlaylists().filter(p => p.id !== playlistId);
-    localStorage.setItem('pkp_playlists', JSON.stringify(playlists));
-    this.customPlaylists.set(playlists);
+  createPlaylist(name: string, description: string = ''): void {
+    this.api.createPlaylist(name, description).subscribe(() => {
+      this.loadPlaylists();
+    });
   }
 
   // --- HISTORY ---
-  getHistory(): Song[] {
-    const data = localStorage.getItem('pkp_history');
-    return data ? JSON.parse(data) : [];
-  }
+  addToHistory(song: Song): void {
+    // Optimistically update signal
+    const cur = this.history().filter(h => h.id !== song.id);
+    this.history.set([song, ...cur]);
 
-  addToHistory(song: Song): Song[] {
-    let hist = this.getHistory().filter(h => h.id !== song.id);
-    hist.unshift(song);
-    if (hist.length > 100) hist.pop();
-    localStorage.setItem('pkp_history', JSON.stringify(hist));
-    this.history.set(hist);
-    return hist;
+    // Record on backend for the user
+    this.api.recordHistory(song.id).subscribe({
+      next: () => {},
+      error: (err) => console.warn('Error recording history to server:', err)
+    });
   }
 
   // --- OFFLINE AUDIO (INDEXEDDB) ---

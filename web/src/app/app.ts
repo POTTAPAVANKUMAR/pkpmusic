@@ -31,7 +31,7 @@ export class App implements OnInit {
   // Tab State
   selectedTab = signal<AppTab>('home');
   
-  // Strict Mobile App Auth State (Matching LoginView, RegisterView, ForgotPasswordView)
+  // Strict Mobile App Auth State
   authMode = signal<'login' | 'register' | 'forgot' | 'verifyOtp'>('login');
   loginEmail = signal<string>('');
   loginPassword = signal<string>('');
@@ -58,10 +58,14 @@ export class App implements OnInit {
   searchSuggestions = signal<string[]>([]);
   showSuggestions = signal<boolean>(false);
 
-  // Dashboard & Navigation Data
+  // Home Dashboard (Personalized for User)
   dashboardSections = signal<DashboardSection[]>([]);
   dashboardLoading = signal<boolean>(false);
   dashboardError = signal<string | null>(null);
+
+  // Explore Sections (Global Discover)
+  exploreSections = signal<DashboardSection[]>([]);
+  exploreLoading = signal<boolean>(false);
 
   // Category Pills
   categories = [
@@ -98,19 +102,17 @@ export class App implements OnInit {
     public lyrics: LyricsService,
     private api: ApiService
   ) {
-    // Load dashboard when authenticated
+    // Load personalized data whenever authentication is ready
     effect(() => {
       if (this.auth.isAuthenticated()) {
-        this.loadDashboard();
-        this.loadTelemetry();
+        this.loadUserDataAndDashboard();
       }
     });
   }
 
   ngOnInit() {
     if (this.auth.isAuthenticated()) {
-      this.loadDashboard();
-      this.loadTelemetry();
+      this.loadUserDataAndDashboard();
       setInterval(() => {
         if (this.selectedTab() === 'server') {
           this.loadTelemetry();
@@ -119,7 +121,15 @@ export class App implements OnInit {
     }
   }
 
-  // --- MOBILE APP AUTHENTICATION FLOWS (1:1 with iOS) ---
+  // --- INITIALIZE ALL PERSONALIZED USER DATA ---
+  loadUserDataAndDashboard() {
+    this.loadDashboard();
+    this.loadExplore();
+    this.storage.syncUserData();
+    this.loadTelemetry();
+  }
+
+  // --- MOBILE APP AUTHENTICATION FLOWS ---
   handleLogin() {
     const email = this.loginEmail().trim().toLowerCase();
     const password = this.loginPassword();
@@ -137,10 +147,11 @@ export class App implements OnInit {
       next: (res) => {
         this.auth.setSession(res.access_token);
         this.authLoading.set(false);
+        this.loadUserDataAndDashboard();
       },
       error: (err) => {
         this.authLoading.set(false);
-        this.authError.set(err.error?.detail || 'Invalid credentials');
+        this.authError.set(err.error?.detail || 'Invalid email or password');
       }
     });
   }
@@ -161,16 +172,16 @@ export class App implements OnInit {
 
     this.api.register(username, email, password).subscribe({
       next: () => {
-        // Automatically login the user after successful registration
         this.api.login(email, password).subscribe({
           next: (res) => {
             this.auth.setSession(res.access_token);
             this.authLoading.set(false);
+            this.loadUserDataAndDashboard();
           },
           error: () => {
             this.authLoading.set(false);
             this.authMode.set('login');
-            this.authSuccessMsg.set('Account created! Please sign in with your password.');
+            this.authSuccessMsg.set('Account created! Please sign in.');
           }
         });
       },
@@ -233,6 +244,8 @@ export class App implements OnInit {
   handleLogout() {
     this.auth.logout();
     this.player.pause();
+    this.dashboardSections.set([]);
+    this.exploreSections.set([]);
   }
 
   // --- NAVIGATION & TABS ---
@@ -241,24 +254,48 @@ export class App implements OnInit {
     this.selectedArtist.set(null);
     this.selectedAlbum.set(null);
     this.selectedMoodTitle.set(null);
-    if (tab === 'server') {
+
+    if (tab === 'home') {
+      this.loadDashboard();
+    } else if (tab === 'explore') {
+      this.loadExplore();
+    } else if (tab === 'library') {
+      this.storage.loadFavorites();
+      this.storage.loadPlaylists();
+    } else if (tab === 'history') {
+      this.storage.loadHistory();
+    } else if (tab === 'server') {
       this.loadTelemetry();
     }
   }
 
-  // --- DASHBOARD ---
+  // --- PERSONALIZED USER DASHBOARD (Home Tab) ---
   loadDashboard() {
     this.dashboardLoading.set(true);
     this.dashboardError.set(null);
 
-    this.api.getExplore().subscribe({
+    this.api.getDashboard().subscribe({
       next: (sections) => {
         this.dashboardSections.set(sections);
         this.dashboardLoading.set(false);
       },
       error: (err) => {
-        this.dashboardError.set('Failed to load music dashboard.');
+        this.dashboardError.set('Failed to load personalized dashboard.');
         this.dashboardLoading.set(false);
+      }
+    });
+  }
+
+  // --- GLOBAL EXPLORE (Explore Tab) ---
+  loadExplore() {
+    this.exploreLoading.set(true);
+    this.api.getExplore().subscribe({
+      next: (sections) => {
+        this.exploreSections.set(sections);
+        this.exploreLoading.set(false);
+      },
+      error: () => {
+        this.exploreLoading.set(false);
       }
     });
   }
@@ -367,6 +404,20 @@ export class App implements OnInit {
     });
   }
 
+  bookmarkArtist(artist: ArtistDetail) {
+    this.api.addBookmark(this.selectedArtist()!.name, 'artist', artist.name, artist.thumbnails?.[0]?.url).subscribe(() => {
+      alert(`Bookmarked ${artist.name}!`);
+      this.loadDashboard();
+    });
+  }
+
+  bookmarkAlbum(album: AlbumDetail) {
+    this.api.addBookmark(album.title, 'album', album.title, album.thumbnails?.[0]?.url).subscribe(() => {
+      alert(`Bookmarked ${album.title}!`);
+      this.loadDashboard();
+    });
+  }
+
   // --- PLAYBACK HELPERS ---
   playSongNow(song: Song, queueList?: Song[]) {
     this.player.playSong(song, queueList);
@@ -388,7 +439,7 @@ export class App implements OnInit {
     }
   }
 
-  // --- CUSTOM PLAYLISTS ---
+  // --- USER CUSTOM PLAYLISTS ---
   createPlaylist() {
     const name = this.newPlaylistName().trim();
     if (name) {

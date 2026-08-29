@@ -350,7 +350,7 @@
     <div class="tab-view-container" *ngIf="selectedTab() === 'explore' && !selectedArtist() && !selectedAlbum() && !selectedMoodTitle()">
       <div class="explore-hero-header">
         <h1 class="page-title">Explore & Discover</h1>
-        <p class="page-desc">Trending hits, genres, and mood collections.</p>
+        <p class="page-desc">Trending community hits, new releases, and mood collections.</p>
       </div>
 
       <div class="category-pills-row" style="margin-bottom: 2rem;">
@@ -361,7 +361,12 @@
       </div>
 
       <div class="dashboard-sections-wrap">
-        <section class="dash-section" *ngFor="let sec of dashboardSections()">
+        <div *ngIf="exploreLoading()" class="loading-state">
+          <div class="spinner-large"></div>
+          <p>Discovering trending hits...</p>
+        </div>
+
+        <section class="dash-section" *ngFor="let sec of exploreSections()">
           <h2 class="section-title">{{ sec.title }}</h2>
           <div class="horizontal-scroll-deck">
             <div class="card-item-spider" *ngFor="let item of sec.items" (click)="handleDashboardItemClick(item)">
@@ -382,7 +387,7 @@
       <div class="library-header-row">
         <div>
           <h1 class="page-title">Your Library</h1>
-          <p class="page-desc">Liked songs, custom playlists, and downloads.</p>
+          <p class="page-desc">Liked songs, custom playlists, and downloads synced with your account.</p>
         </div>
         <button class="btn-primary-spider" (click)="showNewPlaylistModal.set(true)">
           <span>➕ New Playlist</span>
@@ -416,10 +421,10 @@
       <!-- Custom Playlists Grid -->
       <h3 class="section-title" style="margin-top: 2rem;">Custom Playlists</h3>
       <div class="playlists-grid">
-        <div class="playlist-card" *ngFor="let pl of storage.customPlaylists()" (click)="playAllSongs(pl.tracks)">
+        <div class="playlist-card" *ngFor="let pl of storage.customPlaylists()">
           <div class="playlist-icon">📁</div>
           <div class="playlist-name">{{ pl.name }}</div>
-          <div class="playlist-meta">{{ pl.tracks.length }} tracks</div>
+          <div class="playlist-meta">{{ pl.items?.length || 0 }} tracks</div>
         </div>
       </div>
     </div>
@@ -751,3 +756,23 @@
   </div>
 
 </div>
+
+<!-- NEW PLAYLIST MODAL -->
+<div class="modal-backdrop-overlay" *ngIf="showNewPlaylistModal()">
+  <div class="modal-dialog-box">
+    <h2 class="modal-dialog-title">New Playlist</h2>
+    <p class="modal-dialog-sub">Enter a title for your new playlist</p>
+    
+    <input type="text" 
+           class="modal-text-input" 
+           placeholder="Playlist Name" 
+           [(ngModel)]="newPlaylistName" 
+           (keyup.enter)="createPlaylist()" />
+
+    <div class="modal-actions-row">
+      <button class="btn-dialog-cancel" (click)="showNewPlaylistModal.set(false)">Cancel</button>
+      <button class="btn-dialog-submit" (click)="createPlaylist()" [disabled]="!newPlaylistName().trim()">Create</button>
+    </div>
+  </div>
+</div>
+
