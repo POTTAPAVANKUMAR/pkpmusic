@@ -1073,7 +1073,7 @@
 }
 
 /* ==========================================
-   PERSISTENT BOTTOM PLAYER BAR (88px Height)
+   1. PERSISTENT DOCKED BOTTOM PLAYER BAR (88px Height)
    ========================================== */
 .app-player-bar {
   position: fixed;
@@ -1243,6 +1243,205 @@
   border-radius: 999px;
   outline: none;
   cursor: pointer;
+}
+
+/* ==========================================
+   2. DRAGGABLE FLOATING POPUP PLAYER WIDGET
+   ========================================== */
+.draggable-player-popup {
+  position: fixed;
+  z-index: 1500;
+  width: 340px;
+  background: rgba(19, 22, 34, 0.95);
+  border: 1px solid var(--border-hover);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(255, 42, 42, 0.15);
+  backdrop-filter: blur(24px);
+  user-select: none;
+  overflow: hidden;
+  transition: width 0.2s ease, box-shadow 0.2s ease;
+}
+
+.draggable-player-popup.collapsed {
+  width: 240px;
+}
+
+.popup-drag-handle {
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: grab;
+}
+
+.popup-drag-handle:active {
+  cursor: grabbing;
+}
+
+.drag-grip-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+
+.popup-handle-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-popup-mini {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.btn-popup-mini:hover {
+  background: var(--bg-hover);
+  color: #fff;
+}
+
+.popup-main-content {
+  padding: 14px 16px 16px;
+}
+
+.popup-track-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.popup-art-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.popup-art-thumb.spinning {
+  animation: spinSlow 12s linear infinite;
+}
+
+.popup-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.popup-song-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.popup-song-artist {
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-popup-heart {
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.popup-scrub-box {
+  margin-bottom: 10px;
+}
+
+.popup-times-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+  margin-top: 4px;
+}
+
+.popup-controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.btn-popup-ctrl {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.btn-popup-ctrl:hover {
+  color: #fff;
+}
+
+.btn-popup-ctrl.active {
+  color: var(--accent-red);
+}
+
+.btn-popup-play {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--accent-red);
+  color: #fff;
+  border: none;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(255, 42, 42, 0.4);
+}
+
+.popup-mini-body {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+}
+
+.popup-art-thumb.mini {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+.popup-mini-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.btn-popup-play.mini {
+  width: 28px;
+  height: 28px;
+  font-size: 11px;
 }
 
 /* SLIDE-IN SIDE PANEL (Lyrics & Queue) */
@@ -1763,6 +1962,11 @@
   to { transform: rotate(360deg); }
 }
 
+@keyframes spinSlow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 /* MOBILE RESPONSIVENESS */
 .mobile-bottom-nav {
   display: none;
@@ -1805,6 +2009,11 @@
 
   .player-right-block .volume-slider {
     display: none;
+  }
+
+  .draggable-player-popup {
+    width: calc(100% - 24px);
+    max-width: 360px;
   }
 
   .slide-panel-drawer {

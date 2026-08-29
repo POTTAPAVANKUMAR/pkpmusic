@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed, effect } from '@angular/core';
+import { Component, OnInit, signal, computed, effect, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from './services/api.service';
@@ -20,6 +20,7 @@ import {
 
 type AppTab = 'home' | 'explore' | 'library' | 'history' | 'offline' | 'server';
 type SearchType = 'songs' | 'albums' | 'artists';
+type PlayerDisplayMode = 'docked' | 'floating';
 
 @Component({
   selector: 'app-root',
@@ -99,6 +100,16 @@ export class App implements OnInit {
   moodPlaylists = signal<DashboardItem[]>([]);
   detailLoading = signal<boolean>(false);
 
+  // Player Display & Floating Draggable Mode
+  playerMode = signal<PlayerDisplayMode>('docked');
+  isFloatingCollapsed = signal<boolean>(false);
+  floatingPos = signal<{ x: number, y: number }>({ x: 20, y: 100 });
+  private isDragging = false;
+  private dragStartX = 0;
+  private dragStartY = 0;
+  private initialPopupX = 0;
+  private initialPopupY = 0;
+
   // Sheets & Drawers
   showFullScreenPlayer = signal<boolean>(false);
   activePlayerSheet = signal<'lyrics' | 'queue' | 'related' | 'options' | null>(null);
@@ -131,6 +142,14 @@ export class App implements OnInit {
   }
 
   ngOnInit() {
+    if (typeof window !== 'undefined') {
+      // Default floating position at bottom right
+      this.floatingPos.set({
+        x: Math.max(20, window.innerWidth - 380),
+        y: Math.max(80, window.innerHeight - 240)
+      });
+    }
+
     if (this.auth.isAuthenticated()) {
       this.loadUserDataAndDashboard();
       setInterval(() => {
@@ -139,6 +158,55 @@ export class App implements OnInit {
         }
       }, 6000);
     }
+  }
+
+  // --- DRAGGABLE POPUP HANDLERS ---
+  setPlayerMode(mode: PlayerDisplayMode) {
+    this.playerMode.set(mode);
+    this.showToast(mode === 'floating' ? 'Player popped out! Drag it anywhere 🚀' : 'Player docked to bottom 📌');
+  }
+
+  toggleFloatingCollapse() {
+    this.isFloatingCollapsed.set(!this.isFloatingCollapsed());
+  }
+
+  onDragStart(event: MouseEvent | TouchEvent) {
+    this.isDragging = true;
+    const clientX = 'touches' in event ? event.touches[0].clientX : event.clientX;
+    const clientY = 'touches' in event ? event.touches[0].clientY : event.clientY;
+    this.dragStartX = clientX;
+    this.dragStartY = clientY;
+    this.initialPopupX = this.floatingPos().x;
+    this.initialPopupY = this.floatingPos().y;
+    event.stopPropagation();
+  }
+
+  @HostListener('window:mousemove', ['$event'])
+  @HostListener('window:touchmove', ['$event'])
+  onDragMove(event: MouseEvent | TouchEvent) {
+    if (!this.isDragging) return;
+    const clientX = 'touches' in event ? event.touches[0].clientX : event.clientX;
+    const clientY = 'touches' in event ? event.touches[0].clientY : event.clientY;
+
+    const deltaX = clientX - this.dragStartX;
+    const deltaY = clientY - this.dragStartY;
+
+    const newX = this.initialPopupX + deltaX;
+    const newY = this.initialPopupY + deltaY;
+
+    // Viewport boundaries clamping
+    const width = this.isFloatingCollapsed() ? 220 : 360;
+    const height = this.isFloatingCollapsed() ? 70 : 220;
+    const clampedX = Math.max(10, Math.min(window.innerWidth - width - 10, newX));
+    const clampedY = Math.max(10, Math.min(window.innerHeight - height - 10, newY));
+
+    this.floatingPos.set({ x: clampedX, y: clampedY });
+  }
+
+  @HostListener('window:mouseup')
+  @HostListener('window:touchend')
+  onDragEnd() {
+    this.isDragging = false;
   }
 
   // --- GREETING ---

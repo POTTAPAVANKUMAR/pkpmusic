@@ -292,6 +292,12 @@
       </div>
 
       <div class="topbar-actions">
+        <!-- Floating Popup Player Toggle -->
+        <button class="btn-topbar-pill" *ngIf="player.currentSong()" (click)="setPlayerMode(playerMode() === 'docked' ? 'floating' : 'docked')">
+          <span *ngIf="playerMode() === 'docked'">🚀 Pop Out Player</span>
+          <span *ngIf="playerMode() === 'floating'">📌 Dock Player</span>
+        </button>
+
         <button class="btn-topbar-pill" (click)="showNewPlaylistModal.set(true)">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           <span>New Playlist</span>
@@ -824,9 +830,9 @@
   </aside>
 
   <!-- ==========================================
-       PERSISTENT DESKTOP PLAYER BAR (Clean 90px Height)
+       1. PERSISTENT DOCKED PLAYER BAR (When playerMode === 'docked')
        ========================================== -->
-  <footer class="app-player-bar" *ngIf="player.currentSong()">
+  <footer class="app-player-bar" *ngIf="player.currentSong() && playerMode() === 'docked'">
     
     <!-- Left Track Details -->
     <div class="player-left-block" (click)="showFullScreenPlayer.set(true)">
@@ -884,6 +890,11 @@
 
     <!-- Right Utilities -->
     <div class="player-right-block">
+      <!-- Pop Out Floating Button -->
+      <button class="btn-player-action-icon" (click)="setPlayerMode('floating')" title="Pop out into Draggable Floating Player">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+      </button>
+
       <button class="btn-player-action-icon" [class.active]="activePlayerSheet() === 'lyrics'" (click)="toggleSheet('lyrics')" title="Synced Lyrics">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
       </button>
@@ -906,10 +917,118 @@
              (input)="player.setVolume($any($event.target).value)" />
 
       <button class="btn-player-action-icon" (click)="showFullScreenPlayer.set(true)" title="Fullscreen">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 14 10 14 10 20"></polyline><polyline points="20 10 14 10 14 4"></polyline><line x1="14" y1="10" x2="21" y2="3"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
       </button>
     </div>
   </footer>
+
+  <!-- ==========================================
+       2. DRAGGABLE FLOATING POPUP PLAYER (When playerMode === 'floating')
+       ========================================== -->
+  <div class="draggable-player-popup" 
+       *ngIf="player.currentSong() && playerMode() === 'floating'"
+       [class.collapsed]="isFloatingCollapsed()"
+       [style.left.px]="floatingPos().x"
+       [style.top.px]="floatingPos().y">
+    
+    <!-- Drag Handle Header Bar -->
+    <div class="popup-drag-handle" (mousedown)="onDragStart($event)" (touchstart)="onDragStart($event)">
+      <div class="drag-grip-indicator">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg>
+        <span>PKP Music Player</span>
+      </div>
+
+      <div class="popup-handle-actions" (mousedown)="$event.stopPropagation()" (touchstart)="$event.stopPropagation()">
+        <!-- Minimize / Expand Toggle -->
+        <button class="btn-popup-mini" (click)="toggleFloatingCollapse()" title="Minimize / Expand">
+          <span *ngIf="!isFloatingCollapsed()">—</span>
+          <span *ngIf="isFloatingCollapsed()">▢</span>
+        </button>
+
+        <!-- Dock Back to Bottom -->
+        <button class="btn-popup-mini" (click)="setPlayerMode('docked')" title="Dock to Bottom">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+        </button>
+
+        <!-- Fullscreen Expand -->
+        <button class="btn-popup-mini" (click)="showFullScreenPlayer.set(true)" title="Fullscreen">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Expanded Popup Body -->
+    <div class="popup-main-content" *ngIf="!isFloatingCollapsed()">
+      <div class="popup-track-row">
+        <img [src]="player.currentSong()?.cover_art_url || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=120&auto=format&fit=crop&q=80'" 
+             class="popup-art-thumb" 
+             [class.spinning]="player.isPlaying()" />
+        <div class="popup-meta">
+          <span class="popup-song-title">{{ player.currentSong()?.title }}</span>
+          <span class="popup-song-artist">{{ player.currentSong()?.artist }}</span>
+        </div>
+        <button class="btn-popup-heart" (click)="toggleLike(player.currentSong()!)" title="Like">
+          <span [style.color]="storage.isSongLiked(player.currentSong()!.id) ? 'var(--accent-red)' : 'var(--text-muted)'">
+            {{ storage.isSongLiked(player.currentSong()!.id) ? '♥' : '♡' }}
+          </span>
+        </button>
+      </div>
+
+      <!-- Scrubber Line -->
+      <div class="popup-scrub-box">
+        <input type="range" 
+               class="scrub-slider" 
+               min="0" 
+               [max]="player.duration() > 0 ? player.duration() : 1" 
+               [value]="player.currentTime()" 
+               (input)="player.seek($any($event.target).value)" />
+        <div class="popup-times-row">
+          <span>{{ formatTime(player.currentTime()) }}</span>
+          <span>{{ formatTime(player.duration()) }}</span>
+        </div>
+      </div>
+
+      <!-- Controls Row -->
+      <div class="popup-controls-row">
+        <button class="btn-popup-ctrl" [class.active]="player.shuffle()" (click)="player.toggleShuffle()" title="Shuffle">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5"></path><path d="M4 20L21 3"></path><path d="M21 16v5h-5"></path><path d="M15 15l6 6"></path><path d="M4 4l5 5"></path></svg>
+        </button>
+
+        <button class="btn-popup-ctrl" (click)="player.playPrevious()" title="Previous">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="19 20 9 12 19 4 19 20"></polygon><line x1="5" y1="19" x2="5" y2="5"></line></svg>
+        </button>
+
+        <button class="btn-popup-play" (click)="player.togglePlay()" title="Play / Pause">
+          <span *ngIf="!player.isLoading() && !player.isPlaying()">▶</span>
+          <span *ngIf="!player.isLoading() && player.isPlaying()">⏸</span>
+          <span *ngIf="player.isLoading()" class="spinner-small"></span>
+        </button>
+
+        <button class="btn-popup-ctrl" (click)="player.playNext()" title="Next">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>
+        </button>
+
+        <button class="btn-popup-ctrl" [class.active]="player.repeatMode() !== 'off'" (click)="player.toggleRepeat()" title="Repeat">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mini Collapsed Pill Body -->
+    <div class="popup-mini-body" *ngIf="isFloatingCollapsed()">
+      <img [src]="player.currentSong()?.cover_art_url || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=120&auto=format&fit=crop&q=80'" 
+           class="popup-art-thumb mini" 
+           [class.spinning]="player.isPlaying()" />
+      <div class="popup-mini-meta">
+        <span class="popup-song-title truncate">{{ player.currentSong()?.title }}</span>
+      </div>
+      <button class="btn-popup-play mini" (click)="player.togglePlay()">
+        <span *ngIf="!player.isLoading() && !player.isPlaying()">▶</span>
+        <span *ngIf="!player.isLoading() && player.isPlaying()">⏸</span>
+      </button>
+    </div>
+
+  </div>
 
   <!-- MOBILE BOTTOM BAR -->
   <nav class="mobile-bottom-nav">
