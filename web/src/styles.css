@@ -19,6 +19,8 @@
   --radius-full: 9999px;
   --shadow-card: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
   --shadow-player: 0 -10px 30px rgba(0, 0, 0, 0.6);
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
 }
 
 *, *::before, *::after {
@@ -26,6 +28,7 @@
   margin: 0;
   padding: 0;
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 body {

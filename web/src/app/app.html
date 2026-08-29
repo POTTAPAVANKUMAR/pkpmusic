@@ -939,7 +939,9 @@
        1. PERSISTENT DOCKED PLAYER BAR (When playerMode === 'docked')
        ========================================== -->
   <footer class="app-player-bar" *ngIf="player.currentSong() && playerMode() === 'docked'">
-    
+    <!-- Mobile Floating Island Progress Indicator Bar -->
+    <div class="mobile-player-progress-bar" [style.width.%]="(player.currentTime() / (player.duration() || 1)) * 100"></div>
+
     <!-- Left Track Details -->
     <div class="player-left-block" (click)="showFullScreenPlayer.set(true)">
       <img [src]="player.currentSong()?.cover_art_url || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=120&auto=format&fit=crop&q=80'" class="player-thumb" />
