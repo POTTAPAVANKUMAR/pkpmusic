@@ -368,9 +368,13 @@ export class App implements OnInit {
   // --- NAVIGATION & TABS ---
   setTab(tab: AppTab) {
     this.selectedTab.set(tab);
+    this.clearSearch();
     this.selectedArtist.set(null);
     this.selectedAlbum.set(null);
     this.selectedMoodTitle.set(null);
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 
     if (tab === 'home') {
       this.loadDashboard();
