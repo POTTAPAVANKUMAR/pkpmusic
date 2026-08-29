@@ -6,7 +6,7 @@
   <title>Pavan Kumar Potta — Server Hub</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg-base: #090a0f;
@@ -90,36 +90,165 @@
       display: flex;
       gap: 10px;
       align-items: center;
+      flex-wrap: wrap;
     }
     
-    .ssh-btn {
-      background: rgba(255, 255, 255, 0.04);
+    .btn {
+      background: rgba(255, 255, 255, 0.05);
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 0.5rem 0.9rem;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 12px;
-      color: var(--text-muted);
-      display: flex;
+      padding: 0.55rem 1rem;
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-main);
+      display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 7px;
       cursor: pointer;
       backdrop-filter: blur(10px);
       transition: all 0.15s ease;
+      text-decoration: none;
     }
     
-    .ssh-btn:hover {
-      background: rgba(255, 255, 255, 0.08);
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.1);
       border-color: var(--border-hover);
+      transform: translateY(-1px);
+    }
+    
+    .btn-lock {
+      background: rgba(239, 68, 68, 0.12);
+      border-color: rgba(239, 68, 68, 0.25);
+      color: #f87171;
+    }
+    
+    .btn-lock:hover {
+      background: rgba(239, 68, 68, 0.25);
+    }
+    
+    /* ==========================================
+       PASSCODE LOCK CARD
+       ========================================== */
+    .lock-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 3rem 2rem;
+      backdrop-filter: blur(24px);
+      text-align: center;
+      max-width: 420px;
+      margin: 4.5rem auto;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s ease;
+    }
+    
+    .lock-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #ef4444, #06b6d4, #a855f7);
+    }
+    
+    .lock-icon-wrap {
+      width: 68px;
+      height: 68px;
+      border-radius: 20px;
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      color: #ef4444;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      margin: 0 auto 1.5rem;
+      box-shadow: 0 0 25px rgba(239, 68, 68, 0.2);
+    }
+    
+    .lock-title {
+      font-size: 22px;
+      font-weight: 800;
       color: #fff;
+      margin-bottom: 6px;
     }
     
-    .ssh-btn.copied {
-      border-color: var(--accent-emerald);
-      color: var(--accent-emerald);
+    .lock-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 2rem;
     }
     
-    /* Live Telemetry HUD */
+    .passcode-input-wrapper {
+      position: relative;
+      margin-bottom: 1.25rem;
+    }
+    
+    .passcode-input {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      padding: 0.9rem 1.25rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.25em;
+      text-align: center;
+      color: #fff;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+    
+    .passcode-input:focus {
+      border-color: #06b6d4;
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.25);
+    }
+    
+    .passcode-input.error {
+      border-color: #ef4444;
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+      animation: shake 0.4s ease;
+    }
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-8px); }
+      40%, 80% { transform: translateX(8px); }
+    }
+    
+    .btn-unlock {
+      width: 100%;
+      background: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
+      border: none;
+      color: #fff;
+      padding: 0.9rem;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
+      transition: all 0.15s ease;
+    }
+    
+    .btn-unlock:hover {
+      opacity: 0.92;
+      transform: translateY(-1px);
+    }
+    
+    .lock-error-msg {
+      color: #f87171;
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 12px;
+      display: none;
+    }
+
+    /* Telemetry HUD */
     .telemetry-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -136,7 +265,6 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
-      position: relative;
     }
     
     .telem-header {
@@ -333,7 +461,7 @@
       transform: translateX(4px);
     }
     
-    /* Services Table / Reference */
+    /* Reference Table */
     .reference-box {
       background: var(--bg-card);
       border: 1px solid var(--border);
@@ -405,220 +533,238 @@
           <span>Raspberry Pi Server · pottapk.win</span>
         </div>
       </div>
-      <div class="header-actions">
-        <button class="ssh-btn" id="sshBtn" onclick="copySSH()">
-          <span id="sshIcon">📋</span>
-          <span id="sshText">ssh pavankumarpotta@192.168.1.151</span>
-        </button>
+      <div class="header-actions" id="headerActions">
+        <!-- Injected upon unlock -->
       </div>
     </header>
 
-    <!-- Live Telemetry HUD -->
-    <div class="telemetry-grid">
-      <!-- CPU Temp -->
-      <div class="telem-card">
-        <div class="telem-header">
-          <span class="telem-label">SoC Temp</span>
-          <span class="telem-icon">🌡️</span>
+    <!-- PASSCODE GATE (Visible when locked) -->
+    <div id="passcodeGateSection" class="lock-card" style="display: block;">
+      <div class="lock-icon-wrap">🔐</div>
+      <div class="lock-title">Enter Server Passcode</div>
+      <div class="lock-subtitle">Enter your 10-digit authorization passcode to access the dashboard.</div>
+      
+      <form onsubmit="handlePasscodeSubmit(event)">
+        <div class="passcode-input-wrapper">
+          <input type="password" 
+                 id="passcodeInput" 
+                 class="passcode-input" 
+                 placeholder="••••••••••" 
+                 maxlength="10" 
+                 autocomplete="off" 
+                 autofocus />
         </div>
-        <div class="telem-value" id="tempVal">-- °C</div>
-        <div class="telem-sub">Thermal Target &lt; 70°C</div>
-        <div class="progress-bar-bg">
-          <div class="progress-bar-fill" id="tempBar" style="width: 50%; background: var(--accent-emerald);"></div>
-        </div>
-      </div>
-
-      <!-- CPU Usage -->
-      <div class="telem-card">
-        <div class="telem-header">
-          <span class="telem-label">CPU Load</span>
-          <span class="telem-icon">⚡</span>
-        </div>
-        <div class="telem-value" id="cpuVal">-- %</div>
-        <div class="telem-sub" id="cpuCores">4 Cores · ARM64</div>
-        <div class="progress-bar-bg">
-          <div class="progress-bar-fill" id="cpuBar" style="width: 15%; background: var(--accent-cyan);"></div>
-        </div>
-      </div>
-
-      <!-- RAM -->
-      <div class="telem-card">
-        <div class="telem-header">
-          <span class="telem-label">Memory</span>
-          <span class="telem-icon">💾</span>
-        </div>
-        <div class="telem-value" id="ramVal">-- GB</div>
-        <div class="telem-sub" id="ramPct">-- % Used of 7.9 GB</div>
-        <div class="progress-bar-bg">
-          <div class="progress-bar-fill" id="ramBar" style="width: 25%; background: var(--accent-purple);"></div>
-        </div>
-      </div>
-
-      <!-- NVMe / Disk -->
-      <div class="telem-card">
-        <div class="telem-header">
-          <span class="telem-label">Storage</span>
-          <span class="telem-icon">💽</span>
-        </div>
-        <div class="telem-value" id="diskVal">19.3 GB</div>
-        <div class="telem-sub" id="diskPct">2.1% Used of 937 GB</div>
-        <div class="progress-bar-bg">
-          <div class="progress-bar-fill" id="diskBar" style="width: 2.1%; background: var(--accent-emerald);"></div>
-        </div>
-      </div>
-
-      <!-- Uptime -->
-      <div class="telem-card">
-        <div class="telem-header">
-          <span class="telem-label">Uptime</span>
-          <span class="telem-icon">⏱️</span>
-        </div>
-        <div class="telem-value" id="uptimeVal">83d 3h</div>
-        <div class="telem-sub">Continuous Active</div>
-        <div class="progress-bar-bg">
-          <div class="progress-bar-fill" style="width: 100%; background: var(--accent-emerald);"></div>
-        </div>
-      </div>
+        <button type="submit" class="btn-unlock">Unlock Dashboard</button>
+        <div id="passcodeError" class="lock-error-msg">⚠️ Incorrect passcode. Please try again.</div>
+      </form>
     </div>
 
-    <!-- Active Server Services -->
-    <div class="section-header">
-      <span class="section-title">Core Services & Applications</span>
-      <div class="section-line"></div>
-    </div>
+    <!-- MAIN DASHBOARD CONTENT (Visible when unlocked) -->
+    <div id="dashboardContent" style="display: none;">
+      
+      <!-- Live Telemetry HUD -->
+      <div class="telemetry-grid">
+        <div class="telem-card">
+          <div class="telem-header">
+            <span class="telem-label">SoC Temp</span>
+            <span class="telem-icon">🌡️</span>
+          </div>
+          <div class="telem-value" id="tempVal">-- °C</div>
+          <div class="telem-sub">Thermal Target &lt; 70°C</div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="tempBar" style="width: 50%; background: var(--accent-emerald);"></div>
+          </div>
+        </div>
 
-    <div class="grid">
-      <!-- PKP Music API -->
-      <a class="card card-music" href="https://pkpmusic.pottapk.win/docs" target="_blank">
-        <div class="card-top">
-          <div class="card-icon" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">🎵</div>
-          <span class="badge badge-red">API & Docs</span>
+        <div class="telem-card">
+          <div class="telem-header">
+            <span class="telem-label">CPU Load</span>
+            <span class="telem-icon">⚡</span>
+          </div>
+          <div class="telem-value" id="cpuVal">-- %</div>
+          <div class="telem-sub">4 Cores · ARM64</div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="cpuBar" style="width: 15%; background: var(--accent-cyan);"></div>
+          </div>
         </div>
-        <div class="card-title">PKP Music API</div>
-        <div class="card-domain">pkpmusic.pottapk.win</div>
-        <div class="card-desc">FastAPI streaming backend, ML recommendation engine, YouTube audio engine, and server management API.</div>
-        <div class="card-bottom">
-          <span class="card-meta">Port 8000 · FastAPI</span>
-          <span class="arrow-icon">→</span>
-        </div>
-      </a>
 
-      <!-- Dozzle Live Logs -->
-      <a class="card card-logs" href="https://pkpmusiclogs.pottapk.win" target="_blank">
-        <div class="card-top">
-          <div class="card-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">📜</div>
-          <span class="badge badge-amber">Live Console</span>
+        <div class="telem-card">
+          <div class="telem-header">
+            <span class="telem-label">Memory</span>
+            <span class="telem-icon">💾</span>
+          </div>
+          <div class="telem-value" id="ramVal">2.2 GB</div>
+          <div class="telem-sub" id="ramPct">28% Used of 7.9 GB</div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="ramBar" style="width: 28%; background: var(--accent-purple);"></div>
+          </div>
         </div>
-        <div class="card-title">Live Docker Logs</div>
-        <div class="card-domain">pkpmusiclogs.pottapk.win</div>
-        <div class="card-desc">Real-time terminal stream of all container logs, stdout/stderr, and runtime events via Dozzle.</div>
-        <div class="card-bottom">
-          <span class="card-meta">Port 8888 · Dozzle</span>
-          <span class="arrow-icon">→</span>
-        </div>
-      </a>
 
-      <!-- pgAdmin -->
-      <a class="card card-db" href="https://postgresql.pottapk.win" target="_blank">
-        <div class="card-top">
-          <div class="card-icon" style="background: rgba(6, 182, 212, 0.15); color: #06b6d4;">🗄️</div>
-          <span class="badge badge-cyan">Database GUI</span>
+        <div class="telem-card">
+          <div class="telem-header">
+            <span class="telem-label">Storage</span>
+            <span class="telem-icon">💽</span>
+          </div>
+          <div class="telem-value" id="diskVal">19.3 GB</div>
+          <div class="telem-sub" id="diskPct">2.1% Used of 937 GB</div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="diskBar" style="width: 2.1%; background: var(--accent-emerald);"></div>
+          </div>
         </div>
-        <div class="card-title">PostgreSQL pgAdmin</div>
-        <div class="card-domain">postgresql.pottapk.win</div>
-        <div class="card-desc">Visual database manager for PostgreSQL 15: manage user tables, playlists, songs, and database schemas.</div>
-        <div class="card-bottom">
-          <span class="card-meta">Port 5050 · pgAdmin 4</span>
-          <span class="arrow-icon">→</span>
-        </div>
-      </a>
 
-      <!-- Portainer -->
-      <a class="card card-docker" href="https://portainer.pottapk.win" target="_blank">
-        <div class="card-top">
-          <div class="card-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">📦</div>
-          <span class="badge badge-emerald">Docker GUI</span>
+        <div class="telem-card">
+          <div class="telem-header">
+            <span class="telem-label">Uptime</span>
+            <span class="telem-icon">⏱️</span>
+          </div>
+          <div class="telem-value" id="uptimeVal">83d 3h</div>
+          <div class="telem-sub">Continuous Active</div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" style="width: 100%; background: var(--accent-emerald);"></div>
+          </div>
         </div>
-        <div class="card-title">Portainer CE</div>
-        <div class="card-domain">portainer.pottapk.win</div>
-        <div class="card-desc">Complete container management interface to restart, view stats, inspect images, and manage compose stacks.</div>
-        <div class="card-bottom">
-          <span class="card-meta">Port 9000 · Docker CE</span>
-          <span class="arrow-icon">→</span>
-        </div>
-      </a>
+      </div>
 
-      <!-- CasaOS -->
-      <a class="card card-os" href="https://cloud.pottapk.win" target="_blank">
-        <div class="card-top">
-          <div class="card-icon" style="background: rgba(168, 85, 247, 0.15); color: #a855f7;">🏠</div>
-          <span class="badge badge-purple">Server OS</span>
-        </div>
-        <div class="card-title">CasaOS Dashboard</div>
-        <div class="card-domain">cloud.pottapk.win</div>
-        <div class="card-desc">Visual home server cloud dashboard with disk storage monitoring, widget shortcuts, and server stats.</div>
-        <div class="card-bottom">
-          <span class="card-meta">Port 80 · CasaOS</span>
-          <span class="arrow-icon">→</span>
-        </div>
-      </a>
-    </div>
+      <!-- Core Services Grid -->
+      <div class="section-header">
+        <span class="section-title">Core Services & Applications</span>
+        <div class="section-line"></div>
+      </div>
 
-    <!-- Quick Reference Table -->
-    <div class="section-header">
-      <span class="section-title">Network & Ingress Routing</span>
-      <div class="section-line"></div>
-    </div>
+      <div class="grid">
+        <!-- PKP Music API -->
+        <a class="card card-music" href="https://pkpmusic.pottapk.win/docs" target="_blank">
+          <div class="card-top">
+            <div class="card-icon" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">🎵</div>
+            <span class="badge badge-red">API & Docs</span>
+          </div>
+          <div class="card-title">PKP Music API</div>
+          <div class="card-domain">pkpmusic.pottapk.win</div>
+          <div class="card-desc">FastAPI streaming backend, ML recommendation engine, YouTube audio engine, and telemetry API.</div>
+          <div class="card-bottom">
+            <span class="card-meta">Port 8000 · FastAPI</span>
+            <span class="arrow-icon">→</span>
+          </div>
+        </a>
 
-    <div class="reference-box">
-      <table class="ref-table">
-        <thead>
-          <tr>
-            <th>Service</th>
-            <th>Subdomain</th>
-            <th>Local Target</th>
-            <th>Type</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td style="color: #fff; font-weight: 600;">Landing Portal</td>
-            <td><code>pottapk.win</code></td>
-            <td><code>http://localhost:3000</code></td>
-            <td>Nginx Web Portal</td>
-          </tr>
-          <tr>
-            <td style="color: #fff; font-weight: 600;">PKP Music Core</td>
-            <td><code>pkpmusic.pottapk.win</code></td>
-            <td><code>http://localhost:8000</code></td>
-            <td>FastAPI Backend</td>
-          </tr>
-          <tr>
-            <td style="color: #fff; font-weight: 600;">Dozzle Logs</td>
-            <td><code>pkpmusiclogs.pottapk.win</code></td>
-            <td><code>http://localhost:8888</code></td>
-            <td>Realtime Docker Logs</td>
-          </tr>
-          <tr>
-            <td style="color: #fff; font-weight: 600;">pgAdmin DB GUI</td>
-            <td><code>postgresql.pottapk.win</code></td>
-            <td><code>http://localhost:5050</code></td>
-            <td>PostgreSQL Web GUI</td>
-          </tr>
-          <tr>
-            <td style="color: #fff; font-weight: 600;">Portainer CE</td>
-            <td><code>portainer.pottapk.win</code></td>
-            <td><code>http://localhost:9000</code></td>
-            <td>Container Operations</td>
-          </tr>
-          <tr>
-            <td style="color: #fff; font-weight: 600;">CasaOS Dashboard</td>
-            <td><code>cloud.pottapk.win</code></td>
-            <td><code>http://localhost:80</code></td>
-            <td>Home Server Dashboard</td>
-          </tr>
-        </tbody>
-      </table>
+        <!-- Dozzle Live Logs -->
+        <a class="card card-logs" href="https://pkpmusiclogs.pottapk.win" target="_blank">
+          <div class="card-top">
+            <div class="card-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">📜</div>
+            <span class="badge badge-amber">Live Console</span>
+          </div>
+          <div class="card-title">Live Docker Logs</div>
+          <div class="card-domain">pkpmusiclogs.pottapk.win</div>
+          <div class="card-desc">Real-time terminal stream of all container logs, stdout/stderr, and runtime events via Dozzle.</div>
+          <div class="card-bottom">
+            <span class="card-meta">Port 8888 · Dozzle</span>
+            <span class="arrow-icon">→</span>
+          </div>
+        </a>
+
+        <!-- pgAdmin -->
+        <a class="card card-db" href="https://postgresql.pottapk.win" target="_blank">
+          <div class="card-top">
+            <div class="card-icon" style="background: rgba(6, 182, 212, 0.15); color: #06b6d4;">🗄️</div>
+            <span class="badge badge-cyan">Database GUI</span>
+          </div>
+          <div class="card-title">PostgreSQL pgAdmin</div>
+          <div class="card-domain">postgresql.pottapk.win</div>
+          <div class="card-desc">Visual database manager for PostgreSQL: manage user tables, playlists, songs, and database schemas.</div>
+          <div class="card-bottom">
+            <span class="card-meta">Port 5050 · pgAdmin 4</span>
+            <span class="arrow-icon">→</span>
+          </div>
+        </a>
+
+        <!-- Portainer -->
+        <a class="card card-docker" href="https://portainer.pottapk.win" target="_blank">
+          <div class="card-top">
+            <div class="card-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">📦</div>
+            <span class="badge badge-emerald">Docker GUI</span>
+          </div>
+          <div class="card-title">Portainer CE</div>
+          <div class="card-domain">portainer.pottapk.win</div>
+          <div class="card-desc">Complete container management interface to restart, view stats, inspect images, and manage compose stacks.</div>
+          <div class="card-bottom">
+            <span class="card-meta">Port 9000 · Docker CE</span>
+            <span class="arrow-icon">→</span>
+          </div>
+        </a>
+
+        <!-- CasaOS -->
+        <a class="card card-os" href="https://cloud.pottapk.win" target="_blank">
+          <div class="card-top">
+            <div class="card-icon" style="background: rgba(168, 85, 247, 0.15); color: #a855f7;">🏠</div>
+            <span class="badge badge-purple">Server OS</span>
+          </div>
+          <div class="card-title">CasaOS Dashboard</div>
+          <div class="card-domain">cloud.pottapk.win</div>
+          <div class="card-desc">Visual home server cloud dashboard with disk storage monitoring, widget shortcuts, and server stats.</div>
+          <div class="card-bottom">
+            <span class="card-meta">Port 80 · CasaOS</span>
+            <span class="arrow-icon">→</span>
+          </div>
+        </a>
+      </div>
+
+      <!-- Quick Reference Table -->
+      <div class="section-header">
+        <span class="section-title">Network & Ingress Routing</span>
+        <div class="section-line"></div>
+      </div>
+
+      <div class="reference-box">
+        <table class="ref-table">
+          <thead>
+            <tr>
+              <th>Service</th>
+              <th>Subdomain</th>
+              <th>Local Target</th>
+              <th>Type</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="color: #fff; font-weight: 600;">Landing Portal</td>
+              <td><code>pottapk.win</code></td>
+              <td><code>http://localhost:3000</code></td>
+              <td>Nginx Web Portal</td>
+            </tr>
+            <tr>
+              <td style="color: #fff; font-weight: 600;">PKP Music Core</td>
+              <td><code>pkpmusic.pottapk.win</code></td>
+              <td><code>http://localhost:8000</code></td>
+              <td>FastAPI Backend</td>
+            </tr>
+            <tr>
+              <td style="color: #fff; font-weight: 600;">Dozzle Logs</td>
+              <td><code>pkpmusiclogs.pottapk.win</code></td>
+              <td><code>http://localhost:8888</code></td>
+              <td>Realtime Docker Logs</td>
+            </tr>
+            <tr>
+              <td style="color: #fff; font-weight: 600;">pgAdmin DB GUI</td>
+              <td><code>postgresql.pottapk.win</code></td>
+              <td><code>http://localhost:5050</code></td>
+              <td>PostgreSQL Web GUI</td>
+            </tr>
+            <tr>
+              <td style="color: #fff; font-weight: 600;">Portainer CE</td>
+              <td><code>portainer.pottapk.win</code></td>
+              <td><code>http://localhost:9000</code></td>
+              <td>Container Operations</td>
+            </tr>
+            <tr>
+              <td style="color: #fff; font-weight: 600;">CasaOS Dashboard</td>
+              <td><code>cloud.pottapk.win</code></td>
+              <td><code>http://localhost:80</code></td>
+              <td>Home Server Dashboard</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
     </div>
 
     <!-- Footer -->
@@ -630,6 +776,72 @@
   </div>
 
   <script>
+    const CORRECT_PASSCODE = "5139147720";
+    let isUnlocked = false;
+
+    // Check if previously authorized in this session or browser
+    function initLock() {
+      const stored = localStorage.getItem("pkp_server_unlocked");
+      if (stored === "true") {
+        unlockDashboard();
+      } else {
+        lockDashboard();
+      }
+    }
+
+    // Handle Passcode Form Submission
+    function handlePasscodeSubmit(e) {
+      e.preventDefault();
+      const input = document.getElementById("passcodeInput");
+      const err = document.getElementById("passcodeError");
+      const entered = input.value.trim();
+
+      if (entered === CORRECT_PASSCODE) {
+        err.style.display = "none";
+        input.classList.remove("error");
+        localStorage.setItem("pkp_server_unlocked", "true");
+        unlockDashboard();
+      } else {
+        input.classList.add("error");
+        err.style.display = "block";
+        input.value = "";
+        input.focus();
+        setTimeout(() => input.classList.remove("error"), 500);
+      }
+    }
+
+    // Unlock Dashboard
+    function unlockDashboard() {
+      isUnlocked = true;
+      document.getElementById("passcodeGateSection").style.display = "none";
+      document.getElementById("dashboardContent").style.display = "block";
+
+      const headerActions = document.getElementById("headerActions");
+      headerActions.innerHTML = `
+        <button class="btn" id="sshBtn" onclick="copySSH()">
+          <span id="sshIcon">📋</span>
+          <span id="sshText">ssh pavankumarpotta@192.168.1.151</span>
+        </button>
+        <button class="btn btn-lock" onclick="lockDashboard()">🔒 Lock</button>
+      `;
+
+      fetchTelemetry();
+    }
+
+    // Lock Dashboard
+    function lockDashboard() {
+      isUnlocked = false;
+      localStorage.removeItem("pkp_server_unlocked");
+      document.getElementById("passcodeGateSection").style.display = "block";
+      document.getElementById("dashboardContent").style.display = "none";
+      document.getElementById("headerActions").innerHTML = "";
+      const input = document.getElementById("passcodeInput");
+      if (input) {
+        input.value = "";
+        input.focus();
+      }
+    }
+
     // Copy SSH Command
     function copySSH() {
       const text = "ssh pavankumarpotta@192.168.1.151";
@@ -639,7 +851,7 @@
         const sshText = document.getElementById("sshText");
         btn.classList.add("copied");
         icon.textContent = "✓";
-        sshText.textContent = "Copied to clipboard!";
+        sshText.textContent = "Copied!";
         setTimeout(() => {
           btn.classList.remove("copied");
           icon.textContent = "📋";
@@ -650,57 +862,42 @@
 
     // Dynamic Live Telemetry Fetch
     async function fetchTelemetry() {
+      if (!isUnlocked) return;
       try {
         const res = await fetch("https://pkpmusic.pottapk.win/admin/server/system");
         if (!res.ok) return;
         const data = await res.json();
         
-        // Temperature
         if (data.temperature_c) {
           const temp = data.temperature_c.toFixed(1);
           document.getElementById("tempVal").textContent = temp + " °C";
           const tempBar = document.getElementById("tempBar");
           const pct = Math.min(Math.max((data.temperature_c / 85) * 100, 10), 100);
           tempBar.style.width = pct + "%";
-          if (data.temperature_c > 75) {
-            tempBar.style.background = "var(--accent-red)";
-          } else if (data.temperature_c > 65) {
-            tempBar.style.background = "var(--accent-amber)";
-          } else {
-            tempBar.style.background = "var(--accent-emerald)";
-          }
+          tempBar.style.background = data.temperature_c > 75 ? "var(--accent-red)" : (data.temperature_c > 65 ? "var(--accent-amber)" : "var(--accent-emerald)");
         }
-        
-        // CPU
         if (data.cpu_usage_pct !== undefined) {
           document.getElementById("cpuVal").textContent = data.cpu_usage_pct.toFixed(1) + " %";
           document.getElementById("cpuBar").style.width = Math.max(data.cpu_usage_pct, 5) + "%";
         }
-        
-        // RAM
         if (data.memory) {
           document.getElementById("ramVal").textContent = data.memory.used_formatted;
           document.getElementById("ramPct").textContent = data.memory.usage_pct.toFixed(1) + "% of " + data.memory.total_formatted;
           document.getElementById("ramBar").style.width = data.memory.usage_pct + "%";
         }
-        
-        // Disk
         if (data.disk) {
           document.getElementById("diskVal").textContent = data.disk.used_formatted;
           document.getElementById("diskPct").textContent = data.disk.usage_pct.toFixed(1) + "% of " + data.disk.total_formatted;
           document.getElementById("diskBar").style.width = Math.max(data.disk.usage_pct, 2) + "%";
         }
-        
-        // Uptime
         if (data.uptime_formatted) {
           document.getElementById("uptimeVal").textContent = data.uptime_formatted;
         }
-      } catch (e) {
-        console.log("Telemetry sync note:", e);
-      }
+      } catch (e) {}
     }
 
-    fetchTelemetry();
+    // Start
+    initLock();
     setInterval(fetchTelemetry, 6000);
   </script>
 </body>
