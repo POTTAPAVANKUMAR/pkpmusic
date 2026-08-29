@@ -19,14 +19,17 @@ import {
   HistoryItem,
   MLJobRun,
   DockerContainerInfo,
-  ServiceHealth
+  ServiceHealth,
+  ChatUser,
+  Friendship,
+  ChatMessage
 } from '../models/music.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ApiService {
-  private baseUrl = 'https://pkpmusic.pottapk.win';
+  public baseUrl = 'https://pkpmusic.pottapk.win';
 
   constructor(private http: HttpClient) {}
 
@@ -272,6 +275,55 @@ export class ApiService {
 
   triggerMLJob(): Observable<{ message: string }> {
     return this.http.post<{ message: string }>(`${this.baseUrl}/admin/jobs/ml/trigger`, {}, { headers: this.getAuthHeaders() });
+  }
+
+  // --- SOCIAL & CHAT ---
+  getFriends(): Observable<Friendship[]> {
+    return this.http.get<Friendship[]>(`${this.baseUrl}/social/friends`, { headers: this.getAuthHeaders() }).pipe(
+      catchError(err => {
+        console.error('Error fetching friends:', err);
+        return of([]);
+      })
+    );
+  }
+
+  getPendingRequests(): Observable<Friendship[]> {
+    return this.http.get<Friendship[]>(`${this.baseUrl}/social/requests`, { headers: this.getAuthHeaders() }).pipe(
+      catchError(err => {
+        console.error('Error fetching requests:', err);
+        return of([]);
+      })
+    );
+  }
+
+  searchUsers(query: string): Observable<ChatUser[]> {
+    const params = new HttpParams().set('q', query);
+    return this.http.get<ChatUser[]>(`${this.baseUrl}/social/search`, { params, headers: this.getAuthHeaders() }).pipe(
+      catchError(() => of([]))
+    );
+  }
+
+  getAllUsers(): Observable<ChatUser[]> {
+    return this.http.get<ChatUser[]>(`${this.baseUrl}/social/users`, { headers: this.getAuthHeaders() }).pipe(
+      catchError(() => of([]))
+    );
+  }
+
+  sendFriendRequest(friendId: number): Observable<Friendship> {
+    return this.http.post<Friendship>(`${this.baseUrl}/social/request`, { friend_id: friendId }, { headers: this.getAuthHeaders() });
+  }
+
+  acceptFriendRequest(friendId: number): Observable<Friendship> {
+    return this.http.post<Friendship>(`${this.baseUrl}/social/accept`, { friend_id: friendId }, { headers: this.getAuthHeaders() });
+  }
+
+  getChatHistory(friendId: number): Observable<ChatMessage[]> {
+    return this.http.get<ChatMessage[]>(`${this.baseUrl}/social/chat/${friendId}`, { headers: this.getAuthHeaders() }).pipe(
+      catchError(err => {
+        console.error(`Error loading chat history with ${friendId}:`, err);
+        return of([]);
+      })
+    );
   }
 }
 

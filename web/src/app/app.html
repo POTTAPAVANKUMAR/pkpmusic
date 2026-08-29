@@ -207,6 +207,12 @@
           <span>History</span>
         </button>
 
+        <button class="nav-btn" [class.active]="selectedTab() === 'chat' && !isSearching()" (click)="setTab('chat')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+          <span>Chat & Friends</span>
+          <span class="nav-badge" *ngIf="chat.totalUnread() > 0">{{ chat.totalUnread() }}</span>
+        </button>
+
         <button class="nav-btn" [class.active]="selectedTab() === 'ai' && !isSearching()" (click)="setTab('ai')">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path><circle cx="12" cy="12" r="4"></circle></svg>
           <span>AI Analytics</span>
@@ -295,6 +301,13 @@
       </div>
 
       <div class="topbar-actions">
+        <!-- Chat & Social Lounge Button -->
+        <button class="btn-topbar-pill" [class.active]="selectedTab() === 'chat'" (click)="setTab('chat')" title="Chat & Friends">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+          <span>Chat</span>
+          <span class="pill-badge" *ngIf="chat.totalUnread() > 0">{{ chat.totalUnread() }}</span>
+        </button>
+
         <!-- Floating Popup Player Toggle -->
         <button class="btn-topbar-pill" *ngIf="player.currentSong()" (click)="setPlayerMode(playerMode() === 'docked' ? 'floating' : 'docked')">
           <span *ngIf="playerMode() === 'docked'">🚀 Pop Out</span>
@@ -815,6 +828,276 @@
       </div>
     </div>
 
+    <!-- ==================== CHAT & SOCIAL VIEW ==================== -->
+    <div class="page-content chat-page-wrapper" *ngIf="selectedTab() === 'chat' && !selectedArtist() && !selectedAlbum() && !isSearching()">
+      <div class="chat-layout-grid">
+        
+        <!-- Left Side: People, Friends, Requests, and Search -->
+        <aside class="chat-people-panel">
+          <div class="chat-panel-header">
+            <div class="chat-panel-title-wrap">
+              <h2 class="chat-panel-title">Messages</h2>
+              <div class="chat-connection-pill" [class.connected]="chat.isWsConnected()">
+                <span class="pulse-dot"></span>
+                <span>{{ chat.isWsConnected() ? 'Live Sync' : 'Connecting...' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub-Tab Switcher (Friends / Find / Requests) -->
+          <div class="chat-subtab-bar">
+            <button class="chat-subtab-btn" 
+                    [class.active]="chatActiveSubTab() === 'friends'" 
+                    (click)="chatActiveSubTab.set('friends')">
+              <span>Friends</span>
+              <span class="subtab-count" *ngIf="chat.friends().length > 0">{{ chat.friends().length }}</span>
+            </button>
+            <button class="chat-subtab-btn" 
+                    [class.active]="chatActiveSubTab() === 'find'" 
+                    (click)="chatActiveSubTab.set('find')">
+              <span>Find Users</span>
+            </button>
+            <button class="chat-subtab-btn" 
+                    [class.active]="chatActiveSubTab() === 'requests'" 
+                    (click)="chatActiveSubTab.set('requests')">
+              <span>Requests</span>
+              <span class="subtab-badge" *ngIf="chat.pendingRequests().length > 0">{{ chat.pendingRequests().length }}</span>
+            </button>
+          </div>
+
+          <!-- 1. FRIENDS LIST SUBTAB -->
+          <div class="chat-panel-scroll" *ngIf="chatActiveSubTab() === 'friends'">
+            <div class="chat-user-item" 
+                 *ngFor="let rel of chat.friends()"
+                 [class.selected]="chat.activeFriend()?.id === rel.friend.id"
+                 (click)="selectChatFriend(rel.friend)">
+              <div class="chat-avatar-wrap">
+                <img [src]="rel.friend.profile_picture_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80'" class="chat-user-avatar" />
+                <span class="chat-status-dot online"></span>
+              </div>
+              <div class="chat-user-info">
+                <div class="chat-user-top">
+                  <span class="chat-username">{{ rel.friend.username }}</span>
+                  <span class="chat-last-time" *ngIf="chat.messages()[rel.friend.id]?.length">
+                    {{ formatChatTime(chat.messages()[rel.friend.id]?.slice(-1)[0]?.timestamp || 0) }}
+                  </span>
+                </div>
+                <div class="chat-user-bottom">
+                  <span class="chat-preview-text">
+                    {{ chat.messages()[rel.friend.id]?.length ? 
+                       (chat.messages()[rel.friend.id]?.slice(-1)[0]?.message_type === 'song_share' ? '🎵 Shared a track' : chat.messages()[rel.friend.id]?.slice(-1)[0]?.content) : 
+                       'Tap to start chatting...' }}
+                  </span>
+                  <span class="unread-pill" *ngIf="chat.unreadCounts()[rel.friend.id] > 0">
+                    {{ chat.unreadCounts()[rel.friend.id] }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Empty Friends State -->
+            <div class="chat-empty-panel" *ngIf="chat.friends().length === 0">
+              <div class="empty-icon">👥</div>
+              <p class="empty-title">No friends yet</p>
+              <p class="empty-desc">Discover music lovers and add friends to chat and share music in real-time!</p>
+              <button class="btn-subtab-action" (click)="chatActiveSubTab.set('find')">+ Find People</button>
+            </div>
+          </div>
+
+          <!-- 2. FIND & ADD USERS SUBTAB -->
+          <div class="chat-panel-scroll" *ngIf="chatActiveSubTab() === 'find'">
+            <div class="chat-search-input-wrap">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <input type="text" 
+                     placeholder="Search username..." 
+                     [ngModel]="chatSearchQuery()"
+                     (input)="onChatSearchInput($any($event.target).value)" />
+            </div>
+
+            <div class="chat-search-section-label" *ngIf="chat.searchResults().length > 0">Search Results</div>
+            <div class="chat-user-item search-mode" *ngFor="let u of chat.searchResults()">
+              <img [src]="u.profile_picture_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80'" class="chat-user-avatar" />
+              <div class="chat-user-info">
+                <span class="chat-username">{{ u.username }}</span>
+                <span class="chat-preview-text">Listener</span>
+              </div>
+              <button class="btn-chat-add" (click)="sendFriendRequestToUser(u)">
+                <span>+ Add</span>
+              </button>
+            </div>
+
+            <div class="chat-search-section-label">Community Members</div>
+            <div class="chat-user-item search-mode" *ngFor="let u of chat.availableUsers()">
+              <img [src]="u.profile_picture_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80'" class="chat-user-avatar" />
+              <div class="chat-user-info">
+                <span class="chat-username">{{ u.username }}</span>
+                <span class="chat-preview-text">PKP Music Streamer</span>
+              </div>
+              <button class="btn-chat-add" (click)="sendFriendRequestToUser(u)">
+                <span>+ Add</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 3. PENDING REQUESTS SUBTAB -->
+          <div class="chat-panel-scroll" *ngIf="chatActiveSubTab() === 'requests'">
+            <div class="chat-user-item request-mode" *ngFor="let req of chat.pendingRequests()">
+              <img [src]="req.friend.profile_picture_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80'" class="chat-user-avatar" />
+              <div class="chat-user-info">
+                <span class="chat-username">{{ req.friend.username }}</span>
+                <span class="chat-preview-text">Sent you a friend request</span>
+              </div>
+              <div class="request-btn-group">
+                <button class="btn-req-accept" (click)="acceptPendingFriendRequest(req)">Accept</button>
+              </div>
+            </div>
+
+            <div class="chat-empty-panel" *ngIf="chat.pendingRequests().length === 0">
+              <div class="empty-icon">📬</div>
+              <p class="empty-title">No pending requests</p>
+              <p class="empty-desc">When other listeners add you, requests will appear here.</p>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Right Side: Active Chat Room / Conversation Stage -->
+        <section class="chat-room-stage">
+          
+          <!-- When a friend is selected -->
+          <ng-container *ngIf="chat.activeFriend(); else noActiveFriendTpl">
+            
+            <!-- Chat Room Header -->
+            <div class="chat-room-header">
+              <div class="chat-room-user">
+                <div class="chat-avatar-wrap">
+                  <img [src]="chat.activeFriend()?.profile_picture_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80'" class="chat-room-avatar" />
+                  <span class="chat-status-dot online"></span>
+                </div>
+                <div class="chat-room-meta">
+                  <h3 class="chat-room-name">{{ chat.activeFriend()?.username }}</h3>
+                  <span class="chat-room-sub">Online · Real-time WebSocket</span>
+                </div>
+              </div>
+
+              <!-- Quick Action: Share Currently Playing Song -->
+              <div class="chat-room-actions">
+                <button class="btn-share-song-pill" 
+                        *ngIf="player.currentSong()"
+                        (click)="shareCurrentSongInChat()" 
+                        title="Share {{ player.currentSong()?.title }} with {{ chat.activeFriend()?.username }}">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                  <span>Share Now Playing</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Chat Messages Scroll Container -->
+            <div class="chat-messages-container">
+              <div class="chat-messages-scroll">
+                
+                <!-- Loading history spinner -->
+                <div class="chat-loading-history" *ngIf="chat.isLoadingHistory()">
+                  <span class="btn-spinner"></span>
+                  <span>Loading history...</span>
+                </div>
+
+                <!-- Message Bubbles -->
+                <div class="chat-bubble-row" 
+                     *ngFor="let msg of (chat.messages()[chat.activeFriend()!.id] || [])"
+                     [class.outgoing]="msg.sender_id === auth.currentUser()?.id"
+                     [class.incoming]="msg.sender_id !== auth.currentUser()?.id">
+                  
+                  <div class="chat-bubble">
+                    
+                    <!-- Standard Text Message -->
+                    <div class="bubble-text" *ngIf="msg.message_type !== 'song_share'">
+                      {{ msg.content }}
+                    </div>
+
+                    <!-- Rich Embedded Song Share Card -->
+                    <div class="bubble-song-card" *ngIf="msg.message_type === 'song_share'">
+                      <ng-container *ngIf="parseSharedSong(msg.content) as shared">
+                        <img [src]="shared.cover_art_url || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=120&auto=format&fit=crop&q=80'" class="shared-song-thumb" />
+                        <div class="shared-song-meta">
+                          <span class="shared-tag">🎵 SHARED TRACK</span>
+                          <span class="shared-title">{{ shared.title }}</span>
+                          <span class="shared-artist">{{ shared.artist }}</span>
+                        </div>
+                        <button class="btn-play-shared" (click)="playSharedSong(shared)" title="Play this song">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                        </button>
+                      </ng-container>
+                      <div *ngIf="!parseSharedSong(msg.content)" class="bubble-text">
+                        🎵 Shared Track: {{ msg.content }}
+                      </div>
+                    </div>
+
+                    <!-- Message Timestamp -->
+                    <div class="bubble-footer">
+                      <span class="bubble-time">{{ formatChatTime(msg.timestamp) }}</span>
+                    </div>
+                  </div>
+
+                </div>
+
+                <!-- Empty Chat Message Prompt -->
+                <div class="chat-empty-convo" *ngIf="!chat.isLoadingHistory() && (!chat.messages()[chat.activeFriend()!.id] || chat.messages()[chat.activeFriend()!.id].length === 0)">
+                  <div class="convo-greeting-icon">👋</div>
+                  <h4>Say hello to {{ chat.activeFriend()?.username }}!</h4>
+                  <p>Send a message or share your favorite tracks to listen together.</p>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Chat Composer Bar -->
+            <div class="chat-composer-bar">
+              <button class="btn-composer-music" 
+                      *ngIf="player.currentSong()" 
+                      (click)="shareCurrentSongInChat()" 
+                      title="Share currently playing: {{ player.currentSong()?.title }}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+              </button>
+
+              <input type="text" 
+                     class="chat-composer-input" 
+                     [placeholder]="'Message ' + chat.activeFriend()?.username + '...'"
+                     [ngModel]="chatMessageDraft()"
+                     (ngModelChange)="chatMessageDraft.set($event)"
+                     (keyup.enter)="sendChatMessage()" />
+
+              <button class="btn-composer-send" 
+                      [disabled]="!chatMessageDraft().trim()"
+                      (click)="sendChatMessage()"
+                      title="Send message">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+              </button>
+            </div>
+
+          </ng-container>
+
+          <!-- No Friend Selected Placeholder -->
+          <ng-template #noActiveFriendTpl>
+            <div class="chat-placeholder-screen">
+              <div class="placeholder-icon-wrap">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+              </div>
+              <h3 class="placeholder-title">Music Social Lounge</h3>
+              <p class="placeholder-desc">Connect with friends, chat in real-time, and share songs seamlessly without interrupting your listening session.</p>
+              
+              <div class="quick-friends-row" *ngIf="chat.friends().length > 0">
+                <div class="quick-friend-chip" *ngFor="let rel of chat.friends().slice(0, 4)" (click)="selectChatFriend(rel.friend)">
+                  <img [src]="rel.friend.profile_picture_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80'" class="chip-avatar" />
+                  <span>{{ rel.friend.username }}</span>
+                </div>
+              </div>
+            </div>
+          </ng-template>
+
+        </section>
+      </div>
+    </div>
+
     <!-- ==================== ARTIST DETAIL VIEW ==================== -->
     <div class="page-content" *ngIf="selectedArtist()">
       <button class="btn-back-breadcrumb" (click)="clearDetailView()">
@@ -1172,6 +1455,13 @@
     <button class="mob-btn" [class.active]="selectedTab() === 'history' && !isSearching()" (click)="setTab('history')">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
       <span>History</span>
+    </button>
+    <button class="mob-btn" [class.active]="selectedTab() === 'chat' && !isSearching()" (click)="setTab('chat')">
+      <div class="mob-icon-wrap" style="position: relative; display: flex; align-items: center; justify-content: center;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+        <span class="mob-badge" *ngIf="chat.totalUnread() > 0">{{ chat.totalUnread() }}</span>
+      </div>
+      <span>Chat</span>
     </button>
     <button class="mob-btn" [class.active]="selectedTab() === 'ai' && !isSearching()" (click)="setTab('ai')">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path><circle cx="12" cy="12" r="4"></circle></svg>

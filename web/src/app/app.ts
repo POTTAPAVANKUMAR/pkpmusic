@@ -6,6 +6,7 @@ import { PlayerService } from './services/player.service';
 import { StorageService } from './services/storage.service';
 import { LyricsService } from './services/lyrics.service';
 import { AuthService } from './services/auth.service';
+import { ChatService } from './services/chat.service';
 import { 
   Song, 
   DashboardSection, 
@@ -17,10 +18,13 @@ import {
   ServerTelemetry,
   UserPlaylist,
   MLJobRun,
-  ServiceHealth
+  ServiceHealth,
+  ChatUser,
+  Friendship,
+  ChatMessage
 } from './models/music.model';
 
-type AppTab = 'home' | 'explore' | 'library' | 'history' | 'ai' | 'server';
+type AppTab = 'home' | 'explore' | 'library' | 'history' | 'chat' | 'ai' | 'server';
 type SearchType = 'songs' | 'albums' | 'artists';
 type PlayerDisplayMode = 'docked' | 'floating';
 
@@ -142,11 +146,17 @@ export class App implements OnInit {
   toastMessage = signal<string | null>(null);
   private toastTimer: any = null;
 
+  // Chat & Social UI State
+  chatSearchQuery = signal<string>('');
+  chatMessageDraft = signal<string>('');
+  chatActiveSubTab = signal<'friends' | 'find' | 'requests'>('friends');
+
   constructor(
     public auth: AuthService,
     public player: PlayerService,
     public storage: StorageService,
     public lyrics: LyricsService,
+    public chat: ChatService,
     private api: ApiService
   ) {
     effect(() => {
@@ -748,5 +758,89 @@ export class App implements OnInit {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  }
+
+  // --- CHAT & SOCIAL HANDLERS ---
+  openChatTab(friend?: ChatUser) {
+    this.selectedTab.set('chat');
+    if (friend) {
+      this.chat.selectFriend(friend);
+    }
+  }
+
+  selectChatFriend(friend: ChatUser) {
+    this.chat.selectFriend(friend);
+  }
+
+  sendChatMessage() {
+    const active = this.chat.activeFriend();
+    const text = this.chatMessageDraft().trim();
+    if (!active || !text) return;
+
+    this.chat.sendMessage(active.id, text, 'text');
+    this.chatMessageDraft.set('');
+  }
+
+  shareCurrentSongInChat() {
+    const active = this.chat.activeFriend();
+    const current = this.player.currentSong();
+    if (!active) {
+      this.showToast('Please select a friend to chat with first');
+      return;
+    }
+    if (!current) {
+      this.showToast('No song is currently playing to share');
+      return;
+    }
+
+    this.chat.shareSongWithFriend(active.id, current);
+    this.showToast(`Shared "${current.title}" with ${active.username} 🎶`);
+  }
+
+  playSharedSong(song: Song) {
+    this.player.playSong(song);
+    this.showToast(`Playing "${song.title}" ▶`);
+  }
+
+  parseSharedSong(content: string): Song | null {
+    if (!content) return null;
+    try {
+      if (content.trim().startsWith('{') && content.trim().endsWith('}')) {
+        const parsed = JSON.parse(content);
+        if (parsed.id && parsed.title) {
+          return {
+            id: parsed.id,
+            title: parsed.title,
+            artist: parsed.artist || 'Unknown Artist',
+            cover_art_url: parsed.cover_art_url || null,
+            duration_ms: parsed.duration_ms || 0
+          };
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  formatChatTime(timestamp: number): string {
+    if (!timestamp) return '';
+    const date = new Date(timestamp * 1000);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  onChatSearchInput(query: string) {
+    this.chatSearchQuery.set(query);
+    this.chat.searchUsers(query);
+  }
+
+  sendFriendRequestToUser(user: ChatUser) {
+    this.chat.sendFriendRequest(user.id, () => {
+      this.showToast(`Friend request sent to ${user.username} 📨`);
+    });
+  }
+
+  acceptPendingFriendRequest(req: Friendship) {
+    this.chat.acceptFriendRequest(req.friend.id, () => {
+      this.showToast(`Accepted ${req.friend.username}'s friend request! 🎉`);
+    });
   }
 }

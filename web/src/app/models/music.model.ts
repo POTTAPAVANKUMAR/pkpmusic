@@ -154,3 +154,28 @@ export interface ServiceHealth {
   latency_ms?: number;
 }
 
+// --- CHAT & SOCIAL MODELS ---
+export interface ChatUser {
+  id: number;
+  username: string;
+  profile_picture_url?: string | null;
+}
+
+export interface Friendship {
+  id: number;
+  user_id: number;
+  friend_id: number;
+  status: string; // 'pending' | 'accepted'
+  friend: ChatUser;
+}
+
+export interface ChatMessage {
+  id: number;
+  sender_id: number;
+  receiver_id: number;
+  content: string;
+  message_type?: string; // 'text' | 'song_share' | 'song'
+  timestamp: number;
+  shared_song?: Song | null; // Parsed or enriched song details
+}
+
