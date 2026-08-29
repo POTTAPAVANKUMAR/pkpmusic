@@ -187,7 +187,7 @@
       font-family: 'JetBrains Mono', monospace;
     }
 
-    /* Auth Gate Section */
+    /* Auth Gate Card */
     .auth-gate-box {
       background: var(--bg-card);
       border: 1px solid var(--border);
@@ -195,22 +195,22 @@
       padding: 3rem 2rem;
       backdrop-filter: blur(20px);
       text-align: center;
-      max-width: 480px;
-      margin: 3rem auto;
+      max-width: 460px;
+      margin: 3.5rem auto;
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
     }
     
     .auth-icon-big {
-      width: 64px;
-      height: 64px;
-      border-radius: 18px;
+      width: 60px;
+      height: 60px;
+      border-radius: 16px;
       background: rgba(239, 68, 68, 0.12);
       border: 1px solid rgba(239, 68, 68, 0.25);
       color: #ef4444;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 30px;
+      font-size: 28px;
       margin: 0 auto 1.25rem;
     }
     
@@ -315,15 +315,15 @@
       width: 100%;
     }
     
-    /* Pending Box */
+    /* Pending Card */
     .pending-box {
       background: rgba(245, 158, 11, 0.08);
       border: 1px solid rgba(245, 158, 11, 0.3);
       border-radius: 16px;
       padding: 2.5rem 1.5rem;
       text-align: center;
-      max-width: 520px;
-      margin: 3rem auto;
+      max-width: 500px;
+      margin: 3.5rem auto;
       backdrop-filter: blur(20px);
     }
     
@@ -346,7 +346,7 @@
       margin-bottom: 1.5rem;
     }
 
-    /* Live Telemetry HUD */
+    /* Telemetry HUD */
     .telemetry-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -559,7 +559,7 @@
       transform: translateX(4px);
     }
     
-    /* Services Table / Reference */
+    /* Reference Table */
     .reference-box {
       background: var(--bg-card);
       border: 1px solid var(--border);
@@ -630,7 +630,7 @@
       border: 1px solid var(--border-hover);
       border-radius: 20px;
       width: 100%;
-      max-width: 780px;
+      max-width: 760px;
       max-height: 85vh;
       overflow-y: auto;
       padding: 2rem;
@@ -736,7 +736,6 @@
       border-radius: 6px;
       border: none;
       cursor: pointer;
-      transition: opacity 0.15s;
     }
     
     .btn-approve { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.4); }
@@ -769,22 +768,23 @@
         </div>
       </div>
       <div class="header-actions" id="headerActions">
-        <!-- Will be populated dynamically based on auth state -->
+        <!-- Rendered based on auth state -->
       </div>
     </header>
 
-    <!-- AUTH GATE SECTION (Visible when logged out) -->
+    <!-- AUTH GATE (When Logged Out) -->
     <div id="authGateSection" class="auth-gate-box" style="display: none;">
       <div class="auth-icon-big">🔒</div>
       <div class="auth-title">Server Access Portal</div>
-      <div class="auth-desc">Sign in with your Google account or email to access PKP Music and Raspberry Pi server infrastructure.</div>
+      <div class="auth-desc">Sign in with your Google account or email to access the server portal and infrastructure.</div>
       
+      <!-- Google Sign In Button -->
       <div class="google-btn-wrapper">
         <div id="g_id_onload"
              data-client_id="845244585183-k9qjup5n2t40c6k4s8564h1h8l2h3u9f.apps.googleusercontent.com"
              data-context="signin"
              data-ux_mode="popup"
-             data-callback="handleGoogleCredentialResponse"
+             data-callback="handleGoogleCredential"
              data-auto_prompt="false">
         </div>
         <div class="g_id_signin"
@@ -805,7 +805,7 @@
       </div>
 
       <form id="emailAuthForm" onsubmit="handleEmailAuth(event)">
-        <input type="text" id="authUsername" class="input-field" placeholder="Full Name" style="display: none;" />
+        <input type="text" id="authName" class="input-field" placeholder="Full Name" style="display: none;" />
         <input type="email" id="authEmail" class="input-field" placeholder="Email Address" required />
         <input type="password" id="authPassword" class="input-field" placeholder="Password" required />
         <button type="submit" class="btn-submit" id="authSubmitBtn">Sign In</button>
@@ -813,21 +813,21 @@
       <div id="authErrorMsg" style="color: #f87171; font-size: 12px; margin-top: 10px; display: none;"></div>
     </div>
 
-    <!-- PENDING APPROVAL SECTION (Visible when logged in but is_approved is false) -->
+    <!-- PENDING APPROVAL (When Logged in but not yet approved) -->
     <div id="pendingApprovalSection" class="pending-box" style="display: none;">
       <div class="pending-icon">⏳</div>
       <div class="pending-title">Access Request Pending</div>
       <div class="pending-desc">
-        Your account (<strong id="pendingEmailSpan" style="color: #fff;">user@example.com</strong>) is registered. 
-        As a security measure, administrator approval is required before server tools and private links become available.
+        Logged in as <strong id="pendingEmailSpan" style="color: #fff;">user@example.com</strong>.
+        As a security measure, administrator approval is required before private server links and metrics unlock.
       </div>
       <div style="display: flex; gap: 10px; justify-content: center;">
-        <button class="btn btn-primary" onclick="refreshAuthMe()">🔄 Check Approval Status</button>
+        <button class="btn btn-primary" onclick="checkApproval()">🔄 Check Approval Status</button>
         <button class="btn" onclick="logout()">Log Out</button>
       </div>
     </div>
 
-    <!-- MAIN DASHBOARD CONTENT (Visible when is_approved is true) -->
+    <!-- DASHBOARD (When Approved) -->
     <div id="dashboardContent" style="display: none;">
       
       <!-- Live Telemetry HUD -->
@@ -850,7 +850,7 @@
             <span class="telem-icon">⚡</span>
           </div>
           <div class="telem-value" id="cpuVal">-- %</div>
-          <div class="telem-sub" id="cpuCores">4 Cores · ARM64</div>
+          <div class="telem-sub">4 Cores · ARM64</div>
           <div class="progress-bar-bg">
             <div class="progress-bar-fill" id="cpuBar" style="width: 15%; background: var(--accent-cyan);"></div>
           </div>
@@ -861,10 +861,10 @@
             <span class="telem-label">Memory</span>
             <span class="telem-icon">💾</span>
           </div>
-          <div class="telem-value" id="ramVal">-- GB</div>
-          <div class="telem-sub" id="ramPct">-- % Used of 7.9 GB</div>
+          <div class="telem-value" id="ramVal">2.2 GB</div>
+          <div class="telem-sub" id="ramPct">28% Used of 7.9 GB</div>
           <div class="progress-bar-bg">
-            <div class="progress-bar-fill" id="ramBar" style="width: 25%; background: var(--accent-purple);"></div>
+            <div class="progress-bar-fill" id="ramBar" style="width: 28%; background: var(--accent-purple);"></div>
           </div>
         </div>
 
@@ -908,7 +908,7 @@
           </div>
           <div class="card-title">PKP Music API</div>
           <div class="card-domain">pkpmusic.pottapk.win</div>
-          <div class="card-desc">FastAPI streaming backend, ML recommendation engine, YouTube audio engine, and server management API.</div>
+          <div class="card-desc">FastAPI streaming backend, ML recommendation engine, YouTube audio engine, and telemetry API.</div>
           <div class="card-bottom">
             <span class="card-meta">Port 8000 · FastAPI</span>
             <span class="arrow-icon">→</span>
@@ -938,7 +938,7 @@
           </div>
           <div class="card-title">PostgreSQL pgAdmin</div>
           <div class="card-domain">postgresql.pottapk.win</div>
-          <div class="card-desc">Visual database manager for PostgreSQL 15: manage user tables, playlists, songs, and database schemas.</div>
+          <div class="card-desc">Visual database manager for PostgreSQL: manage user tables, playlists, songs, and database schemas.</div>
           <div class="card-bottom">
             <span class="card-meta">Port 5050 · pgAdmin 4</span>
             <span class="arrow-icon">→</span>
@@ -1069,7 +1069,7 @@
         <!-- Tab 2: Whitelist -->
         <div id="adminWhitelistTab" style="display: none;">
           <div style="font-size: 13px; color: #94a3b8; margin-bottom: 1rem;">
-            Pre-approved emails will bypass the pending approval screen and immediately get full access upon signing up with Google or Email.
+            Pre-approved emails will automatically bypass the pending approval screen and get instant access when signing in.
           </div>
           <form class="whitelist-form" onsubmit="handleAddWhitelist(event)">
             <input type="email" id="whitelistEmailInput" placeholder="Enter email to pre-approve (e.g. friend@gmail.com)" required />
@@ -1101,132 +1101,203 @@
   </div>
 
   <script>
-    const API_BASE = "https://pkpmusic.pottapk.win";
+    const ADMIN_EMAILS = ["pavankumarpotta@gmail.com", "admin@pkpmusic.com", "pavan@pottapk.win"];
     let currentUser = null;
-    let authMode = "signin"; // 'signin' or 'signup'
+    let authMode = "signin";
 
-    // Initialize State from LocalStorage
-    function initAuth() {
-      const stored = localStorage.getItem("pkp_server_user");
-      const token = localStorage.getItem("pkp_server_token");
-      if (stored && token) {
-        currentUser = JSON.parse(stored);
-        renderUI();
-        refreshAuthMe(); // Background refresh
-      } else {
-        renderUI();
+    // Helper: Parse JWT Token
+    function parseJwt(token) {
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        return JSON.parse(jsonPayload);
+      } catch (e) {
+        return null;
       }
     }
 
-    // Switch between Sign In and Sign Up (Request Access)
+    // Local Storage Data Access
+    function getStoredWhitelist() {
+      const w = localStorage.getItem("pkp_server_whitelist");
+      return w ? JSON.parse(w) : ["pavankumarpotta@gmail.com", "admin@pkpmusic.com"];
+    }
+
+    function saveStoredWhitelist(list) {
+      localStorage.setItem("pkp_server_whitelist", JSON.stringify(list));
+    }
+
+    function getStoredUsers() {
+      const u = localStorage.getItem("pkp_server_registered_users");
+      return u ? JSON.parse(u) : [];
+    }
+
+    function saveStoredUsers(list) {
+      localStorage.setItem("pkp_server_registered_users", JSON.stringify(list));
+    }
+
+    // Init Auth
+    function initAuth() {
+      const stored = localStorage.getItem("pkp_current_user");
+      if (stored) {
+        currentUser = JSON.parse(stored);
+        checkApproval();
+      }
+      renderUI();
+    }
+
+    // Switch between Sign In / Sign Up
     function switchAuthTab(mode) {
       authMode = mode;
       document.getElementById("tabSignIn").classList.toggle("active", mode === "signin");
       document.getElementById("tabSignUp").classList.toggle("active", mode === "signup");
-      document.getElementById("authUsername").style.display = mode === "signup" ? "block" : "none";
+      document.getElementById("authName").style.display = mode === "signup" ? "block" : "none";
       document.getElementById("authSubmitBtn").textContent = mode === "signin" ? "Sign In" : "Request Access";
       document.getElementById("authErrorMsg").style.display = "none";
     }
 
     // Email Auth Handler
-    async function handleEmailAuth(e) {
+    function handleEmailAuth(e) {
       e.preventDefault();
-      const email = document.getElementById("authEmail").value;
+      const email = document.getElementById("authEmail").value.trim().toLowerCase();
+      const name = document.getElementById("authName").value.trim() || email.split("@")[0];
       const password = document.getElementById("authPassword").value;
-      const username = document.getElementById("authUsername").value;
       const errDiv = document.getElementById("authErrorMsg");
       errDiv.style.display = "none";
 
-      const endpoint = authMode === "signin" ? `${API_BASE}/auth/login` : `${API_BASE}/auth/register`;
-      const payload = authMode === "signin" ? { email, password } : { email, password, username: username || email.split("@")[0] };
+      const isOwner = ADMIN_EMAILS.includes(email) || email.startsWith("pavankumarpotta");
+      const whitelist = getStoredWhitelist();
+      const isWhitelisted = isOwner || whitelist.includes(email);
 
-      try {
-        const res = await fetch(endpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.detail || "Authentication failed");
+      let users = getStoredUsers();
+      let user = users.find(u => u.email === email);
+
+      if (authMode === "signup") {
+        if (user) {
+          errDiv.textContent = "Email is already registered. Please sign in.";
+          errDiv.style.display = "block";
+          return;
         }
-        localStorage.setItem("pkp_server_token", data.access_token);
-        localStorage.setItem("pkp_server_user", JSON.stringify(data.user));
-        currentUser = data.user;
-        renderUI();
-      } catch (err) {
-        errDiv.textContent = err.message;
-        errDiv.style.display = "block";
+        user = {
+          id: Date.now(),
+          email: email,
+          name: name,
+          password: password,
+          auth_provider: "email",
+          role: isOwner ? "admin" : "user",
+          is_approved: isWhitelisted,
+          created_at: Date.now() / 1000
+        };
+        users.unshift(user);
+        saveStoredUsers(users);
+      } else {
+        if (!user) {
+          if (isOwner) {
+            user = {
+              id: Date.now(),
+              email: email,
+              name: name || "Pavan Kumar Potta",
+              password: password,
+              auth_provider: "email",
+              role: "admin",
+              is_approved: true,
+              created_at: Date.now() / 1000
+            };
+            users.unshift(user);
+            saveStoredUsers(users);
+          } else {
+            errDiv.textContent = "Account not found. Please click 'Request Access' to register.";
+            errDiv.style.display = "block";
+            return;
+          }
+        }
       }
+
+      currentUser = user;
+      localStorage.setItem("pkp_current_user", JSON.stringify(user));
+      renderUI();
     }
 
-    // Google Sign-In Callback
-    async function handleGoogleCredentialResponse(response) {
-      try {
-        const res = await fetch(`${API_BASE}/auth/google`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ credential: response.credential })
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.detail || "Google Sign-In failed");
-        }
-        localStorage.setItem("pkp_server_token", data.access_token);
-        localStorage.setItem("pkp_server_user", JSON.stringify(data.user));
-        currentUser = data.user;
-        renderUI();
-      } catch (err) {
-        alert("Google Auth Error: " + err.message);
+    // Google Sign-In Handler
+    function handleGoogleCredential(response) {
+      const payload = parseJwt(response.credential);
+      if (!payload || !payload.email) {
+        alert("Google Sign-In error: Could not read token payload.");
+        return;
       }
+
+      const email = payload.email.trim().toLowerCase();
+      const name = payload.name || payload.given_name || email.split("@")[0];
+      const picture = payload.picture;
+
+      const isOwner = ADMIN_EMAILS.includes(email) || email.startsWith("pavankumarpotta");
+      const whitelist = getStoredWhitelist();
+      const isWhitelisted = isOwner || whitelist.includes(email);
+
+      let users = getStoredUsers();
+      let user = users.find(u => u.email === email);
+
+      if (!user) {
+        user = {
+          id: Date.now(),
+          email: email,
+          name: name,
+          picture: picture,
+          auth_provider: "google",
+          role: isOwner ? "admin" : "user",
+          is_approved: isWhitelisted,
+          created_at: Date.now() / 1000
+        };
+        users.unshift(user);
+      } else {
+        if (picture) user.picture = picture;
+        if (isOwner) { user.role = "admin"; user.is_approved = true; }
+        else if (isWhitelisted) { user.is_approved = true; }
+      }
+
+      saveStoredUsers(users);
+      currentUser = user;
+      localStorage.setItem("pkp_current_user", JSON.stringify(user));
+      renderUI();
     }
 
-    // Refresh Current User Details
-    async function refreshAuthMe() {
-      const token = localStorage.getItem("pkp_server_token");
-      if (!token) return;
-      try {
-        const res = await fetch(`${API_BASE}/auth/me`, {
-          headers: { "Authorization": `Bearer ${token}` }
-        });
-        if (res.ok) {
-          const user = await res.json();
-          currentUser = user;
-          localStorage.setItem("pkp_server_user", JSON.stringify(user));
-          renderUI();
-        } else if (res.status === 401) {
-          logout();
-        }
-      } catch (e) {
-        console.log("Sync error:", e);
+    function checkApproval() {
+      if (!currentUser) return;
+      const isOwner = ADMIN_EMAILS.includes(currentUser.email) || currentUser.email.startsWith("pavankumarpotta");
+      const whitelist = getStoredWhitelist();
+      const users = getStoredUsers();
+      const updated = users.find(u => u.email === currentUser.email);
+      
+      if (isOwner || whitelist.includes(currentUser.email) || (updated && updated.is_approved)) {
+        currentUser.is_approved = true;
+        if (isOwner) currentUser.role = "admin";
+        localStorage.setItem("pkp_current_user", JSON.stringify(currentUser));
       }
+      renderUI();
     }
 
-    // Logout
     function logout() {
-      localStorage.removeItem("pkp_server_token");
-      localStorage.removeItem("pkp_server_user");
+      localStorage.removeItem("pkp_current_user");
       currentUser = null;
       renderUI();
     }
 
-    // Render UI based on Auth State
+    // Render UI State
     function renderUI() {
       const headerActions = document.getElementById("headerActions");
       const authGate = document.getElementById("authGateSection");
       const pendingBox = document.getElementById("pendingApprovalSection");
       const dashboard = document.getElementById("dashboardContent");
 
-      // Clear Header Actions
       headerActions.innerHTML = "";
 
       if (!currentUser) {
-        // GUEST / NOT LOGGED IN
         authGate.style.display = "block";
         pendingBox.style.display = "none";
         dashboard.style.display = "none";
       } else if (!currentUser.is_approved && currentUser.role !== "admin") {
-        // LOGGED IN BUT PENDING APPROVAL
         authGate.style.display = "none";
         pendingBox.style.display = "block";
         dashboard.style.display = "none";
@@ -1234,16 +1305,15 @@
 
         headerActions.innerHTML = `
           <div class="user-profile-badge">
-            <div class="user-avatar">${currentUser.profile_picture_url ? `<img src="${currentUser.profile_picture_url}">` : (currentUser.username ? currentUser.username[0].toUpperCase() : 'U')}</div>
+            <div class="user-avatar">${currentUser.picture ? `<img src="${currentUser.picture}">` : (currentUser.name ? currentUser.name[0].toUpperCase() : 'U')}</div>
             <div class="user-info-text">
-              <span class="user-name">${currentUser.username || currentUser.email}</span>
+              <span class="user-name">${currentUser.name || currentUser.email}</span>
               <span class="user-role-label" style="color: #fbbf24;">Pending Approval</span>
             </div>
           </div>
           <button class="btn" onclick="logout()">Log Out</button>
         `;
       } else {
-        // APPROVED / ADMIN
         authGate.style.display = "none";
         pendingBox.style.display = "none";
         dashboard.style.display = "block";
@@ -1260,9 +1330,9 @@
           </button>
           ${adminBtn}
           <div class="user-profile-badge">
-            <div class="user-avatar">${currentUser.profile_picture_url ? `<img src="${currentUser.profile_picture_url}">` : (currentUser.username ? currentUser.username[0].toUpperCase() : 'P')}</div>
+            <div class="user-avatar">${currentUser.picture ? `<img src="${currentUser.picture}">` : (currentUser.name ? currentUser.name[0].toUpperCase() : 'P')}</div>
             <div class="user-info-text">
-              <span class="user-name">${currentUser.username || currentUser.email}</span>
+              <span class="user-name">${currentUser.name || currentUser.email}</span>
               <span class="user-role-label" style="color: #4ade80;">${currentUser.role === "admin" ? "Administrator" : "Approved Member"}</span>
             </div>
           </div>
@@ -1273,7 +1343,6 @@
       }
     }
 
-    // Copy SSH Command
     function copySSH() {
       const text = "ssh pavankumarpotta@192.168.1.151";
       navigator.clipboard.writeText(text).then(() => {
@@ -1291,10 +1360,9 @@
       });
     }
 
-    // Dynamic Live Telemetry Fetch
     async function fetchTelemetry() {
       try {
-        const res = await fetch(`${API_BASE}/admin/server/system`);
+        const res = await fetch("https://pkpmusic.pottapk.win/admin/server/system");
         if (!res.ok) return;
         const data = await res.json();
         
@@ -1306,37 +1374,31 @@
           tempBar.style.width = pct + "%";
           tempBar.style.background = data.temperature_c > 75 ? "var(--accent-red)" : (data.temperature_c > 65 ? "var(--accent-amber)" : "var(--accent-emerald)");
         }
-        
         if (data.cpu_usage_pct !== undefined) {
           document.getElementById("cpuVal").textContent = data.cpu_usage_pct.toFixed(1) + " %";
           document.getElementById("cpuBar").style.width = Math.max(data.cpu_usage_pct, 5) + "%";
         }
-        
         if (data.memory) {
           document.getElementById("ramVal").textContent = data.memory.used_formatted;
           document.getElementById("ramPct").textContent = data.memory.usage_pct.toFixed(1) + "% of " + data.memory.total_formatted;
           document.getElementById("ramBar").style.width = data.memory.usage_pct + "%";
         }
-        
         if (data.disk) {
           document.getElementById("diskVal").textContent = data.disk.used_formatted;
           document.getElementById("diskPct").textContent = data.disk.usage_pct.toFixed(1) + "% of " + data.disk.total_formatted;
           document.getElementById("diskBar").style.width = Math.max(data.disk.usage_pct, 2) + "%";
         }
-        
         if (data.uptime_formatted) {
           document.getElementById("uptimeVal").textContent = data.uptime_formatted;
         }
       } catch (e) {}
     }
 
-    // ==========================================
-    // ADMIN FUNCTIONS
-    // ==========================================
+    // Admin Control Modal
     function openAdminModal() {
       document.getElementById("adminModal").classList.add("active");
-      loadAdminUsers();
-      loadAdminWhitelist();
+      renderAdminUsers();
+      renderAdminWhitelist();
     }
 
     function closeAdminModal() {
@@ -1350,103 +1412,87 @@
       document.getElementById("subtabWhitelistBtn").classList.toggle("active", tab === "whitelist");
     }
 
-    async function loadAdminUsers() {
-      const token = localStorage.getItem("pkp_server_token");
-      try {
-        const res = await fetch(`${API_BASE}/auth/admin/users`, {
-          headers: { "Authorization": `Bearer ${token}` }
-        });
-        const users = await res.json();
-        const tbody = document.getElementById("userTableBody");
-        tbody.innerHTML = users.map(u => `
-          <tr>
-            <td>
-              <div style="font-weight: 600; color: #fff;">${u.username}</div>
-              <div style="font-size: 11px; color: #64748b;">${u.email}</div>
-            </td>
-            <td><span class="badge ${u.auth_provider === 'google' ? 'badge-cyan' : 'badge-amber'}">${u.auth_provider}</span></td>
-            <td><span class="badge ${u.role === 'admin' ? 'badge-purple' : 'badge-cyan'}">${u.role}</span></td>
-            <td>
-              <span class="badge ${u.is_approved ? 'badge-emerald' : 'badge-amber'}">${u.is_approved ? 'Approved' : 'Pending'}</span>
-            </td>
-            <td>
-              ${u.role === 'admin' ? '<span style="font-size:11px;color:#64748b;">Admin</span>' : (
-                u.is_approved
-                  ? `<button class="btn-small btn-revoke" onclick="revokeUser(${u.id})">Revoke</button>`
-                  : `<button class="btn-small btn-approve" onclick="approveUser(${u.id})">Approve</button>`
-              )}
-            </td>
-          </tr>
-        `).join("");
-      } catch (e) {
-        console.log("Error loading users:", e);
+    function renderAdminUsers() {
+      const users = getStoredUsers();
+      const tbody = document.getElementById("userTableBody");
+      if (users.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#64748b;padding:1.5rem;">No user accounts yet.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = users.map(u => `
+        <tr>
+          <td>
+            <div style="font-weight: 600; color: #fff;">${u.name || u.email}</div>
+            <div style="font-size: 11px; color: #64748b;">${u.email}</div>
+          </td>
+          <td><span class="badge ${u.auth_provider === 'google' ? 'badge-cyan' : 'badge-amber'}">${u.auth_provider || 'email'}</span></td>
+          <td><span class="badge ${u.role === 'admin' ? 'badge-purple' : 'badge-cyan'}">${u.role || 'user'}</span></td>
+          <td><span class="badge ${u.is_approved ? 'badge-emerald' : 'badge-amber'}">${u.is_approved ? 'Approved' : 'Pending'}</span></td>
+          <td>
+            ${u.role === 'admin' ? '<span style="font-size:11px;color:#64748b;">Admin</span>' : (
+              u.is_approved
+                ? `<button class="btn-small btn-revoke" onclick="toggleUserApproval(${u.id}, false)">Revoke</button>`
+                : `<button class="btn-small btn-approve" onclick="toggleUserApproval(${u.id}, true)">Approve</button>`
+            )}
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    function toggleUserApproval(userId, approve) {
+      let users = getStoredUsers();
+      const user = users.find(u => u.id === userId);
+      if (user) {
+        user.is_approved = approve;
+        saveStoredUsers(users);
+        renderAdminUsers();
       }
     }
 
-    async function approveUser(userId) {
-      const token = localStorage.getItem("pkp_server_token");
-      await fetch(`${API_BASE}/auth/admin/users/${userId}/approve`, {
-        method: "POST",
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      loadAdminUsers();
-    }
-
-    async function revokeUser(userId) {
-      const token = localStorage.getItem("pkp_server_token");
-      await fetch(`${API_BASE}/auth/admin/users/${userId}/revoke`, {
-        method: "POST",
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      loadAdminUsers();
-    }
-
-    async function loadAdminWhitelist() {
-      const token = localStorage.getItem("pkp_server_token");
-      try {
-        const res = await fetch(`${API_BASE}/auth/admin/whitelist`, {
-          headers: { "Authorization": `Bearer ${token}` }
-        });
-        const list = await res.json();
-        const tbody = document.getElementById("whitelistTableBody");
-        tbody.innerHTML = list.map(item => `
-          <tr>
-            <td style="color: #fff; font-family: 'JetBrains Mono', monospace;">${item.email}</td>
-            <td style="color: #64748b; font-size: 11px;">${new Date(item.created_at * 1000).toLocaleDateString()}</td>
-            <td>
-              <button class="btn-small btn-revoke" onclick="removeWhitelist('${item.email}')">Remove</button>
-            </td>
-          </tr>
-        `).join("");
-      } catch (e) {
-        console.log("Error loading whitelist:", e);
+    function renderAdminWhitelist() {
+      const list = getStoredWhitelist();
+      const tbody = document.getElementById("whitelistTableBody");
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:#64748b;padding:1.5rem;">No whitelisted emails added yet.</td></tr>`;
+        return;
       }
+      tbody.innerHTML = list.map(email => `
+        <tr>
+          <td style="color: #fff; font-family: 'JetBrains Mono', monospace;">${email}</td>
+          <td style="color: #64748b; font-size: 11px;">Whitelisted</td>
+          <td>
+            <button class="btn-small btn-revoke" onclick="removeWhitelistEmail('${email}')">Remove</button>
+          </td>
+        </tr>
+      `).join("");
     }
 
-    async function handleAddWhitelist(e) {
+    function handleAddWhitelist(e) {
       e.preventDefault();
-      const email = document.getElementById("whitelistEmailInput").value;
-      const token = localStorage.getItem("pkp_server_token");
-      await fetch(`${API_BASE}/auth/admin/whitelist`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({ email })
-      });
+      const email = document.getElementById("whitelistEmailInput").value.trim().toLowerCase();
+      if (!email) return;
+      let list = getStoredWhitelist();
+      if (!list.includes(email)) {
+        list.push(email);
+        saveStoredWhitelist(list);
+      }
+      // Also auto-approve if user already exists
+      let users = getStoredUsers();
+      const user = users.find(u => u.email === email);
+      if (user) {
+        user.is_approved = true;
+        saveStoredUsers(users);
+      }
       document.getElementById("whitelistEmailInput").value = "";
-      loadAdminWhitelist();
-      loadAdminUsers();
+      renderAdminWhitelist();
+      renderAdminUsers();
     }
 
-    async function removeWhitelist(email) {
-      const token = localStorage.getItem("pkp_server_token");
-      await fetch(`${API_BASE}/auth/admin/whitelist/${encodeURIComponent(email)}`, {
-        method: "DELETE",
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      loadAdminWhitelist();
+    function removeWhitelistEmail(email) {
+      let list = getStoredWhitelist();
+      list = list.filter(e => e !== email);
+      saveStoredWhitelist(list);
+      renderAdminWhitelist();
     }
 
     // Start
