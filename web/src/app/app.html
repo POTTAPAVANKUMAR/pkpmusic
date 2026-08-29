@@ -1,0 +1,757 @@
+<div class="app-layout">
+
+  <!-- DESKTOP SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo">🎵</div>
+      <div class="brand-text">
+        <span class="brand-name">PKP Music</span>
+        <span class="brand-tag">Hi-Fi Angular</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-title">DISCOVER</div>
+      <button class="nav-item" [class.active]="activeTab() === 'home'" (click)="switchView('home')">
+        <span class="nav-icon">🏠</span>
+        <span class="nav-label">Home & For You</span>
+      </button>
+      <button class="nav-item" [class.active]="activeTab() === 'explore'" (click)="switchView('explore')">
+        <span class="nav-icon">✨</span>
+        <span class="nav-label">Explore & Moods</span>
+      </button>
+      <button class="nav-item" [class.active]="activeTab() === 'search'" (click)="switchView('search')">
+        <span class="nav-icon">🔍</span>
+        <span class="nav-label">Search</span>
+      </button>
+
+      <div class="nav-section-title">MY LIBRARY</div>
+      <button class="nav-item" [class.active]="activeTab() === 'favorites'" (click)="switchView('favorites')">
+        <span class="nav-icon">❤️</span>
+        <span class="nav-label">Liked Songs</span>
+        <span class="nav-badge">{{ favorites().length }}</span>
+      </button>
+      <button class="nav-item" [class.active]="activeTab() === 'playlists'" (click)="switchView('playlists')">
+        <span class="nav-icon">📑</span>
+        <span class="nav-label">Playlists</span>
+      </button>
+      <button class="nav-item" [class.active]="activeTab() === 'history'" (click)="switchView('history')">
+        <span class="nav-icon">⏱️</span>
+        <span class="nav-label">Recently Played</span>
+      </button>
+      <button class="nav-item" [class.active]="activeTab() === 'downloads'" (click)="switchView('downloads')">
+        <span class="nav-icon">📥</span>
+        <span class="nav-label">Offline Downloads</span>
+        <span class="nav-badge">{{ downloads().length }}</span>
+      </button>
+
+      <div class="nav-section-title">SYSTEM</div>
+      <button class="nav-item" [class.active]="activeTab() === 'server'" (click)="switchView('server')">
+        <span class="nav-icon">🖥️</span>
+        <span class="nav-label">Server Telemetry</span>
+        <span class="live-dot-pulse"></span>
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="btn-create-playlist" (click)="openCreatePlaylist()">
+        <span>➕</span> New Playlist
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT AREA -->
+  <main class="main-content">
+
+    <!-- Top Bar -->
+    <header class="top-bar">
+      <div class="search-bar-wrap">
+        <span class="search-bar-icon">🔍</span>
+        <input type="search" 
+               [ngModel]="searchQuery()" 
+               (ngModelChange)="onSearchInput($event)" 
+               (keydown.enter)="executeSearch()"
+               placeholder="Search songs, artists, albums, or podcasts..." />
+        @if (showSuggestions() && searchSuggestions().length > 0) {
+          <div class="suggestions-dropdown">
+            @for (sugg of searchSuggestions(); track sugg) {
+              <div class="suggestion-item" (click)="selectSuggestion(sugg)">
+                <span>🔍</span>
+                <span>{{ sugg }}</span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="top-bar-actions">
+        <button class="btn-icon" title="Server Status" (click)="switchView('server')">
+          <span class="status-indicator"></span>
+          <span style="font-size: 12px; font-weight: 700; font-family: 'JetBrains Mono', monospace;">
+            {{ telemetry().temperature_c ? (telemetry().temperature_c! | number:'1.1-1') + '°C' : 'Pi Live' }}
+          </span>
+        </button>
+        <button class="btn-icon" title="Settings" (click)="toggleSettings()">⚙️</button>
+      </div>
+    </header>
+
+    <!-- VIEW: HOME / FOR YOU -->
+    @if (activeTab() === 'home') {
+      <section class="view-panel">
+        <div class="view-header">
+          <h1 class="view-title">Welcome Back</h1>
+          <p class="view-subtitle">High-fidelity personalized streaming, curated for you.</p>
+        </div>
+
+        @if (isLoadingExplore()) {
+          <div class="loading-spinner-wrap">
+            <div class="spinner"></div>
+            <p>Curating your recommendations...</p>
+          </div>
+        } @else {
+          @for (section of exploreSections(); track section.title) {
+            <div class="section-scroll-container">
+              <div class="section-scroll-header">
+                <h2 class="section-scroll-title">{{ section.title }}</h2>
+              </div>
+              <div class="horizontal-scroll-cards">
+                @for (item of section.items; track item.id) {
+                  <div class="media-card" (click)="playItem(item)">
+                    <div class="media-card-img-wrap">
+                      <img class="media-card-img" [src]="item.image_url || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300'" alt="Cover" />
+                      <button class="media-card-play-btn">▶</button>
+                    </div>
+                    <div class="media-card-title">{{ item.title }}</div>
+                    <div class="media-card-sub">{{ item.subtitle || item.type }}</div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        }
+      </section>
+    }
+
+    <!-- VIEW: EXPLORE & MOODS -->
+    @if (activeTab() === 'explore') {
+      <section class="view-panel">
+        <div class="view-header">
+          <h1 class="view-title">Explore & Moods</h1>
+          <p class="view-subtitle">Trending hits, community playlists, and mood categories.</p>
+        </div>
+        @for (section of exploreSections(); track section.title) {
+          <div class="section-scroll-container">
+            <div class="section-scroll-header">
+              <h2 class="section-scroll-title">{{ section.title }}</h2>
+            </div>
+            <div class="horizontal-scroll-cards">
+              @for (item of section.items; track item.id) {
+                <div class="media-card" (click)="playItem(item)">
+                  <div class="media-card-img-wrap">
+                    <img class="media-card-img" [src]="item.image_url || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300'" alt="Cover" />
+                    <button class="media-card-play-btn">▶</button>
+                  </div>
+                  <div class="media-card-title">{{ item.title }}</div>
+                  <div class="media-card-sub">{{ item.subtitle || item.type }}</div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </section>
+    }
+
+    <!-- VIEW: SEARCH RESULTS -->
+    @if (activeTab() === 'search') {
+      <section class="view-panel">
+        <div class="view-header">
+          <h1 class="view-title">Search Results</h1>
+          <div class="search-filter-pills">
+            <button class="filter-pill" [class.active]="searchFilter() === 'all'" (click)="setFilter('all')">All</button>
+            <button class="filter-pill" [class.active]="searchFilter() === 'songs'" (click)="setFilter('songs')">Songs ({{ searchSongsList().length }})</button>
+            <button class="filter-pill" [class.active]="searchFilter() === 'albums'" (click)="setFilter('albums')">Albums ({{ searchAlbumsList().length }})</button>
+            <button class="filter-pill" [class.active]="searchFilter() === 'artists'" (click)="setFilter('artists')">Artists ({{ searchArtistsList().length }})</button>
+          </div>
+        </div>
+
+        @if (isSearching()) {
+          <div class="loading-spinner-wrap"><div class="spinner"></div><p>Searching YouTube Music...</p></div>
+        } @else {
+          <!-- Songs Section -->
+          @if ((searchFilter() === 'all' || searchFilter() === 'songs') && searchSongsList().length > 0) {
+            <div class="view-section-header"><h2>Songs</h2></div>
+            <div class="track-list">
+              @for (song of searchSongsList(); track song.id; let idx = $index) {
+                <div class="track-row" [class.active]="player.currentSong()?.id === song.id" (click)="playSong(song, searchSongsList())">
+                  <span class="track-num">{{ idx + 1 }}</span>
+                  <img class="track-cover" [src]="song.cover_art_url || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=100'" alt="Cover" />
+                  <div class="track-info">
+                    <div class="track-title">{{ song.title }}</div>
+                    <div class="track-artist">{{ song.artist }}</div>
+                  </div>
+                  <div class="track-actions">
+                    <button class="btn-icon" (click)="toggleFav(song, $event)">{{ isFav(song.id) ? '❤️' : '🤍' }}</button>
+                    <button class="btn-icon" (click)="downloadSong(song, $event)" title="Save Offline">📥</button>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Albums Section -->
+          @if ((searchFilter() === 'all' || searchFilter() === 'albums') && searchAlbumsList().length > 0) {
+            <div class="view-section-header" style="margin-top: 2rem;"><h2>Albums</h2></div>
+            <div class="grid-card-list">
+              @for (album of searchAlbumsList(); track album.browseId) {
+                <div class="media-card" (click)="openAlbum(album.browseId)">
+                  <div class="media-card-img-wrap">
+                    <img class="media-card-img" [src]="album.cover_art_url" alt="Cover" />
+                    <button class="media-card-play-btn">▶</button>
+                  </div>
+                  <div class="media-card-title">{{ album.title }}</div>
+                  <div class="media-card-sub">{{ album.artist }} · {{ album.year }}</div>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Artists Section -->
+          @if ((searchFilter() === 'all' || searchFilter() === 'artists') && searchArtistsList().length > 0) {
+            <div class="view-section-header" style="margin-top: 2rem;"><h2>Artists</h2></div>
+            <div class="grid-card-list">
+              @for (artist of searchArtistsList(); track artist.browseId) {
+                <div class="media-card" (click)="openArtist(artist.browseId)">
+                  <div class="media-card-img-wrap" style="border-radius: 50%;">
+                    <img class="media-card-img" [src]="artist.cover_art_url" alt="Artist" />
+                  </div>
+                  <div class="media-card-title" style="text-align: center;">{{ artist.artist }}</div>
+                </div>
+              }
+            </div>
+          }
+        }
+      </section>
+    }
+
+    <!-- VIEW: LIKED SONGS -->
+    @if (activeTab() === 'favorites') {
+      <section class="view-panel">
+        <div class="playlist-hero">
+          <div class="playlist-hero-cover hero-fav-cover">❤️</div>
+          <div class="playlist-hero-info">
+            <span class="playlist-hero-tag">FAVORITES</span>
+            <h1 class="playlist-hero-title">Liked Songs</h1>
+            <p class="playlist-hero-meta">{{ favorites().length }} tracks in your favorites</p>
+            <div class="playlist-hero-actions">
+              <button class="btn btn-primary" (click)="playAll(favorites())"><span class="btn-icon">▶</span> Play All</button>
+              <button class="btn" (click)="shuffleAll(favorites())"><span class="btn-icon">🔀</span> Shuffle</button>
+            </div>
+          </div>
+        </div>
+        <div class="track-list">
+          @for (song of favorites(); track song.id; let idx = $index) {
+            <div class="track-row" [class.active]="player.currentSong()?.id === song.id" (click)="playSong(song, favorites())">
+              <span class="track-num">{{ idx + 1 }}</span>
+              <img class="track-cover" [src]="song.cover_art_url" alt="Cover" />
+              <div class="track-info">
+                <div class="track-title">{{ song.title }}</div>
+                <div class="track-artist">{{ song.artist }}</div>
+              </div>
+              <div class="track-actions">
+                <button class="btn-icon" (click)="toggleFav(song, $event)">❤️</button>
+                <button class="btn-icon" (click)="downloadSong(song, $event)" title="Save Offline">📥</button>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- VIEW: PLAYLISTS -->
+    @if (activeTab() === 'playlists') {
+      <section class="view-panel">
+        <div class="view-header" style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h1 class="view-title">Your Playlists</h1>
+            <p class="view-subtitle">Personal custom playlists created on this device.</p>
+          </div>
+          <button class="btn btn-primary" (click)="openCreatePlaylist()">+ Create Playlist</button>
+        </div>
+
+        <div class="grid-card-list">
+          @for (pl of playlists(); track pl.id) {
+            <div class="media-card" (click)="openCustomPlaylist(pl)">
+              <div class="media-card-img-wrap" style="background: linear-gradient(135deg, #3b82f6, #06b6d4); display: flex; align-items: center; justify-content: center; font-size: 38px;">
+                📑
+                <button class="media-card-play-btn">▶</button>
+              </div>
+              <div class="media-card-title">{{ pl.name }}</div>
+              <div class="media-card-sub">{{ pl.tracks.length }} tracks</div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- VIEW: RECENTLY PLAYED HISTORY -->
+    @if (activeTab() === 'history') {
+      <section class="view-panel">
+        <div class="view-header">
+          <h1 class="view-title">Recently Played</h1>
+          <p class="view-subtitle">Your playback history across all sessions.</p>
+        </div>
+        <div class="track-list">
+          @for (song of history(); track song.id; let idx = $index) {
+            <div class="track-row" [class.active]="player.currentSong()?.id === song.id" (click)="playSong(song, history())">
+              <span class="track-num">{{ idx + 1 }}</span>
+              <img class="track-cover" [src]="song.cover_art_url" alt="Cover" />
+              <div class="track-info">
+                <div class="track-title">{{ song.title }}</div>
+                <div class="track-artist">{{ song.artist }}</div>
+              </div>
+              <div class="track-actions">
+                <button class="btn-icon" (click)="toggleFav(song, $event)">{{ isFav(song.id) ? '❤️' : '🤍' }}</button>
+                <button class="btn-icon" (click)="downloadSong(song, $event)" title="Save Offline">📥</button>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- VIEW: OFFLINE DOWNLOADS -->
+    @if (activeTab() === 'downloads') {
+      <section class="view-panel">
+        <div class="view-header">
+          <h1 class="view-title">Offline Downloads</h1>
+          <p class="view-subtitle">Songs downloaded to IndexedDB storage for offline playback without internet.</p>
+        </div>
+        <div class="track-list">
+          @for (song of downloads(); track song.id; let idx = $index) {
+            <div class="track-row" [class.active]="player.currentSong()?.id === song.id" (click)="playSong(song, downloads())">
+              <span class="track-num">{{ idx + 1 }}</span>
+              <img class="track-cover" [src]="song.cover_art_url" alt="Cover" />
+              <div class="track-info">
+                <div class="track-title">{{ song.title }} <span style="font-size: 11px; color: #10b981; font-weight: 700;">(Offline Ready)</span></div>
+                <div class="track-artist">{{ song.artist }}</div>
+              </div>
+              <div class="track-actions">
+                <button class="btn-icon" (click)="deleteOfflineSong(song.id, $event)" title="Delete from Offline Storage">🗑️</button>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- VIEW: ALBUM / DETAIL VIEW -->
+    @if (activeTab() === 'detail' && currentDetail()) {
+      <section class="view-panel">
+        <div class="playlist-hero">
+          <img class="playlist-hero-cover" [src]="currentDetail()?.thumbnails?.[0]?.url || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300'" alt="Cover" />
+          <div class="playlist-hero-info">
+            <span class="playlist-hero-tag">ALBUM</span>
+            <h1 class="playlist-hero-title">{{ currentDetail()?.title }}</h1>
+            <p class="playlist-hero-meta">{{ currentDetail()?.songs?.length }} Tracks</p>
+            <div class="playlist-hero-actions">
+              <button class="btn btn-primary" (click)="playAll(currentDetail()!.songs)"><span class="btn-icon">▶</span> Play All</button>
+              <button class="btn" (click)="shuffleAll(currentDetail()!.songs)"><span class="btn-icon">🔀</span> Shuffle</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="track-list">
+          @for (song of currentDetail()?.songs; track song.id; let idx = $index) {
+            <div class="track-row" [class.active]="player.currentSong()?.id === song.id" (click)="playSong(song, currentDetail()!.songs)">
+              <span class="track-num">{{ idx + 1 }}</span>
+              <img class="track-cover" [src]="song.cover_art_url" alt="Cover" />
+              <div class="track-info">
+                <div class="track-title">{{ song.title }}</div>
+                <div class="track-artist">{{ song.artist }}</div>
+              </div>
+              <div class="track-actions">
+                <button class="btn-icon" (click)="toggleFav(song, $event)">{{ isFav(song.id) ? '❤️' : '🤍' }}</button>
+                <button class="btn-icon" (click)="downloadSong(song, $event)" title="Save Offline">📥</button>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- VIEW: ARTIST DETAIL -->
+    @if (activeTab() === 'artist' && currentArtist()) {
+      <section class="view-panel">
+        <div class="artist-hero">
+          <div class="artist-hero-backdrop" [style.background-image]="'url(' + (currentArtist()?.thumbnails?.[0]?.url || '') + ')'"></div>
+          <div class="artist-hero-content">
+            <img class="artist-hero-avatar" [src]="currentArtist()?.thumbnails?.[0]?.url" alt="Artist" />
+            <div>
+              <span class="playlist-hero-tag">ARTIST</span>
+              <h1 class="artist-hero-name">{{ currentArtist()?.name }}</h1>
+              <p class="artist-hero-meta">{{ currentArtist()?.subscribers }}</p>
+              <div class="playlist-hero-actions">
+                <button class="btn btn-primary" (click)="playAll(currentArtist()!.songs)"><span class="btn-icon">▶</span> Play Top Tracks</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="view-section-header"><h2>Top Songs</h2></div>
+        <div class="track-list">
+          @for (song of currentArtist()?.songs; track song.id; let idx = $index) {
+            <div class="track-row" [class.active]="player.currentSong()?.id === song.id" (click)="playSong(song, currentArtist()!.songs)">
+              <span class="track-num">{{ idx + 1 }}</span>
+              <img class="track-cover" [src]="song.cover_art_url" alt="Cover" />
+              <div class="track-info">
+                <div class="track-title">{{ song.title }}</div>
+                <div class="track-artist">{{ song.artist }}</div>
+              </div>
+              <div class="track-actions">
+                <button class="btn-icon" (click)="toggleFav(song, $event)">{{ isFav(song.id) ? '❤️' : '🤍' }}</button>
+                <button class="btn-icon" (click)="downloadSong(song, $event)">📥</button>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- VIEW: SERVER TELEMETRY -->
+    @if (activeTab() === 'server') {
+      <section class="view-panel">
+        <div class="view-header">
+          <h1 class="view-title">Raspberry Pi Server Telemetry</h1>
+          <p class="view-subtitle">Live host metrics and service monitoring for pavankumarpotta (192.168.1.151).</p>
+        </div>
+
+        <div class="telemetry-hud-grid">
+          <div class="hud-card">
+            <div class="hud-card-top">
+              <span class="hud-label">CPU Temp</span>
+              <span class="hud-icon">🌡️</span>
+            </div>
+            <div class="hud-val">{{ telemetry().temperature_c ? (telemetry().temperature_c! | number:'1.1-1') + ' °C' : '-- °C' }}</div>
+            <div class="hud-sub">Thermal Target &lt; 70°C</div>
+            <div class="hud-progress">
+              <div class="hud-fill" [style.width.%]="telemetry().temperature_c ? (telemetry().temperature_c! / 85) * 100 : 40" style="background: #10b981;"></div>
+            </div>
+          </div>
+
+          <div class="hud-card">
+            <div class="hud-card-top">
+              <span class="hud-label">CPU Load</span>
+              <span class="hud-icon">⚡</span>
+            </div>
+            <div class="hud-val">{{ telemetry().cpu_usage_pct !== undefined ? (telemetry().cpu_usage_pct! | number:'1.1-1') + ' %' : '-- %' }}</div>
+            <div class="hud-sub">4 Cores · ARM64</div>
+            <div class="hud-progress">
+              <div class="hud-fill" [style.width.%]="telemetry().cpu_usage_pct || 15" style="background: #06b6d4;"></div>
+            </div>
+          </div>
+
+          <div class="hud-card">
+            <div class="hud-card-top">
+              <span class="hud-label">Memory</span>
+              <span class="hud-icon">💾</span>
+            </div>
+            <div class="hud-val">{{ telemetry().memory?.used_formatted || '2.2 GB' }}</div>
+            <div class="hud-sub">{{ telemetry().memory?.usage_pct ? (telemetry().memory!.usage_pct | number:'1.0-0') + '% Used of ' + telemetry().memory?.total_formatted : '28% of 7.9 GB' }}</div>
+            <div class="hud-progress">
+              <div class="hud-fill" [style.width.%]="telemetry().memory?.usage_pct || 28" style="background: #a855f7;"></div>
+            </div>
+          </div>
+
+          <div class="hud-card">
+            <div class="hud-card-top">
+              <span class="hud-label">Disk Storage</span>
+              <span class="hud-icon">💽</span>
+            </div>
+            <div class="hud-val">{{ telemetry().disk?.used_formatted || '19.3 GB' }}</div>
+            <div class="hud-sub">{{ telemetry().disk?.usage_pct ? (telemetry().disk!.usage_pct | number:'1.1-1') + '% Used of ' + telemetry().disk?.total_formatted : '2.1% of 937 GB' }}</div>
+            <div class="hud-progress">
+              <div class="hud-fill" [style.width.%]="telemetry().disk?.usage_pct || 2.1" style="background: #10b981;"></div>
+            </div>
+          </div>
+
+          <div class="hud-card">
+            <div class="hud-card-top">
+              <span class="hud-label">System Uptime</span>
+              <span class="hud-icon">⏱️</span>
+            </div>
+            <div class="hud-val">{{ telemetry().uptime_formatted || '83d 3h' }}</div>
+            <div class="hud-sub">Continuous Active</div>
+            <div class="hud-progress"><div class="hud-fill" style="width: 100%; background: #10b981;"></div></div>
+          </div>
+        </div>
+
+        <div class="view-section-header" style="margin-top: 2rem;"><h2>Quick Server Shortcuts</h2></div>
+        <div class="server-shortcuts-grid">
+          <a class="shortcut-card" href="https://pottapk.win" target="_blank">
+            <div class="shortcut-icon">🏠</div>
+            <div class="shortcut-name">Landing Hub</div>
+            <div class="shortcut-host">pottapk.win</div>
+          </a>
+          <a class="shortcut-card" href="https://pkpmusiclogs.pottapk.win" target="_blank">
+            <div class="shortcut-icon">📜</div>
+            <div class="shortcut-name">Live Logs</div>
+            <div class="shortcut-host">pkpmusiclogs.pottapk.win</div>
+          </a>
+          <a class="shortcut-card" href="https://postgresql.pottapk.win" target="_blank">
+            <div class="shortcut-icon">🗄️</div>
+            <div class="shortcut-name">PostgreSQL</div>
+            <div class="shortcut-host">postgresql.pottapk.win</div>
+          </a>
+          <a class="shortcut-card" href="https://portainer.pottapk.win" target="_blank">
+            <div class="shortcut-icon">📦</div>
+            <div class="shortcut-name">Portainer</div>
+            <div class="shortcut-host">portainer.pottapk.win</div>
+          </a>
+          <a class="shortcut-card" href="https://cloud.pottapk.win" target="_blank">
+            <div class="shortcut-icon">☁️</div>
+            <div class="shortcut-name">CasaOS</div>
+            <div class="shortcut-host">cloud.pottapk.win</div>
+          </a>
+        </div>
+      </section>
+    }
+
+  </main>
+
+  <!-- BOTTOM PERSISTENT PLAYER -->
+  <footer class="bottom-player">
+    <div class="player-left" (click)="toggleFullscreen()">
+      <img class="player-cover" [src]="player.currentSong()?.cover_art_url || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=100'" alt="Cover" />
+      <div class="player-track-meta">
+        <div class="player-track-title">{{ player.currentSong()?.title || 'No Song Playing' }}</div>
+        <div class="player-track-artist">{{ player.currentSong()?.artist || 'Select a song to start streaming' }}</div>
+      </div>
+      @if (player.currentSong()) {
+        <button class="btn-player-fav" (click)="$event.stopPropagation(); toggleCurrentFav()">
+          {{ isFav(player.currentSong()!.id) ? '❤️' : '🤍' }}
+        </button>
+      }
+    </div>
+
+    <div class="player-center">
+      <div class="player-controls">
+        <button class="btn-ctrl" [class.active]="player.shuffle()" (click)="player.toggleShuffle()" title="Shuffle">🔀</button>
+        <button class="btn-ctrl" (click)="player.previous()" title="Previous">⏮</button>
+        <button class="btn-play-pause" (click)="player.togglePlay()" title="Play / Pause">
+          {{ player.isPlaying() ? '⏸' : '▶' }}
+        </button>
+        <button class="btn-ctrl" (click)="player.next()" title="Next">⏭</button>
+        <button class="btn-ctrl" [class.active]="player.repeat() !== 'off'" (click)="player.toggleRepeat()" title="Repeat">
+          {{ player.repeat() === 'one' ? '🔂' : '🔁' }}
+        </button>
+      </div>
+
+      <div class="player-progress-bar-wrap">
+        <span class="player-time">{{ formatTime(player.currentTime()) }}</span>
+        <div class="seek-slider-container">
+          <div class="seek-slider-fill" [style.width.%]="player.progressPercent()"></div>
+          <input type="range" min="0" max="100" step="0.1" [value]="player.progressPercent()" (input)="onSeek($event)" />
+        </div>
+        <span class="player-time">{{ formatTime(player.duration()) }}</span>
+      </div>
+    </div>
+
+    <div class="player-right">
+      <button class="btn-ctrl-tool" [class.active]="isLyricsOpen()" (click)="toggleLyrics()" title="Lyrics">🎤</button>
+      <button class="btn-ctrl-tool" [class.active]="isQueueOpen()" (click)="toggleQueue()" title="Queue">📑</button>
+      @if (player.currentSong()) {
+        <button class="btn-ctrl-tool" (click)="downloadSong(player.currentSong()!)" title="Save Offline">📥</button>
+      }
+      <div class="volume-control-wrap">
+        <span class="volume-icon" (click)="player.toggleMute()">
+          {{ player.isMuted() || player.volume() === 0 ? '🔇' : '🔊' }}
+        </span>
+        <input type="range" min="0" max="1" step="0.01" [value]="player.volume()" (input)="onVolume($event)" />
+      </div>
+    </div>
+  </footer>
+
+  <!-- MOBILE BOTTOM NAVIGATION -->
+  <nav class="mobile-bottom-nav">
+    <button class="mobile-nav-item" [class.active]="activeTab() === 'home'" (click)="switchView('home')">
+      <span class="mob-icon">🏠</span>
+      <span class="mob-label">Home</span>
+    </button>
+    <button class="mobile-nav-item" [class.active]="activeTab() === 'explore'" (click)="switchView('explore')">
+      <span class="mob-icon">✨</span>
+      <span class="mob-label">Explore</span>
+    </button>
+    <button class="mobile-nav-item" [class.active]="activeTab() === 'search'" (click)="switchView('search')">
+      <span class="mob-icon">🔍</span>
+      <span class="mob-label">Search</span>
+    </button>
+    <button class="mobile-nav-item" [class.active]="activeTab() === 'favorites'" (click)="switchView('favorites')">
+      <span class="mob-icon">❤️</span>
+      <span class="mob-label">Liked</span>
+    </button>
+    <button class="mobile-nav-item" [class.active]="activeTab() === 'playlists'" (click)="switchView('playlists')">
+      <span class="mob-icon">📚</span>
+      <span class="mob-label">Library</span>
+    </button>
+  </nav>
+
+  <!-- FULLSCREEN NOW PLAYING SHEET -->
+  <div class="fullscreen-player-modal" [class.active]="isFullscreenOpen()">
+    <div class="fs-backdrop-blur" [style.background-image]="'url(' + (player.currentSong()?.cover_art_url || '') + ')'"></div>
+    <div class="fs-content">
+      <header class="fs-header">
+        <button class="btn-icon" (click)="toggleFullscreen()">⌄</button>
+        <div class="fs-header-title">NOW PLAYING</div>
+        <button class="btn-icon" (click)="toggleLyrics()">🎤</button>
+      </header>
+
+      <div class="fs-cover-wrap">
+        <img class="fs-cover" [src]="player.currentSong()?.cover_art_url || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500'" alt="Cover" />
+      </div>
+
+      <div class="fs-meta-row">
+        <div class="fs-track-info">
+          <div class="fs-title">{{ player.currentSong()?.title || 'Song Title' }}</div>
+          <div class="fs-artist">{{ player.currentSong()?.artist || 'Artist Name' }}</div>
+        </div>
+        @if (player.currentSong()) {
+          <button class="btn-icon fs-fav-btn" (click)="toggleCurrentFav()">
+            {{ isFav(player.currentSong()!.id) ? '❤️' : '🤍' }}
+          </button>
+        }
+      </div>
+
+      <div class="fs-progress-wrap">
+        <div class="seek-slider-container">
+          <div class="seek-slider-fill" [style.width.%]="player.progressPercent()"></div>
+          <input type="range" min="0" max="100" step="0.1" [value]="player.progressPercent()" (input)="onSeek($event)" />
+        </div>
+        <div class="fs-time-labels">
+          <span>{{ formatTime(player.currentTime()) }}</span>
+          <span>{{ formatTime(player.duration()) }}</span>
+        </div>
+      </div>
+
+      <div class="fs-controls-wrap">
+        <button class="fs-btn-ctrl" [class.active]="player.shuffle()" (click)="player.toggleShuffle()">🔀</button>
+        <button class="fs-btn-ctrl" (click)="player.previous()">⏮</button>
+        <button class="fs-btn-play" (click)="player.togglePlay()">
+          {{ player.isPlaying() ? '⏸' : '▶' }}
+        </button>
+        <button class="fs-btn-ctrl" (click)="player.next()">⏭</button>
+        <button class="fs-btn-ctrl" [class.active]="player.repeat() !== 'off'" (click)="player.toggleRepeat()">
+          {{ player.repeat() === 'one' ? '🔂' : '🔁' }}
+        </button>
+      </div>
+
+      <div class="fs-bottom-tools">
+        <button class="btn" (click)="toggleQueue()">📑 Up Next Queue</button>
+        @if (player.currentSong()) {
+          <button class="btn" (click)="downloadSong(player.currentSong()!)">📥 Save Offline</button>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- SYNCHRONIZED LYRICS DRAWER -->
+  <div class="side-drawer" [class.active]="isLyricsOpen()">
+    <div class="drawer-header">
+      <div class="drawer-title">📜 Synchronized Lyrics</div>
+      <button class="drawer-close" (click)="toggleLyrics()">✕</button>
+    </div>
+    <div class="drawer-body lyrics-body">
+      @if (player.isSyncedLyrics() && player.syncedLines().length > 0) {
+        @for (line of player.syncedLines(); track line.time; let idx = $index) {
+          <div class="lyrics-line" [class.active]="player.activeLyricIndex() === idx" (click)="player.seek(line.time)">
+            {{ line.text }}
+          </div>
+        }
+      } @else if (player.lyricsText()) {
+        <div style="white-space: pre-line; line-height: 1.8; color: #fff; font-size: 15px;">
+          {{ player.lyricsText() }}
+        </div>
+      } @else {
+        <div class="lyrics-placeholder">
+          Play a song to load synchronized lyrics...
+        </div>
+      }
+    </div>
+    <div class="drawer-footer">
+      <span class="lyrics-source-tag">Source: {{ player.lyricsSource() }}</span>
+    </div>
+  </div>
+
+  <!-- UP NEXT QUEUE DRAWER -->
+  <div class="side-drawer" [class.active]="isQueueOpen()">
+    <div class="drawer-header">
+      <div class="drawer-title">📑 Play Queue ({{ player.queue().length }})</div>
+      <div style="display: flex; gap: 8px;">
+        <button class="btn-small" (click)="player.clearQueue()">Clear</button>
+        <button class="drawer-close" (click)="toggleQueue()">✕</button>
+      </div>
+    </div>
+    <div class="drawer-body">
+      <div class="track-list">
+        @for (song of player.queue(); track song.id; let idx = $index) {
+          <div class="track-row" [class.active]="player.currentIndex() === idx" (click)="player.playSong(song)">
+            <span class="track-num">{{ idx + 1 }}</span>
+            <img class="track-cover" [src]="song.cover_art_url" alt="Cover" />
+            <div class="track-info">
+              <div class="track-title">{{ song.title }}</div>
+              <div class="track-artist">{{ song.artist }}</div>
+            </div>
+            <div class="track-actions">
+              <button class="btn-icon" (click)="$event.stopPropagation(); player.removeFromQueue(idx)">✕</button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- CREATE PLAYLIST MODAL -->
+  <div class="modal-overlay" [class.active]="isCreatePlaylistOpen()">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Create New Playlist</div>
+        <button class="modal-close" (click)="isCreatePlaylistOpen.set(false)">✕</button>
+      </div>
+      <form (submit)="$event.preventDefault(); handleCreatePlaylist()">
+        <input type="text" [ngModel]="newPlaylistName()" (ngModelChange)="newPlaylistName.set($event)" name="plName" class="input-field" placeholder="Playlist Name (e.g. Midnight Mix)" required />
+        <textarea [ngModel]="newPlaylistDesc()" (ngModelChange)="newPlaylistDesc.set($event)" name="plDesc" class="input-field" placeholder="Description (optional)" rows="3"></textarea>
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Create Playlist</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- SETTINGS MODAL -->
+  <div class="modal-overlay" [class.active]="isSettingsOpen()">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">⚙️ Audio & App Settings</div>
+        <button class="modal-close" (click)="isSettingsOpen.set(false)">✕</button>
+      </div>
+      <div class="settings-group">
+        <label class="settings-label">Streaming Audio Quality</label>
+        <select [ngModel]="audioQuality()" (ngModelChange)="saveAudioQuality($event)" class="input-field">
+          <option value="auto">Auto (Best Quality - High Fidelity)</option>
+          <option value="high">High (140 m4a / 256kbps)</option>
+          <option value="normal">Normal (128kbps)</option>
+          <option value="data_saver">Data Saver (64kbps)</option>
+        </select>
+      </div>
+      <div class="settings-group" style="margin-top: 1.25rem;">
+        <label class="settings-label">Clear Offline Storage</label>
+        <button class="btn" (click)="clearAllOffline()">🗑️ Purge Downloaded Songs</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATIONS -->
+  <div class="toast-container">
+    @for (toast of toasts(); track toast.id) {
+      <div class="toast">{{ toast.message }}</div>
+    }
+  </div>
+
+</div>

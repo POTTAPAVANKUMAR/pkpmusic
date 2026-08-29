@@ -45,5 +45,11 @@ services:
       - "8888:8080"
     restart: unless-stopped
 
+  web:
+    build: ./web
+    ports:
+      - "3001:80"
+    restart: unless-stopped
+
 volumes:
   postgres_data:
