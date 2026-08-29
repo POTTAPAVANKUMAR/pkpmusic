@@ -7,6 +7,8 @@ class AuthManager: ObservableObject {
     @Published var isAuthenticated: Bool = false
     @Published var token: String? = nil
     @Published var currentUserProfilePicture: String? = nil
+    @Published var currentUserName: String? = nil
+    @Published var currentUserEmail: String? = nil
     
     private let tokenKey = "pkp_music_auth_token"
     
@@ -40,6 +42,8 @@ class AuthManager: ObservableObject {
             if let data = data, let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
                 DispatchQueue.main.async {
                     self.currentUserProfilePicture = dict["profile_picture_url"] as? String
+                    self.currentUserName = dict["username"] as? String ?? dict["name"] as? String
+                    self.currentUserEmail = dict["email"] as? String
                 }
             }
         }.resume()

@@ -140,16 +140,20 @@ struct HomeView: View {
                         Spacer()
                     } else {
                         ScrollView {
-                            VStack(spacing: 30) {
+                            VStack(spacing: 26) {
+                                // Dynamic Hero Greeting Banner
+                                heroGreetingBanner
+                                
                                 ForEach(networkManager.dashboardSections) { section in
                                     DashboardSectionView(section: section)
                                 }
                             }
-                            .padding(.top, 20)
+                            .padding(.top, 4)
                             .padding(.bottom, 100) // Space for mini player
                         }
                         .refreshable {
                             networkManager.fetchDashboard()
+                            networkManager.fetchFavorites()
                         }
                     }
                 }
@@ -159,11 +163,135 @@ struct HomeView: View {
                 if networkManager.dashboardSections.isEmpty {
                     networkManager.fetchDashboard()
                 }
+                networkManager.fetchFavorites()
             }
             .fullScreenCover(isPresented: $showFullScreenPlayer) {
                 FullScreenPlayerView(isShowing: $showFullScreenPlayer)
             }
         }
+    }
+    
+    // MARK: - Dynamic Hero Greeting Banner
+    private var timeGreeting: String {
+        let hour = Calendar.current.component(.hour, from: Date())
+        if hour < 12 { return "Good morning" }
+        else if hour < 18 { return "Good afternoon" }
+        else { return "Good evening" }
+    }
+    
+    private var userGreetingName: String {
+        if let name = authManager.currentUserName, !name.isEmpty {
+            return name
+        }
+        if let email = authManager.currentUserEmail, !email.isEmpty {
+            return email.components(separatedBy: "@").first ?? "Music Lover"
+        }
+        return "Music Lover"
+    }
+
+    private func playFavoritesOrTopTrack() {
+        let generator = UIImpactFeedbackGenerator(style: .heavy)
+        generator.impactOccurred()
+        
+        if !networkManager.favorites.isEmpty {
+            let firstSong = networkManager.favorites[0]
+            audioManager.play(song: firstSong, in: networkManager.favorites, at: 0)
+            showFullScreenPlayer = true
+            return
+        }
+        
+        // Fallback to first song in dashboard
+        for section in networkManager.dashboardSections {
+            if let firstItem = section.items.first(where: { $0.type == "song" }) {
+                let song = Song(id: firstItem.id, title: firstItem.title, artist: firstItem.subtitle ?? "Unknown", album: nil, albumId: nil, durationMs: nil, coverArtUrl: firstItem.imageUrl)
+                audioManager.play(song: song)
+                showFullScreenPlayer = true
+                return
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var heroGreetingBanner: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .center) {
+                Text("\(timeGreeting), \(userGreetingName)")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(Theme.neonAccent)
+                    .tracking(0.5)
+                
+                Spacer()
+                
+                Text("PRO")
+                    .font(.system(size: 10, weight: .black))
+                    .foregroundColor(Theme.spiderNeonRed)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Theme.spiderNeonRed.opacity(0.15))
+                    .cornerRadius(8)
+            }
+            
+            Text("Ready for your daily music flow?")
+                .font(.system(size: 23, weight: .heavy))
+                .foregroundColor(.white)
+                .lineLimit(2)
+            
+            Text("Explore personalized recommendations and curated tracks synced across your devices.")
+                .font(.system(size: 13, weight: .regular))
+                .foregroundColor(.gray.opacity(0.9))
+                .lineLimit(3)
+                .lineSpacing(2)
+            
+            Button(action: playFavoritesOrTopTrack) {
+                HStack(spacing: 8) {
+                    Image(systemName: "play.fill")
+                        .font(.system(size: 12, weight: .bold))
+                    Text("Play Favorites")
+                        .font(.system(size: 14, weight: .bold))
+                }
+                .foregroundColor(.white)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
+                .background(
+                    LinearGradient(
+                        colors: [Theme.spiderNeonRed, Color.red.opacity(0.85)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .cornerRadius(24)
+                .shadow(color: Theme.spiderNeonRed.opacity(0.4), radius: 10, x: 0, y: 4)
+            }
+            .padding(.top, 4)
+        }
+        .padding(18)
+        .background(
+            RoundedRectangle(cornerRadius: 18)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Theme.spiderNeonRed.opacity(0.18),
+                            Color.purple.opacity(0.12),
+                            Color.white.opacity(0.03)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18)
+                        .stroke(
+                            LinearGradient(
+                                colors: [Theme.spiderNeonRed.opacity(0.4), Color.white.opacity(0.08)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+                )
+        )
+        .padding(.horizontal)
+        .padding(.top, 8)
     }
     
     @ViewBuilder
@@ -427,9 +555,9 @@ struct DashboardItemCard: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: item.type == "artist" ? .center : .leading, spacing: 8) {
             // Image container
-            ZStack {
+            ZStack(alignment: .bottomTrailing) {
                 if let urlString = item.imageUrl, let url = URL(string: urlString) {
                     AsyncImage(url: url) { phase in
                         if let image = phase.image {
@@ -443,7 +571,7 @@ struct DashboardItemCard: View {
                         getDynamicGradient(for: item.title)
                         Image(systemName: getDynamicIcon(for: item.title, type: item.type))
                             .foregroundColor(.white)
-                            .font(.system(size: 50))
+                            .font(.system(size: 44))
                             .shadow(color: .black.opacity(0.5), radius: 5)
                     } else {
                         Theme.spiderDarkGrey
@@ -452,24 +580,59 @@ struct DashboardItemCard: View {
                             .font(.largeTitle)
                     }
                 }
+                
+                // Floating Play Indicator on songs & albums
+                if item.type == "song" || item.type == "album" || item.type == "playlist" {
+                    Circle()
+                        .fill(Theme.spiderNeonRed)
+                        .frame(width: 32, height: 32)
+                        .overlay(
+                            Image(systemName: "play.fill")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(.white)
+                        )
+                        .shadow(color: .black.opacity(0.5), radius: 4, x: 0, y: 2)
+                        .padding(8)
+                }
             }
-            .frame(width: 150, height: 150)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: 3)
+            .frame(width: 146, height: 146)
+            .clipShape(item.type == "artist" ? AnyShape(Circle()) : AnyShape(RoundedRectangle(cornerRadius: 14)))
+            .overlay(
+                item.type == "artist" ?
+                    AnyView(Circle().stroke(Color.white.opacity(0.1), lineWidth: 1)) :
+                    AnyView(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.08), lineWidth: 1))
+            )
+            .shadow(color: .black.opacity(0.35), radius: 8, x: 0, y: 4)
             
             // Text
-            Text(item.title)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(.white)
-                .lineLimit(1)
-            
-            if let subtitle = item.subtitle {
-                Text(subtitle)
-                    .font(.system(size: 12))
-                    .foregroundColor(.gray)
+            VStack(alignment: item.type == "artist" ? .center : .leading, spacing: 2) {
+                Text(item.title)
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(.white)
                     .lineLimit(1)
+                
+                if let subtitle = item.subtitle {
+                    Text(subtitle)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.gray.opacity(0.85))
+                        .lineLimit(1)
+                }
             }
+            .frame(maxWidth: .infinity, alignment: item.type == "artist" ? .center : .leading)
         }
-        .frame(width: 150)
+        .frame(width: 146)
     }
 }
+
+struct AnyShape: Shape {
+    private let _path: (CGRect) -> Path
+
+    init<S: Shape>(_ shape: S) {
+        _path = shape.path(in:)
+    }
+
+    func path(in rect: CGRect) -> Path {
+        return _path(rect)
+    }
+}
+
