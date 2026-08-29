@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, BackgroundTasks
+from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
 from app.db.database import get_db
 from app.crud import crud
 from app.ml.recommender import run_ml_pipeline
+from app.services import server_manager
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -20,6 +21,9 @@ class MLJobRunResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class ContainerActionRequest(BaseModel):
+    action: str # "restart", "stop", "start"
+
 @router.get("/jobs/ml/metrics", response_model=List[MLJobRunResponse])
 def get_ml_metrics(db: Session = Depends(get_db)):
     """Fetch the history of ML job runs for the analytics dashboard."""
@@ -32,3 +36,56 @@ def trigger_ml_job(background_tasks: BackgroundTasks):
     background_tasks.add_task(run_ml_pipeline)
     return {"message": "ML pipeline triggered successfully in the background."}
 
+# --- SERVER HUB ENDPOINTS ---
+
+@router.get("/server/system", response_model=Dict[str, Any])
+def get_system_telemetry():
+    """Fetch real-time CPU, RAM, Disk, Temperature, Uptime and OS metrics."""
+    try:
+        return server_manager.get_system_metrics()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/server/containers", response_model=List[Dict[str, Any]])
+def get_containers():
+    """Fetch list of all Docker containers and their states."""
+    try:
+        return server_manager.get_docker_containers()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/server/containers/{container_id}/action", response_model=Dict[str, Any])
+def container_action(container_id: str, req: ContainerActionRequest):
+    """Execute restart, stop, or start on a Docker container."""
+    try:
+        result = server_manager.perform_container_action(container_id, req.action)
+        return result
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/server/containers/{container_id}/logs", response_model=Dict[str, Any])
+def get_container_logs(container_id: str, tail: int = Query(150, ge=10, le=1000)):
+    """Fetch stdout/stderr logs for a given container."""
+    try:
+        logs = server_manager.get_container_logs(container_id, tail=tail)
+        return {"container_id": container_id, "logs": logs}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/server/docker/prune", response_model=Dict[str, Any])
+def prune_docker():
+    """Run docker system prune to free unused space."""
+    try:
+        return server_manager.prune_docker_system()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/server/services", response_model=List[Dict[str, Any]])
+async def get_services_status():
+    """Health check all Cloudflare tunnel routes and subdomains."""
+    try:
+        return await server_manager.get_all_services_health()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

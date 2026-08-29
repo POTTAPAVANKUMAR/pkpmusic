@@ -50,6 +50,9 @@
 		B9D01212D865EE303347F22B /* NetworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BA201F39776718B485DA939 /* NetworkManager.swift */; };
 		C39465C1D2629881343AC1A0 /* ForgotPasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21A490D5F03F491482F708A2 /* ForgotPasswordView.swift */; };
 		C3B911D4F26F0D842263DBE0 /* MLAnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8F4CF19684E63E8D0ACF9EF /* MLAnalyticsView.swift */; };
+		F12000000000000000000001 /* ServerModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11000000000000000000001 /* ServerModels.swift */; };
+		F12000000000000000000002 /* ServerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11000000000000000000002 /* ServerManager.swift */; };
+		F12000000000000000000003 /* ServerHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11000000000000000000003 /* ServerHubView.swift */; };
 		C9588BD9EE02D21B31E883A3 /* DownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D0AEEDC7A99934EA163F6D /* DownloadManager.swift */; };
 		C9DB835A5A37197BE2053C40 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6A6EA2C632A277807DE3540 /* LibraryView.swift */; };
 		CA7DEE153890BA22F6D021E2 /* PodcastChannelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF5A1FEBB8682EDF6D2C2084 /* PodcastChannelView.swift */; };
@@ -107,6 +110,9 @@
 		92EBC5B752757F6697FF7DD5 /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
 		9AFA41B2F77747592304F14A /* WatchPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchPlayerView.swift; sourceTree = "<group>"; };
 		A8F4CF19684E63E8D0ACF9EF /* MLAnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MLAnalyticsView.swift; sourceTree = "<group>"; };
+		F11000000000000000000001 /* ServerModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerModels.swift; sourceTree = "<group>"; };
+		F11000000000000000000002 /* ServerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerManager.swift; sourceTree = "<group>"; };
+		F11000000000000000000003 /* ServerHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerHubView.swift; sourceTree = "<group>"; };
 		B1E1F098B3B481507E599268 /* MoodPlaylistsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoodPlaylistsView.swift; sourceTree = "<group>"; };
 		B4767E61E9FFF8F3EB817E5E /* ArtistAlbumsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtistAlbumsView.swift; sourceTree = "<group>"; };
 		B48C3C4D51AAACFE413EA6FA /* ChatManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatManager.swift; sourceTree = "<group>"; };
@@ -139,6 +145,7 @@
 			children = (
 				D9CB28E0147A36820AC16F2C /* Dashboard.swift */,
 				CF90F15A8E6145CA7E4C5434 /* Playlist.swift */,
+				F11000000000000000000001 /* ServerModels.swift */,
 				4D4A57AB49F22BE9ED65C03F /* Social.swift */,
 				C8B70FFD7A8A7C1DA656F739 /* Song.swift */,
 				B7C0FCC8CB596FAA81D753C9 /* YouTube.swift */,
@@ -251,6 +258,7 @@
 				B48C3C4D51AAACFE413EA6FA /* ChatManager.swift */,
 				63D0AEEDC7A99934EA163F6D /* DownloadManager.swift */,
 				1BA201F39776718B485DA939 /* NetworkManager.swift */,
+				F11000000000000000000002 /* ServerManager.swift */,
 				703CF597B30C78DEB38EF85D /* ThemeManager.swift */,
 			);
 			path = ViewModels;
@@ -276,6 +284,7 @@
 				A8F4CF19684E63E8D0ACF9EF /* MLAnalyticsView.swift */,
 				2A3E1572631EA5999DE96E66 /* ProfileSettingsView.swift */,
 				3124FE46339F8BA4AF66B7C8 /* RelatedSongsView.swift */,
+				F11000000000000000000003 /* ServerHubView.swift */,
 			);
 			path = Main;
 			sourceTree = "<group>";
@@ -461,6 +470,9 @@
 				9F37610BC62C85429D9F9683 /* LocalAlbumDetailView.swift in Sources */,
 				8543B60241E2CFD100F25B0F /* LoginView.swift in Sources */,
 				C3B911D4F26F0D842263DBE0 /* MLAnalyticsView.swift in Sources */,
+				F12000000000000000000001 /* ServerModels.swift in Sources */,
+				F12000000000000000000002 /* ServerManager.swift in Sources */,
+				F12000000000000000000003 /* ServerHubView.swift in Sources */,
 				DA92A2F1FF490CC7F8E7A881 /* MiniPlayerView.swift in Sources */,
 				90A37AD95A916A949FE428F6 /* MoodPlaylistsView.swift in Sources */,
 				3BBA410EC893C76C19AF8C5E /* NetworkManager.swift in Sources */,

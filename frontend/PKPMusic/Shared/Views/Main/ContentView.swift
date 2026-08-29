@@ -45,6 +45,11 @@ struct ContentView: View {
                                     Label("Offline", systemImage: "arrow.down.circle.fill")
                                 }
                             
+                            ServerHubView()
+                                .tabItem {
+                                    Label("Server", systemImage: "server.rack")
+                                }
+                            
                             WebView(urlString: "https://pkpmusic.pottapk.win/docs")
                                 .edgesIgnoringSafeArea(.top)
                                 .tabItem {
