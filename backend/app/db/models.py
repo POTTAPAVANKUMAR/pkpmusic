@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Float, text
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Float
 from sqlalchemy.orm import relationship
 from app.db.database import Base
 
@@ -8,26 +8,13 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
     email = Column(String, unique=True, index=True)
-    hashed_password = Column(String, nullable=True)
+    hashed_password = Column(String)
     is_active = Column(Boolean, default=True)
-    is_approved = Column(Boolean, default=False)
-    role = Column(String, default="user") # 'admin' or 'user'
-    auth_provider = Column(String, default="email") # 'email' or 'google'
     otp_code = Column(String, nullable=True)
     otp_expires_at = Column(Float, nullable=True) # Epoch timestamp
     profile_picture_url = Column(String, nullable=True)
-    created_at = Column(Float, nullable=True)
 
     playlists = relationship("Playlist", back_populates="owner")
-
-
-class WhitelistEmail(Base):
-    __tablename__ = "whitelist_emails"
-
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True)
-    created_at = Column(Float)
-    added_by = Column(String, nullable=True)
 
 
 class Song(Base):
@@ -82,7 +69,6 @@ class History(Base):
     song_id = Column(String, ForeignKey("songs.id"))
     played_at = Column(String) # Simple ISO string for now
 
-    user = relationship("User")
     song = relationship("Song", back_populates="history_items")
 
 class Favorite(Base):
@@ -91,9 +77,7 @@ class Favorite(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     song_id = Column(String, ForeignKey("songs.id"))
-    created_at = Column(Float) # Epoch timestamp
 
-    user = relationship("User")
     song = relationship("Song", back_populates="favorite_items")
 
 class Bookmark(Base):
@@ -101,7 +85,7 @@ class Bookmark(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    item_id = Column(String, index=True)
+    item_id = Column(String, index=True) # browseId of album or artist
     item_type = Column(String) # 'album' or 'artist'
     title = Column(String)
     cover_art_url = Column(String, nullable=True)
@@ -147,34 +131,3 @@ class MLJobRun(Base):
     users_processed = Column(Integer, default=0)
     recommendations_generated = Column(Integer, default=0)
     error_message = Column(String, nullable=True)
-
-
-def init_and_migrate_db(engine):
-    """Create all tables and perform safe schema migrations for new auth/admin columns."""
-    Base.metadata.create_all(bind=engine)
-    try:
-        with engine.begin() as conn:
-            # Check if Postgres or SQLite
-            is_postgres = "postgresql" in str(engine.url)
-            if is_postgres:
-                conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_approved BOOLEAN DEFAULT FALSE;"))
-                conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR DEFAULT 'user';"))
-                conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_provider VARCHAR DEFAULT 'email';"))
-                conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at FLOAT;"))
-                conn.execute(text("ALTER TABLE users ALTER COLUMN hashed_password DROP NOT NULL;"))
-                # Pre-approve admin accounts
-                conn.execute(text("UPDATE users SET is_approved = TRUE, role = 'admin' WHERE LOWER(email) LIKE '%pavankumar%' OR LOWER(username) LIKE '%pavankumar%' OR LOWER(email) = 'admin@pkpmusic.com';"))
-            else:
-                # SQLite fallback
-                for col_sql in [
-                    "ALTER TABLE users ADD COLUMN is_approved BOOLEAN DEFAULT 0",
-                    "ALTER TABLE users ADD COLUMN role VARCHAR DEFAULT 'user'",
-                    "ALTER TABLE users ADD COLUMN auth_provider VARCHAR DEFAULT 'email'",
-                    "ALTER TABLE users ADD COLUMN created_at FLOAT"
-                ]:
-                    try:
-                        conn.execute(text(col_sql))
-                    except Exception:
-                        pass
-    except Exception as e:
-        print(f"Schema migration note: {e}")

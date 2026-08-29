@@ -6,8 +6,8 @@ from app.db import models
 import asyncio
 import app.api.routers.dashboard as dashboard_router
 
-# Create database tables and apply schema updates
-models.init_and_migrate_db(engine)
+# Create the database tables
+models.Base.metadata.create_all(bind=engine)
 
 from fastapi.middleware.cors import CORSMiddleware
 

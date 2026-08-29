@@ -1,147 +1,22 @@
-import time
-
-ADMIN_EMAILS = ["pavankumarpotta@gmail.com", "admin@pkpmusic.com", "pavankumarpotta"]
-
-def is_admin_email(email: str) -> bool:
-    if not email:
-        return False
-    e = email.strip().lower()
-    return e in ADMIN_EMAILS or e.startswith("pavankumarpotta")
-
-def is_email_whitelisted(db: Session, email: str) -> bool:
-    if is_admin_email(email):
-        return True
-    whitelisted = db.query(models.WhitelistEmail).filter(models.WhitelistEmail.email == email.strip().lower()).first()
-    return whitelisted is not None
+from sqlalchemy.orm import Session
+from app.db import models
+from app import schemas
+from app.core import security as auth
 
 # Users
 def get_user(db: Session, user_id: int):
     return db.query(models.User).filter(models.User.id == user_id).first()
 
 def get_user_by_email(db: Session, email: str):
-    return db.query(models.User).filter(models.User.email == email.strip().lower()).first()
+    return db.query(models.User).filter(models.User.email == email).first()
 
 def create_user(db: Session, user: schemas.UserCreate):
-    email = user.email.strip().lower()
-    is_admin = is_admin_email(email)
-    is_approved = is_admin or is_email_whitelisted(db, email)
-    role = "admin" if is_admin else "user"
-    
-    hashed_password = auth.get_password_hash(user.password) if user.password else None
-    db_user = models.User(
-        email=email,
-        username=user.username or email.split("@")[0],
-        hashed_password=hashed_password,
-        is_approved=is_approved,
-        role=role,
-        auth_provider=user.auth_provider or "email",
-        created_at=time.time(),
-        profile_picture_url=user.profile_picture_url
-    )
+    hashed_password = auth.get_password_hash(user.password)
+    db_user = models.User(email=user.email, username=user.username, hashed_password=hashed_password)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
     return db_user
-
-def create_or_update_google_user(db: Session, email: str, name: str, picture: str = None):
-    clean_email = email.strip().lower()
-    user = get_user_by_email(db, clean_email)
-    is_admin = is_admin_email(clean_email)
-    
-    if user:
-        # Update user info if needed
-        if is_admin and not user.is_approved:
-            user.is_approved = True
-            user.role = "admin"
-        elif is_email_whitelisted(db, clean_email) and not user.is_approved:
-            user.is_approved = True
-            
-        if picture and not user.profile_picture_url:
-            user.profile_picture_url = picture
-        db.commit()
-        db.refresh(user)
-        return user
-    
-    # Create new Google user
-    is_approved = is_admin or is_email_whitelisted(db, clean_email)
-    role = "admin" if is_admin else "user"
-    username = (name or clean_email.split("@")[0]).strip()
-    
-    # Ensure username is unique
-    existing_username = db.query(models.User).filter(models.User.username == username).first()
-    if existing_username:
-        username = f"{username}_{int(time.time()) % 10000}"
-        
-    db_user = models.User(
-        email=clean_email,
-        username=username,
-        hashed_password=None,
-        is_approved=is_approved,
-        role=role,
-        auth_provider="google",
-        profile_picture_url=picture,
-        created_at=time.time()
-    )
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
-    return db_user
-
-def get_all_users(db: Session):
-    return db.query(models.User).order_by(models.User.id.desc()).all()
-
-def update_user_approval(db: Session, user_id: int, is_approved: bool, role: str = None):
-    user = get_user(db, user_id)
-    if not user:
-        return None
-    user.is_approved = is_approved
-    if role:
-        user.role = role
-    db.commit()
-    db.refresh(user)
-    return user
-
-def delete_user(db: Session, user_id: int):
-    user = get_user(db, user_id)
-    if user:
-        db.delete(user)
-        db.commit()
-        return True
-    return False
-
-def get_whitelist_emails(db: Session):
-    return db.query(models.WhitelistEmail).order_by(models.WhitelistEmail.id.desc()).all()
-
-def add_whitelist_email(db: Session, email: str, added_by: str = None):
-    clean_email = email.strip().lower()
-    existing = db.query(models.WhitelistEmail).filter(models.WhitelistEmail.email == clean_email).first()
-    if existing:
-        return existing
-    
-    entry = models.WhitelistEmail(
-        email=clean_email,
-        created_at=time.time(),
-        added_by=added_by
-    )
-    db.add(entry)
-    
-    # Auto approve existing registered user with this email
-    existing_user = get_user_by_email(db, clean_email)
-    if existing_user:
-        existing_user.is_approved = True
-        
-    db.commit()
-    db.refresh(entry)
-    return entry
-
-def remove_whitelist_email(db: Session, email: str):
-    clean_email = email.strip().lower()
-    entry = db.query(models.WhitelistEmail).filter(models.WhitelistEmail.email == clean_email).first()
-    if entry:
-        db.delete(entry)
-        db.commit()
-        return True
-    return False
 
 def update_user_otp(db: Session, user: models.User, otp_code: str, otp_expires_at: float):
     user.otp_code = otp_code
