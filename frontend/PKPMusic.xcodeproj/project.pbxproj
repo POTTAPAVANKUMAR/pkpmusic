@@ -53,6 +53,7 @@
 		F12000000000000000000001 /* ServerModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11000000000000000000001 /* ServerModels.swift */; };
 		F12000000000000000000002 /* ServerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11000000000000000000002 /* ServerManager.swift */; };
 		F12000000000000000000003 /* ServerHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11000000000000000000003 /* ServerHubView.swift */; };
+		F12000000000000000000004 /* ServerFileExplorerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11000000000000000000004 /* ServerFileExplorerView.swift */; };
 		C9588BD9EE02D21B31E883A3 /* DownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D0AEEDC7A99934EA163F6D /* DownloadManager.swift */; };
 		C9DB835A5A37197BE2053C40 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6A6EA2C632A277807DE3540 /* LibraryView.swift */; };
 		CA7DEE153890BA22F6D021E2 /* PodcastChannelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF5A1FEBB8682EDF6D2C2084 /* PodcastChannelView.swift */; };
@@ -113,6 +114,7 @@
 		F11000000000000000000001 /* ServerModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerModels.swift; sourceTree = "<group>"; };
 		F11000000000000000000002 /* ServerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerManager.swift; sourceTree = "<group>"; };
 		F11000000000000000000003 /* ServerHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerHubView.swift; sourceTree = "<group>"; };
+		F11000000000000000000004 /* ServerFileExplorerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerFileExplorerView.swift; sourceTree = "<group>"; };
 		B1E1F098B3B481507E599268 /* MoodPlaylistsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoodPlaylistsView.swift; sourceTree = "<group>"; };
 		B4767E61E9FFF8F3EB817E5E /* ArtistAlbumsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtistAlbumsView.swift; sourceTree = "<group>"; };
 		B48C3C4D51AAACFE413EA6FA /* ChatManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatManager.swift; sourceTree = "<group>"; };
@@ -285,6 +287,7 @@
 				2A3E1572631EA5999DE96E66 /* ProfileSettingsView.swift */,
 				3124FE46339F8BA4AF66B7C8 /* RelatedSongsView.swift */,
 				F11000000000000000000003 /* ServerHubView.swift */,
+				F11000000000000000000004 /* ServerFileExplorerView.swift */,
 			);
 			path = Main;
 			sourceTree = "<group>";
@@ -473,6 +476,7 @@
 				F12000000000000000000001 /* ServerModels.swift in Sources */,
 				F12000000000000000000002 /* ServerManager.swift in Sources */,
 				F12000000000000000000003 /* ServerHubView.swift in Sources */,
+				F12000000000000000000004 /* ServerFileExplorerView.swift in Sources */,
 				DA92A2F1FF490CC7F8E7A881 /* MiniPlayerView.swift in Sources */,
 				90A37AD95A916A949FE428F6 /* MoodPlaylistsView.swift in Sources */,
 				3BBA410EC893C76C19AF8C5E /* NetworkManager.swift in Sources */,

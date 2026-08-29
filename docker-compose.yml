@@ -21,6 +21,7 @@ services:
       - ./library:/app/library
       - /var/run/docker.sock:/var/run/docker.sock
       - /sys:/host_sys:ro
+      - /home/pavankumarpotta:/host_home
     depends_on:
       - db
     restart: unless-stopped

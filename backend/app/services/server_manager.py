@@ -349,3 +349,185 @@ async def get_all_services_health() -> List[Dict[str, Any]]:
     tasks = [check_service_health(s) for s in MONITORED_SERVICES]
     results = await asyncio.gather(*tasks)
     return results
+
+# --- FILE EXPLORER / FILE MANAGER ---
+
+def resolve_fs_path(path: str) -> str:
+    """Resolve and normalize host filesystem paths safely."""
+    if not path or path in ["~", "home", "/home"]:
+        if os.path.exists("/host_home"):
+            return "/host_home"
+        return "/app"
+    
+    # Map user friendly prefixes
+    if path.startswith("~/"):
+        if os.path.exists("/host_home"):
+            path = os.path.join("/host_home", path[2:])
+        else:
+            path = os.path.join("/app", path[2:])
+    elif path.startswith("/home/pavankumarpotta"):
+        if os.path.exists("/host_home"):
+            path = path.replace("/home/pavankumarpotta", "/host_home", 1)
+            
+    norm = os.path.abspath(os.path.normpath(path))
+    return norm
+
+def get_file_icon(name: str, is_dir: bool) -> str:
+    if is_dir:
+        return "folder.fill"
+    ext = os.path.splitext(name)[1].lower()
+    if ext in [".yml", ".yaml", ".conf", ".config", ".ini", ".env"]:
+        return "doc.badge.gearshape.fill"
+    elif ext in [".py", ".sh", ".bash", ".zsh", ".js", ".ts", ".html", ".css", ".sql"]:
+        return "chevron.left.forwardslash.chevron.right"
+    elif ext in [".log", ".txt", ".md", ".json"]:
+        return "doc.text.fill"
+    elif ext in [".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"]:
+        return "photo.fill"
+    elif ext in [".mp3", ".m4a", ".flac", ".wav", ".aac"]:
+        return "music.note"
+    elif ext in [".mp4", ".mov", ".mkv"]:
+        return "film.fill"
+    elif ext in [".zip", ".tar", ".gz", ".deb"]:
+        return "archivebox.fill"
+    else:
+        return "doc.fill"
+
+def list_directory(raw_path: str = "~") -> Dict[str, Any]:
+    """List contents of a directory on the server."""
+    target_path = resolve_fs_path(raw_path)
+    if not os.path.exists(target_path):
+        raise FileNotFoundError(f"Path does not exist: {raw_path}")
+    if not os.path.isdir(target_path):
+        raise NotADirectoryError(f"Path is not a directory: {raw_path}")
+        
+    parent_path = os.path.dirname(target_path)
+    if target_path == "/host_home" or target_path == "/":
+        parent_path = None
+        
+    items = []
+    try:
+        entries = os.scandir(target_path)
+        for entry in entries:
+            name = entry.name
+            is_dir = entry.is_dir(follow_symlinks=True)
+            size_bytes = 0
+            mtime = 0.0
+            try:
+                stat = entry.stat(follow_symlinks=True)
+                size_bytes = stat.st_size if not is_dir else 0
+                mtime = stat.st_mtime
+            except Exception:
+                pass
+                
+            mtime_str = time.strftime("%b %d, %H:%M", time.localtime(mtime)) if mtime > 0 else ""
+            ext = os.path.splitext(name)[1].lower() if not is_dir else ""
+            
+            items.append({
+                "id": entry.path,
+                "name": name,
+                "path": entry.path,
+                "is_dir": is_dir,
+                "size_bytes": size_bytes,
+                "size_formatted": format_bytes(size_bytes) if not is_dir else "",
+                "modified_time": mtime,
+                "modified_formatted": mtime_str,
+                "extension": ext,
+                "icon": get_file_icon(name, is_dir)
+            })
+    except PermissionError:
+        raise PermissionError(f"Permission denied accessing: {raw_path}")
+        
+    sorted_items = sorted(items, key=lambda x: (not x["is_dir"], x["name"].lower()))
+    
+    display_path = target_path.replace("/host_home", "~")
+    display_parent = parent_path.replace("/host_home", "~") if parent_path else None
+    
+    return {
+        "current_path": target_path,
+        "display_path": display_path,
+        "parent_path": parent_path,
+        "display_parent": display_parent,
+        "items": sorted_items,
+        "item_count": len(sorted_items)
+    }
+
+def read_file_content(raw_path: str, max_bytes: int = 2 * 1024 * 1024) -> Dict[str, Any]:
+    """Read content of a text or code file."""
+    target_path = resolve_fs_path(raw_path)
+    if not os.path.exists(target_path):
+        raise FileNotFoundError(f"File not found: {raw_path}")
+    if os.path.isdir(target_path):
+        raise IsADirectoryError(f"Target is a directory: {raw_path}")
+        
+    stat = os.stat(target_path)
+    size = stat.st_size
+    if size > max_bytes:
+        raise ValueError(f"File is too large to edit on mobile ({format_bytes(size)} > {format_bytes(max_bytes)})")
+        
+    try:
+        with open(target_path, "r", encoding="utf-8", errors="replace") as f:
+            content = f.read()
+        return {
+            "path": target_path,
+            "display_path": target_path.replace("/host_home", "~"),
+            "name": os.path.basename(target_path),
+            "content": content,
+            "size_bytes": size,
+            "size_formatted": format_bytes(size),
+            "is_text": True
+        }
+    except Exception as e:
+        raise ValueError(f"Could not read file: {e}")
+
+def write_file_content(raw_path: str, content: str) -> Dict[str, Any]:
+    """Save content to a file on the server."""
+    target_path = resolve_fs_path(raw_path)
+    parent_dir = os.path.dirname(target_path)
+    if not os.path.exists(parent_dir):
+        os.makedirs(parent_dir, exist_ok=True)
+        
+    with open(target_path, "w", encoding="utf-8") as f:
+        f.write(content)
+        
+    stat = os.stat(target_path)
+    return {
+        "success": True,
+        "path": target_path,
+        "size_bytes": stat.st_size,
+        "size_formatted": format_bytes(stat.st_size)
+    }
+
+def create_directory(raw_parent_path: str, name: str) -> Dict[str, Any]:
+    """Create a new folder."""
+    target_dir = resolve_fs_path(raw_parent_path)
+    new_dir_path = os.path.join(target_dir, name.strip().lstrip("/"))
+    os.makedirs(new_dir_path, exist_ok=True)
+    return {"success": True, "path": new_dir_path}
+
+def delete_file_or_dir(raw_path: str) -> Dict[str, Any]:
+    """Delete a file or directory."""
+    target_path = resolve_fs_path(raw_path)
+    if not os.path.exists(target_path):
+        raise FileNotFoundError(f"Path does not exist: {raw_path}")
+        
+    if target_path in ["/", "/host_home", "/app", "/etc", "/var"]:
+        raise PermissionError("Cannot delete root system directories")
+        
+    if os.path.isdir(target_path):
+        shutil.rmtree(target_path)
+    else:
+        os.remove(target_path)
+    return {"success": True, "deleted_path": target_path}
+
+def rename_file_or_dir(raw_path: str, new_name: str) -> Dict[str, Any]:
+    """Rename a file or directory."""
+    target_path = resolve_fs_path(raw_path)
+    if not os.path.exists(target_path):
+        raise FileNotFoundError(f"Path does not exist: {raw_path}")
+        
+    parent_dir = os.path.dirname(target_path)
+    new_path = os.path.join(parent_dir, new_name.strip())
+    os.rename(target_path, new_path)
+    return {"success": True, "old_path": target_path, "new_path": new_path}
+

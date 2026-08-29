@@ -89,3 +89,76 @@ async def get_services_status():
         return await server_manager.get_all_services_health()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# --- FILE EXPLORER ENDPOINTS ---
+
+class FileWriteRequest(BaseModel):
+    path: str
+    content: str
+
+class FileMkdirRequest(BaseModel):
+    path: str
+    name: str
+
+class FileRenameRequest(BaseModel):
+    old_path: str
+    new_name: str
+
+@router.get("/server/fs/list", response_model=Dict[str, Any])
+def list_server_directory(path: str = Query("~")):
+    """List directory contents on host server."""
+    try:
+        return server_manager.list_directory(path)
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/server/fs/read", response_model=Dict[str, Any])
+def read_server_file(path: str = Query(...)):
+    """Read a text or code file from the server."""
+    try:
+        return server_manager.read_file_content(path)
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/server/fs/write", response_model=Dict[str, Any])
+def write_server_file(req: FileWriteRequest):
+    """Write/save content to a file on the server."""
+    try:
+        return server_manager.write_file_content(req.path, req.content)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/server/fs/mkdir", response_model=Dict[str, Any])
+def create_server_folder(req: FileMkdirRequest):
+    """Create a new folder on the server."""
+    try:
+        return server_manager.create_directory(req.path, req.name)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/server/fs/delete", response_model=Dict[str, Any])
+def delete_server_file(path: str = Query(...)):
+    """Delete a file or folder on the server."""
+    try:
+        return server_manager.delete_file_or_dir(path)
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/server/fs/rename", response_model=Dict[str, Any])
+def rename_server_file(req: FileRenameRequest):
+    """Rename a file or folder on the server."""
+    try:
+        return server_manager.rename_file_or_dir(req.old_path, req.new_name)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+

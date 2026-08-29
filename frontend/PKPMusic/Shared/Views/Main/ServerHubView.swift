@@ -326,10 +326,42 @@ struct ServerHubView: View {
     
     // MARK: - 4. Quick Server Tools
     private var quickToolsSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Quick Actions")
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Quick Actions & Files")
                 .font(.headline)
                 .foregroundColor(.white)
+            
+            // File Explorer Card Link
+            NavigationLink(destination: ServerFileExplorerView()) {
+                HStack(spacing: 12) {
+                    Image(systemName: "folder.badge.gearshape")
+                        .font(.system(size: 22))
+                        .foregroundColor(.yellow)
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Server File Explorer")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundColor(.white)
+                        
+                        Text("Browse, view & edit server files, configs & scripts")
+                            .font(.system(size: 11))
+                            .foregroundColor(.gray)
+                    }
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.gray)
+                }
+                .padding(14)
+                .background(Color.yellow.opacity(0.12))
+                .cornerRadius(14)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(Color.yellow.opacity(0.35), lineWidth: 1)
+                )
+            }
             
             HStack(spacing: 12) {
                 // Prune Button

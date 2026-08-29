@@ -21,6 +21,13 @@ class ServerManager: ObservableObject {
     @Published var alertMessage: String? = nil
     @Published var showAlert: Bool = false
     
+    // File Explorer State
+    @Published var currentDirectory: ServerDirectoryListing? = nil
+    @Published var isLoadingDirectory: Bool = false
+    @Published var currentFileDetail: ServerFileDetail? = nil
+    @Published var isLoadingFile: Bool = false
+    @Published var isSavingFile: Bool = false
+    
     private var refreshTimer: AnyCancellable?
     private let baseURL = "https://pkpmusic.pottapk.win"
     
@@ -254,6 +261,188 @@ class ServerManager: ObservableObject {
                 self.showAlert = true
                 self.fetchSystemTelemetry()
                 self.fetchContainers()
+            }
+        }.resume()
+    }
+    
+    // MARK: - File Explorer Networking
+    
+    func fetchDirectory(path: String = "~", completion: (() -> Void)? = nil) {
+        isLoadingDirectory = true
+        guard let encodedPath = path.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let url = URL(string: "\(baseURL)/admin/server/fs/list?path=\(encodedPath)") else {
+            isLoadingDirectory = false
+            completion?()
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 10.0
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                self.isLoadingDirectory = false
+                defer { completion?() }
+                guard let data = data, error == nil else {
+                    self.alertMessage = "Failed to load directory: \(error?.localizedDescription ?? "Network Error")"
+                    self.showAlert = true
+                    return
+                }
+                
+                do {
+                    let listing = try JSONDecoder().decode(ServerDirectoryListing.self, from: data)
+                    self.currentDirectory = listing
+                } catch {
+                    print("Error decoding directory listing: \(error)")
+                }
+            }
+        }.resume()
+    }
+    
+    func readFile(path: String, completion: (() -> Void)? = nil) {
+        isLoadingFile = true
+        currentFileDetail = nil
+        guard let encodedPath = path.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let url = URL(string: "\(baseURL)/admin/server/fs/read?path=\(encodedPath)") else {
+            isLoadingFile = false
+            completion?()
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 12.0
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                self.isLoadingFile = false
+                defer { completion?() }
+                guard let data = data, error == nil else {
+                    self.alertMessage = "Failed to open file: \(error?.localizedDescription ?? "Network Error")"
+                    self.showAlert = true
+                    return
+                }
+                
+                do {
+                    let detail = try JSONDecoder().decode(ServerFileDetail.self, from: data)
+                    self.currentFileDetail = detail
+                } catch {
+                    self.alertMessage = "Could not parse file content."
+                    self.showAlert = true
+                }
+            }
+        }.resume()
+    }
+    
+    func writeFile(path: String, content: String, completion: ((Bool) -> Void)? = nil) {
+        isSavingFile = true
+        guard let url = URL(string: "\(baseURL)/admin/server/fs/write") else {
+            isSavingFile = false
+            completion?(false)
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let body: [String: String] = ["path": path, "content": content]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        request.timeoutInterval = 15.0
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                self.isSavingFile = false
+                if let error = error {
+                    self.alertMessage = "Save failed: \(error.localizedDescription)"
+                    self.showAlert = true
+                    completion?(false)
+                    return
+                }
+                
+                self.alertMessage = "File saved successfully!"
+                self.showAlert = true
+                completion?(true)
+            }
+        }.resume()
+    }
+    
+    func createFolder(path: String, name: String, completion: ((Bool) -> Void)? = nil) {
+        guard let url = URL(string: "\(baseURL)/admin/server/fs/mkdir") else {
+            completion?(false)
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let body: [String: String] = ["path": path, "name": name]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        request.timeoutInterval = 10.0
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    self.alertMessage = "Failed to create folder: \(error.localizedDescription)"
+                    self.showAlert = true
+                    completion?(false)
+                    return
+                }
+                
+                self.fetchDirectory(path: path)
+                completion?(true)
+            }
+        }.resume()
+    }
+    
+    func deleteItem(path: String, parentPath: String, completion: ((Bool) -> Void)? = nil) {
+        guard let encodedPath = path.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let url = URL(string: "\(baseURL)/admin/server/fs/delete?path=\(encodedPath)") else {
+            completion?(false)
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.timeoutInterval = 10.0
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    self.alertMessage = "Failed to delete: \(error.localizedDescription)"
+                    self.showAlert = true
+                    completion?(false)
+                    return
+                }
+                
+                self.fetchDirectory(path: parentPath)
+                completion?(true)
+            }
+        }.resume()
+    }
+    
+    func renameItem(oldPath: String, newName: String, parentPath: String, completion: ((Bool) -> Void)? = nil) {
+        guard let url = URL(string: "\(baseURL)/admin/server/fs/rename") else {
+            completion?(false)
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let body: [String: String] = ["old_path": oldPath, "new_name": newName]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        request.timeoutInterval = 10.0
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    self.alertMessage = "Failed to rename: \(error.localizedDescription)"
+                    self.showAlert = true
+                    completion?(false)
+                    return
+                }
+                
+                self.fetchDirectory(path: parentPath)
+                completion?(true)
             }
         }.resume()
     }
