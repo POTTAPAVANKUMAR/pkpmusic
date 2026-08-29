@@ -14,7 +14,8 @@ import {
   AlbumDetail, 
   AlbumSearchResult, 
   ArtistSearchResult, 
-  ServerTelemetry 
+  ServerTelemetry,
+  UserPlaylist
 } from './models/music.model';
 
 type AppTab = 'home' | 'explore' | 'library' | 'history' | 'offline' | 'server';
@@ -28,10 +29,10 @@ type SearchType = 'songs' | 'albums' | 'artists';
   styleUrls: ['./app.css']
 })
 export class App implements OnInit {
-  // Tab State
+  // Navigation & Tab State
   selectedTab = signal<AppTab>('home');
   
-  // Strict Mobile App Auth State
+  // Mobile App Auth State (Strict Login, Register, Forgot Password)
   authMode = signal<'login' | 'register' | 'forgot' | 'verifyOtp'>('login');
   loginEmail = signal<string>('');
   loginPassword = signal<string>('');
@@ -79,7 +80,19 @@ export class App implements OnInit {
     { name: 'Albums', icon: '💿', query: 'top albums' }
   ];
 
-  // Details Views
+  // Mood Cards
+  moodGenres = [
+    { title: 'Chill & Relax', icon: '🍃', query: 'chill acoustic vibes' },
+    { title: 'Workout & Fitness', icon: '⚡', query: 'workout high energy music' },
+    { title: 'Party & Dance', icon: '🎉', query: 'party dance club hits' },
+    { title: 'Romance & Love', icon: '❤️', query: 'romantic love songs' },
+    { title: 'Deep Focus', icon: '🧠', query: 'deep focus study lo-fi' },
+    { title: 'Gaming & Cyber', icon: '🎮', query: 'gaming electronic synthwave' },
+    { title: 'Rock & Metal', icon: '🎸', query: 'rock classics energy' },
+    { title: 'Peaceful Sleep', icon: '🌙', query: 'peaceful sleep ambient soundscape' }
+  ];
+
+  // Detail Views
   selectedArtist = signal<ArtistDetail | null>(null);
   selectedAlbum = signal<AlbumDetail | null>(null);
   selectedMoodTitle = signal<string | null>(null);
@@ -92,8 +105,16 @@ export class App implements OnInit {
   newPlaylistName = signal<string>('');
   showNewPlaylistModal = signal<boolean>(false);
 
+  // Add to Playlist Modal
+  showAddToPlaylistModal = signal<boolean>(false);
+  songToAddToPlaylist = signal<Song | null>(null);
+
   // Server Telemetry
   telemetry = signal<ServerTelemetry | null>(null);
+
+  // Toast Notification
+  toastMessage = signal<string | null>(null);
+  private toastTimer: any = null;
 
   constructor(
     public auth: AuthService,
@@ -102,7 +123,6 @@ export class App implements OnInit {
     public lyrics: LyricsService,
     private api: ApiService
   ) {
-    // Load personalized data whenever authentication is ready
     effect(() => {
       if (this.auth.isAuthenticated()) {
         this.loadUserDataAndDashboard();
@@ -121,12 +141,37 @@ export class App implements OnInit {
     }
   }
 
+  // --- GREETING ---
+  getUserGreeting(): string {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  }
+
+  getUserDisplayName(): string {
+    const user = this.auth.currentUser();
+    if (user?.name) return user.name;
+    if (user?.username) return user.username;
+    if (user?.email) return user.email.split('@')[0];
+    return 'Music Lover';
+  }
+
   // --- INITIALIZE ALL PERSONALIZED USER DATA ---
   loadUserDataAndDashboard() {
     this.loadDashboard();
     this.loadExplore();
     this.storage.syncUserData();
     this.loadTelemetry();
+  }
+
+  // --- TOAST NOTIFICATIONS ---
+  showToast(msg: string) {
+    if (this.toastTimer) clearTimeout(this.toastTimer);
+    this.toastMessage.set(msg);
+    this.toastTimer = setTimeout(() => {
+      this.toastMessage.set(null);
+    }, 3000);
   }
 
   // --- MOBILE APP AUTHENTICATION FLOWS ---
@@ -148,6 +193,7 @@ export class App implements OnInit {
         this.auth.setSession(res.access_token);
         this.authLoading.set(false);
         this.loadUserDataAndDashboard();
+        this.showToast('Welcome back to PKP Music!');
       },
       error: (err) => {
         this.authLoading.set(false);
@@ -177,6 +223,7 @@ export class App implements OnInit {
             this.auth.setSession(res.access_token);
             this.authLoading.set(false);
             this.loadUserDataAndDashboard();
+            this.showToast('Account created successfully!');
           },
           error: () => {
             this.authLoading.set(false);
@@ -233,6 +280,7 @@ export class App implements OnInit {
         this.authLoading.set(false);
         this.authMode.set('login');
         this.authSuccessMsg.set('Password reset successfully! You can now sign in.');
+        this.showToast('Password updated! Please sign in.');
       },
       error: (err) => {
         this.authLoading.set(false);
@@ -246,6 +294,7 @@ export class App implements OnInit {
     this.player.pause();
     this.dashboardSections.set([]);
     this.exploreSections.set([]);
+    this.showToast('Signed out of PKP Music');
   }
 
   // --- NAVIGATION & TABS ---
@@ -267,6 +316,12 @@ export class App implements OnInit {
     } else if (tab === 'server') {
       this.loadTelemetry();
     }
+  }
+
+  clearDetailView() {
+    this.selectedArtist.set(null);
+    this.selectedAlbum.set(null);
+    this.selectedMoodTitle.set(null);
   }
 
   // --- PERSONALIZED USER DASHBOARD (Home Tab) ---
@@ -305,7 +360,7 @@ export class App implements OnInit {
     this.searchQuery.set(query);
     if (query.trim().length > 1) {
       this.api.getSearchSuggestions(query).subscribe(suggs => {
-        this.searchSuggestions.set(suggs.slice(0, 5));
+        this.searchSuggestions.set(suggs.slice(0, 6));
         this.showSuggestions.set(true);
       });
     } else {
@@ -363,7 +418,7 @@ export class App implements OnInit {
         cover_art_url: item.image_url
       };
       this.player.playSong(song);
-      this.showFullScreenPlayer.set(true);
+      this.showToast(`Playing "${song.title}"`);
     } else if (item.type === 'artist') {
       this.openArtist(item.id);
     } else if (item.type === 'album') {
@@ -404,30 +459,79 @@ export class App implements OnInit {
     });
   }
 
-  bookmarkArtist(artist: ArtistDetail) {
-    this.api.addBookmark(this.selectedArtist()!.name, 'artist', artist.name, artist.thumbnails?.[0]?.url).subscribe(() => {
-      alert(`Bookmarked ${artist.name}!`);
-      this.loadDashboard();
-    });
-  }
-
-  bookmarkAlbum(album: AlbumDetail) {
-    this.api.addBookmark(album.title, 'album', album.title, album.thumbnails?.[0]?.url).subscribe(() => {
-      alert(`Bookmarked ${album.title}!`);
-      this.loadDashboard();
-    });
-  }
-
   // --- PLAYBACK HELPERS ---
   playSongNow(song: Song, queueList?: Song[]) {
     this.player.playSong(song, queueList);
-    this.showFullScreenPlayer.set(true);
+    this.showToast(`Playing "${song.title}"`);
   }
 
   playAllSongs(songs: Song[]) {
-    if (songs.length > 0) {
+    if (songs && songs.length > 0) {
       this.player.playSong(songs[0], songs);
-      this.showFullScreenPlayer.set(true);
+      this.showToast(`Playing ${songs.length} tracks`);
+    }
+  }
+
+  playPlaylist(playlist: UserPlaylist) {
+    const songs = playlist.items?.map(i => i.song) || [];
+    if (songs.length > 0) {
+      this.playAllSongs(songs);
+    } else {
+      this.showToast('This playlist is empty.');
+    }
+  }
+
+  toggleLike(song: Song) {
+    const isLiked = this.storage.isSongLiked(song.id);
+    this.storage.toggleLikedSong(song);
+    this.showToast(isLiked ? 'Removed from Liked Songs' : 'Added to Liked Songs ❤️');
+  }
+
+  // --- OFFLINE DOWNLOAD ---
+  downloadForOffline(song: Song) {
+    this.showToast(`Downloading "${song.title}" for offline play...`);
+    this.api.downloadAudioBlob(song.id).subscribe({
+      next: (blob) => {
+        this.storage.saveOfflineSong(song, blob);
+        this.showToast(`"${song.title}" saved to Offline Library! 📥`);
+      },
+      error: () => {
+        this.showToast('Download failed. Please check network.');
+      }
+    });
+  }
+
+  // --- ADD TO PLAYLIST MODAL ---
+  openAddToPlaylist(song: Song) {
+    this.songToAddToPlaylist.set(song);
+    this.showAddToPlaylistModal.set(true);
+  }
+
+  addSongToSelectedPlaylist(playlist: UserPlaylist) {
+    const song = this.songToAddToPlaylist();
+    if (song) {
+      this.api.addSongToPlaylist(playlist.id, song.id).subscribe({
+        next: () => {
+          this.showAddToPlaylistModal.set(false);
+          this.songToAddToPlaylist.set(null);
+          this.storage.loadPlaylists();
+          this.showToast(`Added "${song.title}" to ${playlist.name}! 📁`);
+        },
+        error: () => {
+          this.showToast('Failed to add to playlist');
+        }
+      });
+    }
+  }
+
+  // --- CUSTOM PLAYLIST CREATOR ---
+  createPlaylist() {
+    const name = this.newPlaylistName().trim();
+    if (name) {
+      this.storage.createPlaylist(name);
+      this.newPlaylistName.set('');
+      this.showNewPlaylistModal.set(false);
+      this.showToast(`Playlist "${name}" created! 📁`);
     }
   }
 
@@ -436,16 +540,6 @@ export class App implements OnInit {
       this.activePlayerSheet.set(null);
     } else {
       this.activePlayerSheet.set(sheet);
-    }
-  }
-
-  // --- USER CUSTOM PLAYLISTS ---
-  createPlaylist() {
-    const name = this.newPlaylistName().trim();
-    if (name) {
-      this.storage.createPlaylist(name);
-      this.newPlaylistName.set('');
-      this.showNewPlaylistModal.set(false);
     }
   }
 
@@ -458,7 +552,7 @@ export class App implements OnInit {
 
   copySSHCommand() {
     navigator.clipboard.writeText('ssh pavankumarpotta@192.168.1.151');
-    alert('SSH command copied to clipboard!');
+    this.showToast('Copied SSH Command to Clipboard 📋');
   }
 
   formatTime(seconds: number): string {

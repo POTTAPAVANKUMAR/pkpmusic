@@ -1,4 +1,13 @@
 <!-- ==========================================
+     TOAST NOTIFICATION FLOATING PILL
+     ========================================== -->
+<div class="toast-pill-container" *ngIf="toastMessage()">
+  <div class="toast-pill">
+    <span>✨ {{ toastMessage() }}</span>
+  </div>
+</div>
+
+<!-- ==========================================
      AUTHENTICATION SCREEN (Strict iOS LoginView, RegisterView, ForgotPasswordView)
      ========================================== -->
 <div class="auth-root" *ngIf="!auth.isAuthenticated()">
@@ -9,14 +18,12 @@
       
       <!-- ==================== 1. LOGIN VIEW ==================== -->
       <div *ngIf="authMode() === 'login'">
-        <!-- App Header / Logo -->
         <div class="auth-logo-wrap">
           <div class="spider-logo-icon">🎵</div>
           <h1 class="spider-glitch-title">PKP Music</h1>
-          <p class="auth-subtitle">Welcome back! Sign in to continue.</p>
+          <p class="auth-subtitle">High-Fidelity Cyberpunk Music Streaming</p>
         </div>
 
-        <!-- Error & Success Alerts -->
         <div class="auth-alert error" *ngIf="authError()">
           <span>⚠️ {{ authError() }}</span>
         </div>
@@ -226,7 +233,7 @@
       <div class="user-avatar-wrap">
         <img [src]="auth.currentUser()?.profile_picture_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80'" alt="User Avatar" class="user-avatar" />
         <div class="user-info">
-          <div class="user-name">{{ auth.currentUser()?.name || auth.currentUser()?.email || 'User' }}</div>
+          <div class="user-name">{{ getUserDisplayName() }}</div>
           <div class="user-role">Authenticated · Hi-Fi</div>
         </div>
       </div>
@@ -239,32 +246,40 @@
   <!-- MAIN SCROLLABLE CONTENT -->
   <main class="main-content">
     
-    <!-- TOP HEADER: SEARCH & PROFILE -->
+    <!-- TOP HEADER: GREETING & SEARCH -->
     <header class="top-header">
-      <div class="search-bar-wrap">
-        <span class="search-icon">🔍</span>
-        <input type="text" 
-               placeholder="Find music, playlists, albums, and artists..." 
-               [ngModel]="searchQuery()"
-               (input)="onSearchInput($any($event.target).value)"
-               (keyup.enter)="performSearch()" />
-        <button *ngIf="searchQuery()" class="btn-clear" (click)="clearSearch()">✕</button>
+      <div class="header-left-col">
+        <div class="greeting-badge">{{ getUserGreeting() }}, {{ getUserDisplayName() }} ✨</div>
+        <div class="search-bar-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" 
+                 placeholder="Search songs, albums, artists, or genres..." 
+                 [ngModel]="searchQuery()"
+                 (input)="onSearchInput($any($event.target).value)"
+                 (keyup.enter)="performSearch()" />
+          <button *ngIf="searchQuery()" class="btn-clear" (click)="clearSearch()">✕</button>
 
-        <!-- Auto Suggestions Dropdown -->
-        <div class="suggestions-box" *ngIf="showSuggestions() && searchSuggestions().length > 0">
-          <div class="suggestion-item" *ngFor="let sugg of searchSuggestions()" (click)="performSearch(sugg)">
-            <span class="sugg-icon">🔍</span>
-            <span>{{ sugg }}</span>
+          <!-- Auto Suggestions Dropdown -->
+          <div class="suggestions-box" *ngIf="showSuggestions() && searchSuggestions().length > 0">
+            <div class="suggestion-item" *ngFor="let sugg of searchSuggestions()" (click)="performSearch(sugg)">
+              <span class="sugg-icon">🔍</span>
+              <span>{{ sugg }}</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="header-profile-mobile">
-        <button class="btn-icon-mobile" (click)="handleLogout()" title="Sign Out">🚪</button>
+      <div class="header-right-col">
+        <button class="btn-icon-top" (click)="showNewPlaylistModal.set(true)" title="New Playlist">
+          <span>➕</span>
+        </button>
+        <button class="btn-icon-top" (click)="handleLogout()" title="Sign Out">
+          <span>🚪</span>
+        </button>
       </div>
     </header>
 
-    <!-- CATEGORY PILLS ROW (TELUGU, ENGLISH, TAMIL, HINDI, POP, R&B, ARTISTS, ALBUMS) -->
+    <!-- CATEGORY PILLS ROW -->
     <div class="category-pills-row" *ngIf="selectedTab() === 'home' && !isSearching()">
       <button class="cat-pill" *ngFor="let cat of categories" (click)="performSearch(cat.query)">
         <span>{{ cat.icon }}</span>
@@ -275,7 +290,10 @@
     <!-- SEARCH VIEW -->
     <div class="search-results-section" *ngIf="isSearching()">
       <div class="search-header-row">
-        <h2 class="section-title">Search Results for "{{ searchQuery() }}"</h2>
+        <div>
+          <h2 class="section-title">Results for "{{ searchQuery() }}"</h2>
+          <p class="section-subtitle">Found matching tracks, albums, and artists</p>
+        </div>
         <div class="segmented-picker">
           <button [class.active]="searchType() === 'songs'" (click)="setSearchType('songs')">Songs</button>
           <button [class.active]="searchType() === 'albums'" (click)="setSearchType('albums')">Albums</button>
@@ -285,25 +303,34 @@
 
       <!-- Songs Results -->
       <div class="track-list" *ngIf="searchType() === 'songs'">
-        <div class="track-item" *ngFor="let song of searchResults()" [class.active]="player.currentSong()?.id === song.id" (click)="playSongNow(song, searchResults())">
+        <div class="track-item" *ngFor="let song of searchResults(); let idx = index" [class.active]="player.currentSong()?.id === song.id" (click)="playSongNow(song, searchResults())">
+          <span class="track-idx">{{ idx + 1 }}</span>
           <img [src]="song.cover_art_url || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=120&auto=format&fit=crop&q=80'" class="track-img" />
           <div class="track-details">
             <div class="track-name">{{ song.title }}</div>
             <div class="track-artist">{{ song.artist }}</div>
           </div>
-          <button class="track-action-btn" (click)="$event.stopPropagation(); storage.toggleLikedSong(song)">
-            <span>{{ storage.isSongLiked(song.id) ? '❤️' : '🤍' }}</span>
-          </button>
-          <button class="track-action-btn" (click)="$event.stopPropagation(); player.addToQueue(song)">
-            <span>➕</span>
-          </button>
+          <div class="track-actions-cluster">
+            <button class="track-action-btn" (click)="$event.stopPropagation(); toggleLike(song)" title="Like Song">
+              <span>{{ storage.isSongLiked(song.id) ? '❤️' : '🤍' }}</span>
+            </button>
+            <button class="track-action-btn" (click)="$event.stopPropagation(); openAddToPlaylist(song)" title="Add to Playlist">
+              <span>➕</span>
+            </button>
+            <button class="track-action-btn" (click)="$event.stopPropagation(); downloadForOffline(song)" title="Download Offline">
+              <span>📥</span>
+            </button>
+          </div>
         </div>
       </div>
 
       <!-- Albums Results -->
       <div class="albums-grid" *ngIf="searchType() === 'albums'">
         <div class="album-card" *ngFor="let alb of searchAlbumResults()" (click)="openAlbum(alb.id)">
-          <img [src]="alb.cover_art_url || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=300&auto=format&fit=crop&q=80'" class="album-img" />
+          <div class="album-img-wrap">
+            <img [src]="alb.cover_art_url || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=300&auto=format&fit=crop&q=80'" class="album-img" />
+            <div class="album-overlay-play">▶</div>
+          </div>
           <div class="album-name">{{ alb.title }}</div>
           <div class="album-artist">{{ alb.artist }}</div>
         </div>
@@ -312,8 +339,11 @@
       <!-- Artists Results -->
       <div class="artists-grid" *ngIf="searchType() === 'artists'">
         <div class="artist-card" *ngFor="let art of searchArtistResults()" (click)="openArtist(art.id)">
-          <img [src]="art.cover_art_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80'" class="artist-img" />
+          <div class="artist-img-wrap">
+            <img [src]="art.cover_art_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80'" class="artist-img" />
+          </div>
           <div class="artist-name">{{ art.artist }}</div>
+          <div class="artist-badge">Artist</div>
         </div>
       </div>
     </div>
@@ -322,13 +352,15 @@
     <div class="tab-view-container" *ngIf="selectedTab() === 'home' && !isSearching() && !selectedArtist() && !selectedAlbum() && !selectedMoodTitle()">
       <div *ngIf="dashboardLoading()" class="loading-state">
         <div class="spinner-large"></div>
-        <p>Loading your music universe...</p>
+        <p>Syncing your personalized music universe...</p>
       </div>
 
       <div class="dashboard-sections-wrap" *ngIf="!dashboardLoading()">
         <section class="dash-section" *ngFor="let sec of dashboardSections()">
           <div class="section-title-row">
-            <h2 class="section-title">{{ sec.title }}</h2>
+            <div>
+              <h2 class="section-title">{{ sec.title }}</h2>
+            </div>
             <span *ngIf="sec.title.includes('AI Recommended')" class="badge-sparkles">✨ AI Recommended</span>
           </div>
 
@@ -350,17 +382,20 @@
     <div class="tab-view-container" *ngIf="selectedTab() === 'explore' && !selectedArtist() && !selectedAlbum() && !selectedMoodTitle()">
       <div class="explore-hero-header">
         <h1 class="page-title">Explore & Discover</h1>
-        <p class="page-desc">Trending community hits, new releases, and mood collections.</p>
+        <p class="page-desc">Trending community hits, moods, genres, and new releases.</p>
       </div>
 
-      <div class="category-pills-row" style="margin-bottom: 2rem;">
-        <button class="cat-pill" *ngFor="let cat of categories" (click)="performSearch(cat.query)">
-          <span>{{ cat.icon }}</span>
-          <span>{{ cat.name }}</span>
-        </button>
+      <!-- Mood & Genre Badges Grid -->
+      <h2 class="section-title" style="margin-bottom: 1rem;">Browse by Mood & Vibe</h2>
+      <div class="mood-genre-grid">
+        <div class="mood-genre-card" *ngFor="let mood of moodGenres" (click)="performSearch(mood.query)">
+          <span class="mood-icon">{{ mood.icon }}</span>
+          <span class="mood-name">{{ mood.title }}</span>
+        </div>
       </div>
 
-      <div class="dashboard-sections-wrap">
+      <!-- Explore Sections -->
+      <div class="dashboard-sections-wrap" style="margin-top: 2rem;">
         <div *ngIf="exploreLoading()" class="loading-state">
           <div class="spinner-large"></div>
           <p>Discovering trending hits...</p>
@@ -394,57 +429,97 @@
         </button>
       </div>
 
-      <!-- Liked Songs Banner -->
+      <!-- Liked Songs Hero Banner -->
       <div class="liked-songs-banner" (click)="playAllSongs(storage.likedSongs())">
         <div class="heart-icon-large">❤️</div>
         <div class="liked-info">
           <h2>Liked Songs</h2>
-          <p>{{ storage.likedSongs().length }} favorite tracks · Instant Play</p>
+          <p>{{ storage.likedSongs().length }} favorite tracks synced with your account</p>
         </div>
         <button class="btn-play-all">▶ Play All</button>
       </div>
 
+      <!-- Custom Playlists Grid -->
+      <div class="library-sub-header">
+        <h3 class="section-title">Your Playlists ({{ storage.customPlaylists().length }})</h3>
+      </div>
+      <div class="playlists-grid">
+        <div class="playlist-card" *ngFor="let pl of storage.customPlaylists()" (click)="playPlaylist(pl)">
+          <div class="playlist-icon">📁</div>
+          <div class="playlist-name">{{ pl.name }}</div>
+          <div class="playlist-meta">{{ pl.items?.length || 0 }} tracks · Instant Play</div>
+        </div>
+      </div>
+
       <!-- Liked Songs Tracklist -->
+      <div class="library-sub-header" style="margin-top: 2.5rem;">
+        <h3 class="section-title">Liked Songs Tracklist</h3>
+      </div>
       <div class="track-list" *ngIf="storage.likedSongs().length > 0">
-        <div class="track-item" *ngFor="let song of storage.likedSongs()" (click)="playSongNow(song, storage.likedSongs())">
+        <div class="track-item" *ngFor="let song of storage.likedSongs(); let idx = index" (click)="playSongNow(song, storage.likedSongs())">
+          <span class="track-idx">{{ idx + 1 }}</span>
           <img [src]="song.cover_art_url || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=120&auto=format&fit=crop&q=80'" class="track-img" />
           <div class="track-details">
             <div class="track-name">{{ song.title }}</div>
             <div class="track-artist">{{ song.artist }}</div>
           </div>
-          <button class="track-action-btn" (click)="$event.stopPropagation(); storage.toggleLikedSong(song)">
-            <span>❤️</span>
-          </button>
+          <div class="track-actions-cluster">
+            <button class="track-action-btn" (click)="$event.stopPropagation(); toggleLike(song)" title="Remove from Liked">
+              <span>❤️</span>
+            </button>
+            <button class="track-action-btn" (click)="$event.stopPropagation(); openAddToPlaylist(song)" title="Add to Playlist">
+              <span>➕</span>
+            </button>
+            <button class="track-action-btn" (click)="$event.stopPropagation(); downloadForOffline(song)" title="Download Offline">
+              <span>📥</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- Custom Playlists Grid -->
-      <h3 class="section-title" style="margin-top: 2rem;">Custom Playlists</h3>
-      <div class="playlists-grid">
-        <div class="playlist-card" *ngFor="let pl of storage.customPlaylists()">
-          <div class="playlist-icon">📁</div>
-          <div class="playlist-name">{{ pl.name }}</div>
-          <div class="playlist-meta">{{ pl.items?.length || 0 }} tracks</div>
-        </div>
+      <div class="empty-state" *ngIf="storage.likedSongs().length === 0">
+        <div class="empty-icon">🤍</div>
+        <p>No liked songs yet. Tap the heart on any track to add it here.</p>
       </div>
     </div>
 
     <!-- TAB 3: HISTORY -->
     <div class="tab-view-container" *ngIf="selectedTab() === 'history'">
-      <h1 class="page-title">Listening History</h1>
-      <p class="page-desc">Recently played tracks across your sessions.</p>
+      <div class="library-header-row">
+        <div>
+          <h1 class="page-title">Listening History</h1>
+          <p class="page-desc">Recently played tracks across all your iOS and Web sessions.</p>
+        </div>
+        <button class="btn-secondary" *ngIf="storage.history().length > 0" (click)="playAllSongs(storage.history())">
+          <span>▶ Replay History</span>
+        </button>
+      </div>
 
       <div class="track-list" *ngIf="storage.history().length > 0">
-        <div class="track-item" *ngFor="let song of storage.history()" (click)="playSongNow(song, storage.history())">
+        <div class="track-item" *ngFor="let song of storage.history(); let idx = index" (click)="playSongNow(song, storage.history())">
+          <span class="track-idx">{{ idx + 1 }}</span>
           <img [src]="song.cover_art_url || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=120&auto=format&fit=crop&q=80'" class="track-img" />
           <div class="track-details">
             <div class="track-name">{{ song.title }}</div>
             <div class="track-artist">{{ song.artist }}</div>
           </div>
-          <button class="track-action-btn" (click)="$event.stopPropagation(); storage.toggleLikedSong(song)">
-            <span>{{ storage.isSongLiked(song.id) ? '❤️' : '🤍' }}</span>
-          </button>
+          <div class="track-actions-cluster">
+            <button class="track-action-btn" (click)="$event.stopPropagation(); toggleLike(song)">
+              <span>{{ storage.isSongLiked(song.id) ? '❤️' : '🤍' }}</span>
+            </button>
+            <button class="track-action-btn" (click)="$event.stopPropagation(); openAddToPlaylist(song)">
+              <span>➕</span>
+            </button>
+            <button class="track-action-btn" (click)="$event.stopPropagation(); downloadForOffline(song)">
+              <span>📥</span>
+            </button>
+          </div>
         </div>
+      </div>
+
+      <div class="empty-state" *ngIf="storage.history().length === 0">
+        <div class="empty-icon">⏱️</div>
+        <p>No listening history yet. Start playing music to see your timeline!</p>
       </div>
     </div>
 
@@ -453,26 +528,32 @@
       <div class="library-header-row">
         <div>
           <h1 class="page-title">Offline Audio Downloads</h1>
-          <p class="page-desc">Audio blobs saved in browser IndexedDB for offline playback.</p>
+          <p class="page-desc">Audio blobs saved in browser IndexedDB for offline playback without internet.</p>
         </div>
+        <button class="btn-secondary" *ngIf="storage.downloads().length > 0" (click)="playAllSongs(storage.downloads())">
+          <span>▶ Play All Offline</span>
+        </button>
       </div>
 
       <div class="track-list" *ngIf="storage.downloads().length > 0">
-        <div class="track-item" *ngFor="let song of storage.downloads()" (click)="playSongNow(song, storage.downloads())">
+        <div class="track-item" *ngFor="let song of storage.downloads(); let idx = index" (click)="playSongNow(song, storage.downloads())">
+          <span class="track-idx">{{ idx + 1 }}</span>
           <img [src]="song.cover_art_url || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=120&auto=format&fit=crop&q=80'" class="track-img" />
           <div class="track-details">
             <div class="track-name">{{ song.title }}</div>
             <div class="track-artist">{{ song.artist }}</div>
           </div>
-          <button class="track-action-btn" (click)="$event.stopPropagation(); storage.removeDownload(song.id)">
-            <span>🗑️</span>
-          </button>
+          <div class="track-actions-cluster">
+            <button class="track-action-btn" (click)="$event.stopPropagation(); storage.removeDownload(song.id)" title="Remove Download">
+              <span>🗑️</span>
+            </button>
+          </div>
         </div>
       </div>
 
       <div class="empty-state" *ngIf="storage.downloads().length === 0">
         <div class="empty-icon">📥</div>
-        <p>No offline downloads yet. Tap download on any track to listen offline.</p>
+        <p>No offline downloads yet. Tap download (📥) on any song to listen without connection.</p>
       </div>
     </div>
 
@@ -538,7 +619,7 @@
 
     <!-- ARTIST DETAIL VIEW -->
     <div class="detail-overlay-view" *ngIf="selectedArtist()">
-      <button class="btn-close-detail" (click)="selectedArtist.set(null)">✕ Close Artist</button>
+      <button class="btn-close-detail" (click)="clearDetailView()">← Back to Dashboard</button>
       <div class="artist-header">
         <h1 class="artist-hero-name">{{ selectedArtist()?.name }}</h1>
         <p class="artist-hero-sub">{{ selectedArtist()?.subscribers }}</p>
@@ -546,11 +627,17 @@
 
       <h3 class="section-title">Top Tracks</h3>
       <div class="track-list">
-        <div class="track-item" *ngFor="let song of selectedArtist()?.songs" (click)="playSongNow(song, selectedArtist()?.songs)">
+        <div class="track-item" *ngFor="let song of selectedArtist()?.songs; let idx = index" (click)="playSongNow(song, selectedArtist()?.songs)">
+          <span class="track-idx">{{ idx + 1 }}</span>
           <img [src]="song.cover_art_url || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=120&auto=format&fit=crop&q=80'" class="track-img" />
           <div class="track-details">
             <div class="track-name">{{ song.title }}</div>
             <div class="track-artist">{{ song.artist }}</div>
+          </div>
+          <div class="track-actions-cluster">
+            <button class="track-action-btn" (click)="$event.stopPropagation(); toggleLike(song)">
+              <span>{{ storage.isSongLiked(song.id) ? '❤️' : '🤍' }}</span>
+            </button>
           </div>
         </div>
       </div>
@@ -558,7 +645,7 @@
 
     <!-- ALBUM DETAIL VIEW -->
     <div class="detail-overlay-view" *ngIf="selectedAlbum()">
-      <button class="btn-close-detail" (click)="selectedAlbum.set(null)">✕ Close Album</button>
+      <button class="btn-close-detail" (click)="clearDetailView()">← Back to Dashboard</button>
       <div class="artist-header">
         <h1 class="artist-hero-name">{{ selectedAlbum()?.title }}</h1>
         <p class="artist-hero-sub">{{ selectedAlbum()?.trackCount }} Tracks</p>
@@ -571,6 +658,11 @@
             <div class="track-name">{{ song.title }}</div>
             <div class="track-artist">{{ song.artist }}</div>
           </div>
+          <div class="track-actions-cluster">
+            <button class="track-action-btn" (click)="$event.stopPropagation(); toggleLike(song)">
+              <span>{{ storage.isSongLiked(song.id) ? '❤️' : '🤍' }}</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -578,7 +670,83 @@
   </main>
 
   <!-- ==========================================
-       FLOATING MINI PLAYER PILL (iOS MiniPlayerView)
+       PERSISTENT DESKTOP BOTTOM PLAYER BAR (Spotify/Apple Music Style)
+       ========================================== -->
+  <footer class="desktop-player-bar" *ngIf="player.currentSong()">
+    <!-- Left: Track Artwork & Info -->
+    <div class="desktop-player-left" (click)="showFullScreenPlayer.set(true)">
+      <img [src]="player.currentSong()?.cover_art_url || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=120&auto=format&fit=crop&q=80'" class="desktop-art" />
+      <div class="desktop-info">
+        <div class="desktop-title">{{ player.currentSong()?.title }}</div>
+        <div class="desktop-artist">{{ player.currentSong()?.artist }}</div>
+      </div>
+      <button class="btn-player-action-mini" (click)="$event.stopPropagation(); toggleLike(player.currentSong()!)" title="Like">
+        <span>{{ storage.isSongLiked(player.currentSong()!.id) ? '❤️' : '🤍' }}</span>
+      </button>
+      <button class="btn-player-action-mini" (click)="$event.stopPropagation(); openAddToPlaylist(player.currentSong()!)" title="Add to Playlist">
+        <span>➕</span>
+      </button>
+    </div>
+
+    <!-- Center: Main Playback Controls & Progress Bar -->
+    <div class="desktop-player-center">
+      <div class="desktop-ctrl-buttons">
+        <button class="btn-ctrl-desktop" [class.active]="player.shuffle()" (click)="player.toggleShuffle()" title="Shuffle">
+          <span>🔀</span>
+        </button>
+        <button class="btn-ctrl-desktop" (click)="player.playPrevious()" title="Previous">
+          <span>⏮</span>
+        </button>
+        <button class="btn-play-desktop" (click)="player.togglePlay()" title="Play / Pause">
+          <span *ngIf="!player.isLoading()">{{ player.isPlaying() ? '⏸' : '▶' }}</span>
+          <span *ngIf="player.isLoading()" class="spinner-small"></span>
+        </button>
+        <button class="btn-ctrl-desktop" (click)="player.playNext()" title="Next">
+          <span>⏭</span>
+        </button>
+        <button class="btn-ctrl-desktop" [class.active]="player.repeatMode() !== 'off'" (click)="player.toggleRepeat()" title="Repeat">
+          <span>{{ player.repeatMode() === 'one' ? '🔂' : '🔁' }}</span>
+        </button>
+      </div>
+
+      <div class="desktop-scrubber-row">
+        <span class="time-label">{{ formatTime(player.currentTime()) }}</span>
+        <input type="range" 
+               class="slider-desktop-scrub" 
+               min="0" 
+               [max]="player.duration() > 0 ? player.duration() : 1" 
+               [value]="player.currentTime()" 
+               (input)="player.seek($any($event.target).value)" />
+        <span class="time-label">{{ formatTime(player.duration()) }}</span>
+      </div>
+    </div>
+
+    <!-- Right: Volume & Drawer Triggers -->
+    <div class="desktop-player-right">
+      <button class="btn-player-action-mini" (click)="toggleSheet('lyrics')" title="Synced Lyrics">
+        <span>💬</span>
+      </button>
+      <button class="btn-player-action-mini" (click)="toggleSheet('queue')" title="Up Next Queue">
+        <span>📋</span>
+      </button>
+      <button class="btn-player-action-mini" (click)="player.toggleMute()" title="Mute">
+        <span>{{ player.isMuted() || player.volume() === 0 ? '🔇' : '🔊' }}</span>
+      </button>
+      <input type="range" 
+             class="slider-volume" 
+             min="0" 
+             max="1" 
+             step="0.01" 
+             [value]="player.volume()" 
+             (input)="player.setVolume($any($event.target).value)" />
+      <button class="btn-player-action-mini" (click)="showFullScreenPlayer.set(true)" title="Expand Fullscreen">
+        <span>⛶</span>
+      </button>
+    </div>
+  </footer>
+
+  <!-- ==========================================
+       FLOATING MINI PLAYER PILL (Mobile iOS MiniPlayerView)
        ========================================== -->
   <div class="mini-player-pill" *ngIf="player.currentSong()" (click)="showFullScreenPlayer.set(true)">
     <img [src]="player.currentSong()?.cover_art_url || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=120&auto=format&fit=crop&q=80'" class="mini-pill-art" [class.spinning]="player.isPlaying()" />
@@ -628,7 +796,6 @@
      FULL-SCREEN EXPANDING PLAYER (iOS FullScreenPlayerView)
      ========================================== -->
 <div class="fullscreen-player-modal" *ngIf="showFullScreenPlayer() && player.currentSong()">
-  <!-- Dynamic Cover Blur Backdrop -->
   <div class="modal-bg-blur" [style.background-image]="'url(' + (player.currentSong()?.cover_art_url || '') + ')'"></div>
   <div class="modal-overlay-tint"></div>
 
@@ -669,7 +836,7 @@
         <button class="btn-utility" (click)="toggleSheet('lyrics')" title="Synced Lyrics">
           <span>💬</span>
         </button>
-        <button class="btn-utility" (click)="storage.toggleLikedSong(player.currentSong()!)" title="Like">
+        <button class="btn-utility" (click)="toggleLike(player.currentSong()!)" title="Like">
           <span>{{ storage.isSongLiked(player.currentSong()!.id) ? '❤️' : '🤍' }}</span>
         </button>
       </div>
@@ -716,7 +883,7 @@
 
   </div>
 
-  <!-- SYNCED LYRICS DRAWER (iOS LyricsView) -->
+  <!-- SYNCED LYRICS DRAWER -->
   <div class="sheet-drawer" *ngIf="activePlayerSheet() === 'lyrics'">
     <div class="drawer-header">
       <span class="drawer-title">LYRICS</span>
@@ -733,7 +900,7 @@
     </div>
 
     <div class="lyrics-empty" *ngIf="lyrics.parsedLines().length === 0">
-      <p>No synced lyrics found for this song.</p>
+      <p>No synced lyrics found for this track.</p>
     </div>
   </div>
 
@@ -761,7 +928,7 @@
 <div class="modal-backdrop-overlay" *ngIf="showNewPlaylistModal()">
   <div class="modal-dialog-box">
     <h2 class="modal-dialog-title">New Playlist</h2>
-    <p class="modal-dialog-sub">Enter a title for your new playlist</p>
+    <p class="modal-dialog-sub">Enter a title for your new custom playlist</p>
     
     <input type="text" 
            class="modal-text-input" 
@@ -776,3 +943,26 @@
   </div>
 </div>
 
+<!-- ADD TO PLAYLIST MODAL -->
+<div class="modal-backdrop-overlay" *ngIf="showAddToPlaylistModal() && songToAddToPlaylist()">
+  <div class="modal-dialog-box">
+    <h2 class="modal-dialog-title">Add to Playlist</h2>
+    <p class="modal-dialog-sub">Select a playlist to add "{{ songToAddToPlaylist()?.title }}"</p>
+    
+    <div class="playlist-select-list" *ngIf="storage.customPlaylists().length > 0">
+      <div class="playlist-select-item" *ngFor="let pl of storage.customPlaylists()" (click)="addSongToSelectedPlaylist(pl)">
+        <span>📁 {{ pl.name }}</span>
+        <span class="pl-count">{{ pl.items?.length || 0 }} songs</span>
+      </div>
+    </div>
+
+    <div class="empty-state" *ngIf="storage.customPlaylists().length === 0" style="padding: 1rem 0;">
+      <p>No playlists found. Create one first!</p>
+    </div>
+
+    <div class="modal-actions-row">
+      <button class="btn-dialog-cancel" (click)="showAddToPlaylistModal.set(false)">Cancel</button>
+      <button class="btn-dialog-submit" (click)="showAddToPlaylistModal.set(false); showNewPlaylistModal.set(true)">+ Create New</button>
+    </div>
+  </div>
+</div>
