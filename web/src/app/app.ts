@@ -15,10 +15,12 @@ import {
   AlbumSearchResult, 
   ArtistSearchResult, 
   ServerTelemetry,
-  UserPlaylist
+  UserPlaylist,
+  MLJobRun,
+  ServiceHealth
 } from './models/music.model';
 
-type AppTab = 'home' | 'explore' | 'library' | 'history' | 'server';
+type AppTab = 'home' | 'explore' | 'library' | 'history' | 'ai' | 'server';
 type SearchType = 'songs' | 'albums' | 'artists';
 type PlayerDisplayMode = 'docked' | 'floating';
 
@@ -122,6 +124,16 @@ export class App implements OnInit {
 
   // Server Telemetry
   telemetry = signal<ServerTelemetry | null>(null);
+
+  // AI / ML Analytics State
+  mlRuns = signal<MLJobRun[]>([]);
+  mlLoading = signal<boolean>(false);
+  mlTriggering = signal<boolean>(false);
+  servicesHealth = signal<ServiceHealth[]>([]);
+  
+  totalRecommendationsGenerated = computed(() => this.mlRuns().reduce((acc, r) => acc + (r.recommendations_generated || 0), 0));
+  totalUsersProcessed = computed(() => this.mlRuns().reduce((acc, r) => acc + (r.users_processed || 0), 0));
+  latestMLRun = computed(() => this.mlRuns().length > 0 ? this.mlRuns()[0] : null);
 
   // User Profile Dropdown Menu
   showProfileMenu = signal<boolean>(false);
@@ -399,8 +411,11 @@ export class App implements OnInit {
       this.storage.loadPlaylists();
     } else if (tab === 'history') {
       this.storage.loadHistory();
+    } else if (tab === 'ai') {
+      this.loadMLAnalytics();
     } else if (tab === 'server') {
       this.loadTelemetry();
+      this.loadServicesHealth();
     }
   }
 
@@ -649,6 +664,52 @@ export class App implements OnInit {
     } else {
       this.activePlayerSheet.set(sheet);
     }
+  }
+
+  // --- AI / ML PIPELINE & ANALYTICS ---
+  loadMLAnalytics() {
+    this.mlLoading.set(true);
+    this.api.getMLMetrics().subscribe({
+      next: (runs) => {
+        this.mlRuns.set(runs);
+        this.mlLoading.set(false);
+      },
+      error: () => {
+        this.mlLoading.set(false);
+      }
+    });
+  }
+
+  triggerMLPipeline() {
+    this.mlTriggering.set(true);
+    this.showToast('🚀 Running AI Pipeline & generating personalized recommendations...');
+    this.api.triggerMLJob().subscribe({
+      next: () => {
+        setTimeout(() => {
+          this.mlTriggering.set(false);
+          this.loadMLAnalytics();
+          this.loadDashboard();
+          this.showToast('✨ AI Analysis complete! Recommendations updated.');
+        }, 2000);
+      },
+      error: () => {
+        this.mlTriggering.set(false);
+        this.showToast('AI pipeline trigger failed. Check server logs.');
+      }
+    });
+  }
+
+  loadServicesHealth() {
+    this.api.getServicesHealth().subscribe({
+      next: (services) => this.servicesHealth.set(services),
+      error: () => this.servicesHealth.set([])
+    });
+  }
+
+  formatTimestamp(timestamp: number): string {
+    if (!timestamp) return '--';
+    const date = new Date(timestamp * 1000);
+    return date.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
   }
 
   // --- TELEMETRY ---

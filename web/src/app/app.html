@@ -206,6 +206,11 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
           <span>History</span>
         </button>
+
+        <button class="nav-btn" [class.active]="selectedTab() === 'ai' && !isSearching()" (click)="setTab('ai')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path><circle cx="12" cy="12" r="4"></circle></svg>
+          <span>AI Analytics</span>
+        </button>
       </div>
 
       <!-- Playlists Section in Sidebar -->
@@ -316,6 +321,11 @@
             </div>
 
             <div class="dropdown-divider"></div>
+
+            <button class="dropdown-item" (click)="showProfileMenu.set(false); setTab('ai')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path><circle cx="12" cy="12" r="4"></circle></svg>
+              <span>AI Analytics & Engine</span>
+            </button>
 
             <button class="dropdown-item" (click)="showProfileMenu.set(false); setTab('server')">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"></rect><rect width="20" height="8" x="2" y="14" rx="2" ry="2"></rect></svg>
@@ -651,7 +661,108 @@
       </div>
     </div>
 
-    <!-- ==================== TAB 4: SERVER HUD ==================== -->
+    <!-- ==================== TAB: AI ANALYTICS ==================== -->
+    <div class="page-content" *ngIf="selectedTab() === 'ai' && !isSearching() && !selectedArtist() && !selectedAlbum() && !selectedMoodTitle()">
+      
+      <!-- AI Hero Banner -->
+      <div class="ai-hero-card">
+        <div class="ai-hero-content">
+          <div class="ai-badge-chip">
+            <span class="sparkle-icon">✦</span>
+            <span>HYBRID MACHINE LEARNING ENGINE</span>
+          </div>
+          <h1 class="ai-hero-title">AI Recommendation Analytics</h1>
+          <p class="ai-hero-sub">Collaborative filtering & vector embeddings analyze your playback graphs to dynamically curate personalized daily feeds.</p>
+          
+          <button class="btn-ai-trigger" (click)="triggerMLPipeline()" [disabled]="mlTriggering() || latestMLRun()?.status === 'Running'">
+            <span *ngIf="!mlTriggering()" class="ai-btn-icon">⚡</span>
+            <span *ngIf="mlTriggering()" class="spinner-small"></span>
+            <span *ngIf="!mlTriggering()">Run AI Analysis Now</span>
+            <span *ngIf="mlTriggering()">Processing Neural Graph...</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Pipeline Stats Deck -->
+      <div class="telemetry-deck-grid" style="margin-top: 2rem;">
+        <div class="hud-card">
+          <div class="hud-label">Engine Pipeline Status</div>
+          <div class="hud-value" [style.color]="latestMLRun()?.status === 'Success' ? '#10b981' : (latestMLRun()?.status === 'Running' ? '#3b82f6' : '#ef4444')">
+            {{ latestMLRun()?.status || 'Idle' }}
+          </div>
+          <div class="hud-footer">{{ latestMLRun() ? ('Last run: ' + formatTimestamp(latestMLRun()!.started_at)) : 'No runs recorded' }}</div>
+        </div>
+
+        <div class="hud-card">
+          <div class="hud-label">Total AI Recommendations</div>
+          <div class="hud-value">{{ totalRecommendationsGenerated() }}</div>
+          <div class="hud-footer">Synthesized for your personal catalog</div>
+        </div>
+
+        <div class="hud-card">
+          <div class="hud-label">User Graphs Analyzed</div>
+          <div class="hud-value">{{ totalUsersProcessed() }}</div>
+          <div class="hud-footer">Active listening vector spaces</div>
+        </div>
+
+        <div class="hud-card">
+          <div class="hud-label">Model Pipeline Duration</div>
+          <div class="hud-value">
+            {{ latestMLRun()?.completed_at && latestMLRun()?.started_at ? ((latestMLRun()!.completed_at! - latestMLRun()!.started_at!).toFixed(1) + 's') : '--' }}
+          </div>
+          <div class="hud-footer">High-throughput background worker</div>
+        </div>
+      </div>
+
+      <!-- Recent Pipeline Executions History -->
+      <div class="content-header-row" style="margin-top: 3rem;">
+        <div>
+          <h2 class="content-title">Recent AI Pipeline Executions</h2>
+          <p class="content-sub">Chronological audit log of ML batch recommendation runs</p>
+        </div>
+        <button class="btn-topbar-pill" (click)="loadMLAnalytics()">
+          <span>↻ Refresh Logs</span>
+        </button>
+      </div>
+
+      <div *ngIf="mlLoading()" class="loading-state-clean" style="margin-top: 2rem;">
+        <div class="spinner-modern"></div>
+        <p>Loading AI pipeline metrics...</p>
+      </div>
+
+      <div class="ai-runs-table" *ngIf="!mlLoading() && mlRuns().length > 0">
+        <div class="ai-table-header">
+          <span>RUN ID</span>
+          <span>TIMESTAMP</span>
+          <span>DURATION</span>
+          <span>RECOMMENDATIONS</span>
+          <span>USERS</span>
+          <span>STATUS</span>
+        </div>
+
+        <div class="ai-table-row" *ngFor="let run of mlRuns()">
+          <span class="run-id-cell">#ML-{{ run.id }}</span>
+          <span class="run-time-cell">{{ formatTimestamp(run.started_at) }}</span>
+          <span class="run-dur-cell">
+            {{ run.completed_at ? ((run.completed_at - run.started_at).toFixed(1) + 's') : 'Running...' }}
+          </span>
+          <span class="run-count-cell"><strong>{{ run.recommendations_generated }}</strong> items</span>
+          <span class="run-users-cell">{{ run.users_processed }} user(s)</span>
+          <div class="run-status-cell">
+            <span class="status-badge" [class.success]="run.status === 'Success'" [class.running]="run.status === 'Running'" [class.failed]="run.status === 'Failed'">
+              {{ run.status }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="empty-state-clean" *ngIf="!mlLoading() && mlRuns().length === 0">
+        <p>No ML pipeline executions found. Click <strong>"Run AI Analysis Now"</strong> above to generate the first batch of personalized recommendations.</p>
+      </div>
+
+    </div>
+
+    <!-- ==================== TAB: SERVER HUD ==================== -->
     <div class="page-content" *ngIf="selectedTab() === 'server' && !isSearching() && !selectedArtist() && !selectedAlbum() && !selectedMoodTitle()">
       <div class="content-header-row">
         <div>
@@ -1040,6 +1151,10 @@
     <button class="mob-btn" [class.active]="selectedTab() === 'history' && !isSearching()" (click)="setTab('history')">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
       <span>History</span>
+    </button>
+    <button class="mob-btn" [class.active]="selectedTab() === 'ai' && !isSearching()" (click)="setTab('ai')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path><circle cx="12" cy="12" r="4"></circle></svg>
+      <span>AI</span>
     </button>
     <button class="mob-btn" [class.active]="selectedTab() === 'server' && !isSearching()" (click)="setTab('server')">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"></rect><rect width="20" height="8" x="2" y="14" rx="2" ry="2"></rect></svg>

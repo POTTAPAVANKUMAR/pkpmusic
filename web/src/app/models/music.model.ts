@@ -126,3 +126,31 @@ export interface ServerTelemetry {
   };
   uptime_formatted?: string;
 }
+
+export interface MLJobRun {
+  id: number;
+  status: string; // 'Success' | 'Running' | 'Failed'
+  started_at: number;
+  completed_at?: number | null;
+  users_processed: number;
+  recommendations_generated: number;
+  error_message?: string | null;
+}
+
+export interface DockerContainerInfo {
+  id: string;
+  name: string;
+  image: string;
+  status: string;
+  state: string;
+  ports?: string;
+}
+
+export interface ServiceHealth {
+  name: string;
+  url: string;
+  status: string;
+  status_code?: number;
+  latency_ms?: number;
+}
+

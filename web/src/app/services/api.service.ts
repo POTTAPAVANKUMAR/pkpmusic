@@ -16,7 +16,10 @@ import {
   ArtistSearchResult,
   FavoriteItem,
   UserPlaylist,
-  HistoryItem
+  HistoryItem,
+  MLJobRun,
+  DockerContainerInfo,
+  ServiceHealth
 } from '../models/music.model';
 
 @Injectable({
@@ -233,10 +236,34 @@ export class ApiService {
     );
   }
 
-  // --- SERVER TELEMETRY ---
+  // --- SERVER TELEMETRY & MANAGEMENT ---
   getServerTelemetry(): Observable<ServerTelemetry> {
-    return this.http.get<ServerTelemetry>(`${this.baseUrl}/admin/server/system`).pipe(
+    return this.http.get<ServerTelemetry>(`${this.baseUrl}/admin/server/system`, { headers: this.getAuthHeaders() }).pipe(
       catchError(() => of({}))
     );
   }
+
+  getServerContainers(): Observable<DockerContainerInfo[]> {
+    return this.http.get<DockerContainerInfo[]>(`${this.baseUrl}/admin/server/containers`, { headers: this.getAuthHeaders() }).pipe(
+      catchError(() => of([]))
+    );
+  }
+
+  getServicesHealth(): Observable<ServiceHealth[]> {
+    return this.http.get<ServiceHealth[]>(`${this.baseUrl}/admin/server/services`, { headers: this.getAuthHeaders() }).pipe(
+      catchError(() => of([]))
+    );
+  }
+
+  // --- AI / ML PIPELINE & ANALYTICS ---
+  getMLMetrics(): Observable<MLJobRun[]> {
+    return this.http.get<MLJobRun[]>(`${this.baseUrl}/admin/jobs/ml/metrics`, { headers: this.getAuthHeaders() }).pipe(
+      catchError(() => of([]))
+    );
+  }
+
+  triggerMLJob(): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.baseUrl}/admin/jobs/ml/trigger`, {}, { headers: this.getAuthHeaders() });
+  }
 }
+
