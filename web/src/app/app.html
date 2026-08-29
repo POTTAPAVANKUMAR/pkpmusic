@@ -991,26 +991,37 @@
 
     <!-- Right Utilities -->
     <div class="player-right-block">
+      <!-- Mobile Quick Play / Pause Button -->
+      <button class="mobile-player-play-btn" (click)="player.togglePlay()" title="Play / Pause">
+        <span *ngIf="!player.isLoading() && !player.isPlaying()">▶</span>
+        <span *ngIf="!player.isLoading() && player.isPlaying()">⏸</span>
+        <span *ngIf="player.isLoading()" class="spinner-small"></span>
+      </button>
+
+      <button class="mobile-player-next-btn" (click)="player.playNext()" title="Next Track">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>
+      </button>
+
       <!-- Pop Out Floating Button -->
-      <button class="btn-player-action-icon" (click)="setPlayerMode('floating')" title="Pop out into Draggable Floating Player">
+      <button class="btn-player-action-icon hide-on-mobile" (click)="setPlayerMode('floating')" title="Pop out into Draggable Floating Player">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
       </button>
 
-      <button class="btn-player-action-icon" [class.active]="activePlayerSheet() === 'lyrics'" (click)="toggleSheet('lyrics')" title="Synced Lyrics">
+      <button class="btn-player-action-icon hide-on-mobile" [class.active]="activePlayerSheet() === 'lyrics'" (click)="toggleSheet('lyrics')" title="Synced Lyrics">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
       </button>
 
-      <button class="btn-player-action-icon" [class.active]="activePlayerSheet() === 'queue'" (click)="toggleSheet('queue')" title="Up Next Queue">
+      <button class="btn-player-action-icon hide-on-mobile" [class.active]="activePlayerSheet() === 'queue'" (click)="toggleSheet('queue')" title="Up Next Queue">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
       </button>
 
-      <button class="btn-player-action-icon" (click)="player.toggleMute()" title="Mute">
+      <button class="btn-player-action-icon hide-on-mobile" (click)="player.toggleMute()" title="Mute">
         <svg *ngIf="!player.isMuted() && player.volume() > 0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
         <svg *ngIf="player.isMuted() || player.volume() === 0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
       </button>
 
       <input type="range" 
-             class="volume-slider" 
+             class="volume-slider hide-on-mobile" 
              min="0" 
              max="1" 
              step="0.01" 

@@ -2259,36 +2259,326 @@
   color: #ef4444;
 }
 
-/* MOBILE RESPONSIVENESS */
+/* =========================================================
+   RESPONSIVE DESIGN SYSTEM (MOBILE, IPAD, TABLET & DESKTOP)
+   ========================================================= */
+
+/* Desktop defaults for mobile player buttons */
+.mobile-player-play-btn,
+.mobile-player-next-btn {
+  display: none;
+}
+
 .mobile-bottom-nav {
   display: none;
 }
 
-@media (max-width: 900px) {
+/* Base Mobile & Touch Settings */
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+}
+
+html, body {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
+button, [role="button"], a, input {
+  touch-action: manipulation;
+}
+
+/* ==========================================
+   1. TABLETS & IPADS (769px to 1080px)
+   ========================================== */
+@media (min-width: 769px) and (max-width: 1080px) {
+  .app-sidebar {
+    width: 200px;
+    padding: 1.25rem 0.75rem;
+  }
+
+  .app-sidebar .app-title {
+    font-size: 16px;
+  }
+
+  .nav-btn {
+    padding: 9px 10px;
+    font-size: 13px;
+    gap: 10px;
+  }
+
+  .app-topbar {
+    padding: 1rem 1.5rem;
+  }
+
+  .grid-cards-container {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 16px;
+  }
+
+  .telemetry-deck-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+
+  .mood-cards-deck {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  }
+
+  .ai-table-header,
+  .ai-table-row {
+    grid-template-columns: 80px 1.3fr 1fr 1.1fr 1fr 100px;
+    padding: 12px 14px;
+  }
+
+  .fullscreen-sheet {
+    max-width: 580px;
+  }
+
+  .fs-artwork-image {
+    width: min(50vw, 340px);
+    height: min(50vw, 340px);
+  }
+}
+
+/* ==========================================
+   2. MOBILE & PHABLETS (<= 768px)
+   ========================================== */
+@media (max-width: 768px) {
   .app-sidebar {
     display: none;
   }
 
+  .app-container {
+    flex-direction: column;
+  }
+
+  .app-main {
+    width: 100%;
+    min-height: 100vh;
+    padding-bottom: calc(75px + var(--sab));
+  }
+
+  .app-container.has-docked-player .app-main {
+    padding-bottom: calc(145px + var(--sab));
+  }
+
+  /* TOPBAR ON MOBILE */
   .app-topbar {
-    padding: 1rem 1.25rem;
+    padding: 0.75rem 1rem;
+    gap: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .topbar-search-box {
+    max-width: none;
+    flex: 1;
+    height: 38px;
+  }
+
+  .topbar-search-box input {
+    font-size: 13px;
+  }
+
+  .topbar-actions {
+    gap: 8px;
+  }
+
+  .topbar-actions .btn-topbar-pill {
+    padding: 6px 12px;
+    font-size: 11px;
+  }
+
+  .topbar-actions .btn-topbar-pill span {
+    display: inline;
+  }
+
+  .topbar-user-profile {
+    padding: 4px;
+    border-radius: 50%;
+  }
+
+  .topbar-user-profile .topbar-username,
+  .topbar-user-profile .chevron-icon {
+    display: none;
+  }
+
+  .topbar-avatar {
+    width: 32px;
+    height: 32px;
+  }
+
+  .user-dropdown-menu {
+    right: 0;
+    top: calc(100% + 8px);
+    width: 260px;
   }
 
   .filter-pills-bar {
-    padding: 0.5rem 1.25rem 0.25rem;
+    padding: 0.5rem 1rem 0.25rem;
+    gap: 6px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
+  .filter-pill {
+    padding: 5px 12px;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  /* PAGE CONTENT */
   .page-content {
-    padding: 1.25rem;
+    padding: 1rem;
   }
 
-  .mobile-only {
-    display: flex;
+  .hero-banner-card {
+    padding: 1.5rem 1.25rem;
+    border-radius: var(--radius-md);
   }
 
+  .hero-headline {
+    font-size: 22px;
+  }
+
+  .hero-subline {
+    font-size: 13px;
+  }
+
+  .content-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .content-title {
+    font-size: 22px;
+  }
+
+  .content-sub {
+    font-size: 13px;
+  }
+
+  /* MEDIA CARDS GRID */
+  .grid-cards-container {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .media-card {
+    padding: 10px;
+  }
+
+  .card-title {
+    font-size: 13px;
+  }
+
+  .card-sub {
+    font-size: 11px;
+  }
+
+  .card-floating-play {
+    width: 34px;
+    height: 34px;
+    font-size: 12px;
+    opacity: 0.9;
+    transform: translateY(0);
+  }
+
+  .mood-cards-deck {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .mood-badge-card {
+    padding: 1rem;
+    gap: 8px;
+  }
+
+  .mood-emoji {
+    font-size: 20px;
+  }
+
+  .mood-label {
+    font-size: 13px;
+  }
+
+  /* TRACK TABLES */
+  .col-num {
+    display: none;
+  }
+
+  .table-header-row {
+    padding: 8px 8px;
+  }
+
+  .table-body-row {
+    padding: 8px 8px;
+    min-height: 52px;
+  }
+
+  .title-primary {
+    font-size: 13px;
+  }
+
+  .title-secondary {
+    font-size: 11px;
+  }
+
+  .col-actions {
+    gap: 2px;
+  }
+
+  .btn-row-action {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
+  /* DOCKED BOTTOM PLAYER (MOBILE FLOATING ISLAND) */
   .app-player-bar {
-    bottom: 60px;
-    height: 70px;
-    padding: 0 1rem;
+    position: fixed;
+    bottom: calc(58px + var(--sab));
+    left: 8px;
+    right: 8px;
+    height: 64px;
+    background: rgba(18, 22, 34, 0.96);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    padding: 0 10px;
+    box-shadow: 0 10px 32px rgba(0, 0, 0, 0.65);
+    z-index: 105;
+  }
+
+  .player-left-block {
+    flex: 1;
+    min-width: 0;
+    gap: 8px;
+  }
+
+  .player-thumb {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+  }
+
+  .player-song-meta {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .song-title-text {
+    font-size: 13px;
+  }
+
+  .song-artist-text {
+    font-size: 11px;
   }
 
   .player-center-block {
@@ -2297,31 +2587,60 @@
 
   .player-right-block {
     width: auto;
+    gap: 8px;
   }
 
-  .player-right-block .volume-slider {
-    display: none;
+  .hide-on-mobile {
+    display: none !important;
   }
 
-  .draggable-player-popup {
-    width: calc(100% - 24px);
-    max-width: 360px;
+  .mobile-player-play-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--accent-red);
+    color: #fff;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 0 3px 12px rgba(255, 42, 42, 0.4);
   }
 
-  .slide-panel-drawer {
-    width: 100%;
-    bottom: 130px;
+  .mobile-player-play-btn:active {
+    transform: scale(0.92);
   }
 
+  .mobile-player-next-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+
+  .mobile-player-next-btn:active {
+    color: #fff;
+  }
+
+  /* MOBILE BOTTOM NAVIGATION BAR */
   .mobile-bottom-nav {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    height: 60px;
-    background: rgba(13, 15, 23, 0.98);
-    border-top: 1px solid var(--border);
-    backdrop-filter: blur(20px);
+    height: calc(56px + var(--sab));
+    padding-bottom: var(--sab);
+    background: rgba(13, 15, 23, 0.95);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
     display: flex;
     justify-content: space-around;
     align-items: center;
@@ -2334,13 +2653,154 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 3px;
+    justify-content: center;
+    gap: 2px;
     color: var(--text-muted);
     font-size: 10px;
     font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 8px;
+    transition: all 0.15s ease;
+    cursor: pointer;
+  }
+
+  .mob-btn:active {
+    transform: scale(0.92);
   }
 
   .mob-btn.active {
     color: var(--accent-red);
+  }
+
+  .mob-btn.active svg {
+    color: var(--accent-red);
+    stroke-width: 2.5;
+  }
+
+  /* AI ANALYTICS & TELEMETRY ON MOBILE */
+  .ai-hero-card {
+    padding: 1.5rem 1.25rem;
+  }
+
+  .ai-hero-title {
+    font-size: 22px;
+  }
+
+  .ai-hero-sub {
+    font-size: 13px;
+    margin-bottom: 1.25rem;
+  }
+
+  .btn-ai-trigger {
+    width: 100%;
+    justify-content: center;
+    padding: 12px;
+  }
+
+  .telemetry-deck-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .hud-card {
+    padding: 1rem;
+  }
+
+  .hud-value {
+    font-size: 18px;
+  }
+
+  .hud-footer {
+    font-size: 11px;
+  }
+
+  .ai-runs-table {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .ai-table-header,
+  .ai-table-row {
+    min-width: 520px;
+    font-size: 12px;
+    padding: 10px 14px;
+  }
+
+  /* FULLSCREEN PLAYER ON MOBILE */
+  .fullscreen-sheet {
+    padding: 1.5rem 1.25rem calc(1.5rem + var(--sab));
+  }
+
+  .fs-artwork-image {
+    width: min(68vw, 290px);
+    height: min(68vw, 290px);
+    border-radius: 16px;
+  }
+
+  .fs-title {
+    font-size: 20px;
+  }
+
+  .fs-artist {
+    font-size: 14px;
+  }
+
+  .fs-btn-play {
+    width: 58px;
+    height: 58px;
+    font-size: 20px;
+  }
+
+  .fs-controls-cluster {
+    gap: 1.25rem;
+  }
+
+  /* FLOATING DRAGGABLE PLAYER ON MOBILE */
+  .draggable-player-popup {
+    width: calc(100% - 20px) !important;
+    left: 10px !important;
+    max-width: none;
+  }
+
+  /* SLIDE PANEL (LYRICS & QUEUE) ON MOBILE */
+  .slide-panel-drawer {
+    width: 100%;
+    left: 0;
+    right: 0;
+    bottom: calc(56px + var(--sab));
+    height: 60vh;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    border-radius: 20px 20px 0 0;
+  }
+
+  /* MODALS ON MOBILE */
+  .modal-dialog {
+    width: calc(100% - 24px);
+    padding: 1.5rem 1.25rem;
+    border-radius: 18px;
+  }
+}
+
+/* ==========================================
+   3. EXTRA COMPACT SCREENS (<= 400px, iPhone SE)
+   ========================================== */
+@media (max-width: 400px) {
+  .grid-cards-container {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .telemetry-deck-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mob-btn span {
+    font-size: 9px;
+  }
+
+  .fs-artwork-image {
+    width: 240px;
+    height: 240px;
   }
 }
