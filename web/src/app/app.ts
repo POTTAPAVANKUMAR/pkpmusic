@@ -123,6 +123,9 @@ export class App implements OnInit {
   // Server Telemetry
   telemetry = signal<ServerTelemetry | null>(null);
 
+  // User Profile Dropdown Menu
+  showProfileMenu = signal<boolean>(false);
+
   // Toast Notification
   toastMessage = signal<string | null>(null);
   private toastTimer: any = null;
@@ -362,7 +365,18 @@ export class App implements OnInit {
     this.player.pause();
     this.dashboardSections.set([]);
     this.exploreSections.set([]);
+    this.showProfileMenu.set(false);
     this.showToast('Signed out of PKP Music');
+  }
+
+  toggleProfileMenu(e?: Event) {
+    if (e) e.stopPropagation();
+    this.showProfileMenu.update(v => !v);
+  }
+
+  @HostListener('document:click')
+  onDocumentClick() {
+    this.showProfileMenu.set(false);
   }
 
   // --- NAVIGATION & TABS ---

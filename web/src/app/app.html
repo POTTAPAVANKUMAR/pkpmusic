@@ -173,7 +173,7 @@
 <!-- ==========================================
      MAIN APPLICATION (AUTHENTICATED WEB UI)
      ========================================== -->
-<div class="app-container" *ngIf="auth.isAuthenticated()">
+<div class="app-container" *ngIf="auth.isAuthenticated()" [class.has-docked-player]="player.currentSong() && playerMode() === 'docked'">
 
   <!-- LEFT SIDEBAR -->
   <aside class="app-sidebar">
@@ -289,8 +289,8 @@
       <div class="topbar-actions">
         <!-- Floating Popup Player Toggle -->
         <button class="btn-topbar-pill" *ngIf="player.currentSong()" (click)="setPlayerMode(playerMode() === 'docked' ? 'floating' : 'docked')">
-          <span *ngIf="playerMode() === 'docked'">🚀 Pop Out Player</span>
-          <span *ngIf="playerMode() === 'floating'">📌 Dock Player</span>
+          <span *ngIf="playerMode() === 'docked'">🚀 Pop Out</span>
+          <span *ngIf="playerMode() === 'floating'">📌 Dock</span>
         </button>
 
         <button class="btn-topbar-pill" (click)="showNewPlaylistModal.set(true)">
@@ -298,9 +298,43 @@
           <span>New Playlist</span>
         </button>
 
-        <button class="btn-topbar-icon mobile-only" (click)="handleLogout()" title="Sign Out">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-        </button>
+        <!-- User Profile Avatar Chip & Dropdown -->
+        <div class="topbar-user-profile" (click)="toggleProfileMenu($event)" title="Account & Settings">
+          <img [src]="auth.currentUser()?.profile_picture_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80'" alt="Avatar" class="topbar-avatar" />
+          <span class="topbar-username">{{ getUserDisplayName() }}</span>
+          <svg class="chevron-icon" [class.open]="showProfileMenu()" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+
+          <!-- Profile Dropdown Menu -->
+          <div class="user-dropdown-menu" *ngIf="showProfileMenu()" (click)="$event.stopPropagation()">
+            <div class="dropdown-header">
+              <img [src]="auth.currentUser()?.profile_picture_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80'" alt="Avatar" class="dropdown-avatar" />
+              <div class="dropdown-user-details">
+                <span class="dropdown-name">{{ getUserDisplayName() }}</span>
+                <span class="dropdown-email">{{ auth.currentUser()?.email || 'Authenticated User' }}</span>
+                <span class="dropdown-badge">● Pro Streamer</span>
+              </div>
+            </div>
+
+            <div class="dropdown-divider"></div>
+
+            <button class="dropdown-item" (click)="showProfileMenu.set(false); setTab('server')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"></rect><rect width="20" height="8" x="2" y="14" rx="2" ry="2"></rect></svg>
+              <span>Server Diagnostics</span>
+            </button>
+
+            <button class="dropdown-item" (click)="showProfileMenu.set(false); showNewPlaylistModal.set(true)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              <span>Create Playlist</span>
+            </button>
+
+            <div class="dropdown-divider"></div>
+
+            <button class="dropdown-item logout" (click)="showProfileMenu.set(false); handleLogout()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+              <span>Sign Out</span>
+            </button>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -800,6 +834,9 @@
         </span>
       </button>
       <button class="btn-player-action-icon" (click)="$event.stopPropagation(); openAddToPlaylist(player.currentSong()!)" title="Add to Playlist">+</button>
+      <button class="btn-player-action-icon" (click)="$event.stopPropagation(); downloadSong(player.currentSong()!)" title="Download to Device">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+      </button>
     </div>
 
     <!-- Center Playback Controls -->
@@ -925,6 +962,9 @@
             {{ storage.isSongLiked(player.currentSong()!.id) ? '♥' : '♡' }}
           </span>
         </button>
+        <button class="btn-popup-heart" (click)="downloadSong(player.currentSong()!)" title="Download to Device">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        </button>
       </div>
 
       <!-- Scrubber Line -->
@@ -1040,10 +1080,13 @@
         <h1 class="fs-title">{{ player.currentSong()?.title }}</h1>
         <h2 class="fs-artist">{{ player.currentSong()?.artist }}</h2>
       </div>
-      <button class="fs-btn-heart" (click)="toggleLike(player.currentSong()!)">
+      <button class="fs-btn-heart" (click)="toggleLike(player.currentSong()!)" title="Like">
         <span [style.color]="storage.isSongLiked(player.currentSong()!.id) ? 'var(--accent-red)' : '#fff'">
           {{ storage.isSongLiked(player.currentSong()!.id) ? '♥' : '♡' }}
         </span>
+      </button>
+      <button class="fs-btn-heart" (click)="downloadSong(player.currentSong()!)" title="Download Track to Device">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
       </button>
     </div>
 
