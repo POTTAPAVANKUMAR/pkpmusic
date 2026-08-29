@@ -47,6 +47,10 @@ export class ApiService {
     return this.http.post(`${this.baseUrl}/auth/forgot-password`, { email });
   }
 
+  verifyOtp(email: string, otp: string, new_password: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/auth/verify-otp`, { email, otp, new_password });
+  }
+
   getMe(): Observable<User | null> {
     return this.http.get<User>(`${this.baseUrl}/auth/me`, { headers: this.getAuthHeaders() }).pipe(
       catchError(() => of(null))

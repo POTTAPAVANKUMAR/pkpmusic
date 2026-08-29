@@ -1,5 +1,5 @@
 <!-- ==========================================
-     AUTHENTICATION SCREEN (iOS LoginView / RegisterView)
+     AUTHENTICATION SCREEN (Strict iOS LoginView, RegisterView, ForgotPasswordView)
      ========================================== -->
 <div class="auth-root" *ngIf="!auth.isAuthenticated()">
   <div class="ambient-glow"></div>
@@ -7,100 +7,152 @@
   <div class="auth-container">
     <div class="auth-card">
       
-      <!-- App Header / Logo -->
-      <div class="auth-logo-wrap">
-        <div class="spider-logo-icon">🎵</div>
-        <h1 class="spider-glitch-title">PKP Music</h1>
-        <p class="auth-subtitle">High-Fidelity Streaming & Cloud Music Hub</p>
+      <!-- ==================== 1. LOGIN VIEW ==================== -->
+      <div *ngIf="authMode() === 'login'">
+        <!-- App Header / Logo -->
+        <div class="auth-logo-wrap">
+          <div class="spider-logo-icon">🎵</div>
+          <h1 class="spider-glitch-title">PKP Music</h1>
+          <p class="auth-subtitle">Welcome back! Sign in to continue.</p>
+        </div>
+
+        <!-- Error & Success Alerts -->
+        <div class="auth-alert error" *ngIf="authError()">
+          <span>⚠️ {{ authError() }}</span>
+        </div>
+        <div class="auth-alert success" *ngIf="authSuccessMsg()">
+          <span>✓ {{ authSuccessMsg() }}</span>
+        </div>
+
+        <form class="auth-form" (ngSubmit)="handleLogin()">
+          <div class="input-group">
+            <span class="input-icon">✉️</span>
+            <input type="email" placeholder="Email" [(ngModel)]="loginEmail" name="email" required autocomplete="email" />
+          </div>
+
+          <div class="input-group">
+            <span class="input-icon">🔒</span>
+            <input type="password" placeholder="Password" [(ngModel)]="loginPassword" name="password" required autocomplete="current-password" />
+          </div>
+
+          <div class="auth-row-extra">
+            <button type="button" class="btn-link" (click)="authMode.set('forgot'); authError.set(null); authSuccessMsg.set(null)">Forgot Password?</button>
+          </div>
+
+          <button type="submit" class="btn-primary-spider" [disabled]="authLoading()">
+            <span *ngIf="!authLoading()">Sign In</span>
+            <span *ngIf="authLoading()" class="spinner"></span>
+          </button>
+
+          <button type="button" class="btn-outline-spider" (click)="authMode.set('register'); authError.set(null); authSuccessMsg.set(null)">
+            <span>Create Account</span>
+          </button>
+        </form>
       </div>
 
-      <!-- Auth Navigation Mode Switcher -->
-      <div class="auth-tabs">
-        <button class="auth-tab-btn" [class.active]="authMode() === 'login'" (click)="authMode.set('login'); authError.set(null)">Sign In</button>
-        <button class="auth-tab-btn" [class.active]="authMode() === 'register'" (click)="authMode.set('register'); authError.set(null)">Create Account</button>
-        <button class="auth-tab-btn" [class.active]="authMode() === 'passcode'" (click)="authMode.set('passcode'); authError.set(null)">Passcode</button>
+      <!-- ==================== 2. REGISTER VIEW ==================== -->
+      <div *ngIf="authMode() === 'register'">
+        <div class="auth-modal-header">
+          <button type="button" class="btn-close-modal" (click)="authMode.set('login')">✕</button>
+          <h2 class="modal-heading">Create Account</h2>
+        </div>
+
+        <div class="auth-alert error" *ngIf="authError()">
+          <span>⚠️ {{ authError() }}</span>
+        </div>
+
+        <form class="auth-form" (ngSubmit)="handleRegister()">
+          <div class="input-group">
+            <span class="input-icon">👤</span>
+            <input type="text" placeholder="Username" [(ngModel)]="registerUsername" name="username" required autocomplete="name" />
+          </div>
+
+          <div class="input-group">
+            <span class="input-icon">✉️</span>
+            <input type="email" placeholder="Email" [(ngModel)]="registerEmail" name="email" required autocomplete="email" />
+          </div>
+
+          <div class="input-group">
+            <span class="input-icon">🔒</span>
+            <input type="password" placeholder="Password" [(ngModel)]="registerPassword" name="password" required autocomplete="new-password" />
+          </div>
+
+          <button type="submit" class="btn-primary-spider" [disabled]="authLoading()">
+            <span *ngIf="!authLoading()">Sign Up</span>
+            <span *ngIf="authLoading()" class="spinner"></span>
+          </button>
+
+          <button type="button" class="btn-secondary" (click)="authMode.set('login')">
+            Already have an account? Sign In
+          </button>
+        </form>
       </div>
 
-      <!-- Error / Success Alerts -->
-      <div class="auth-alert error" *ngIf="authError()">
-        <span>⚠️ {{ authError() }}</span>
+      <!-- ==================== 3. FORGOT PASSWORD (STEP 1: SEND OTP) ==================== -->
+      <div *ngIf="authMode() === 'forgot'">
+        <div class="auth-modal-header">
+          <button type="button" class="btn-close-modal" (click)="authMode.set('login')">✕</button>
+          <h2 class="modal-heading">Reset Password</h2>
+        </div>
+
+        <p class="auth-desc-hint">Enter your account email to receive a password reset OTP.</p>
+
+        <div class="auth-alert error" *ngIf="authError()">
+          <span>⚠️ {{ authError() }}</span>
+        </div>
+
+        <form class="auth-form" (ngSubmit)="handleForgotPasswordSendOTP()">
+          <div class="input-group">
+            <span class="input-icon">✉️</span>
+            <input type="email" placeholder="Enter your email" [(ngModel)]="resetEmail" name="resetEmail" required autocomplete="email" />
+          </div>
+
+          <button type="submit" class="btn-primary-spider" [disabled]="authLoading()">
+            <span *ngIf="!authLoading()">Send OTP</span>
+            <span *ngIf="authLoading()" class="spinner"></span>
+          </button>
+
+          <button type="button" class="btn-secondary" (click)="authMode.set('login')">
+            Back to Sign In
+          </button>
+        </form>
       </div>
-      <div class="auth-alert success" *ngIf="authSuccessMsg()">
-        <span>✓ {{ authSuccessMsg() }}</span>
+
+      <!-- ==================== 4. FORGOT PASSWORD (STEP 2: VERIFY OTP) ==================== -->
+      <div *ngIf="authMode() === 'verifyOtp'">
+        <div class="auth-modal-header">
+          <button type="button" class="btn-close-modal" (click)="authMode.set('login')">✕</button>
+          <h2 class="modal-heading">Enter OTP</h2>
+        </div>
+
+        <div class="auth-alert success" *ngIf="authSuccessMsg()">
+          <span>✓ {{ authSuccessMsg() }}</span>
+        </div>
+        <div class="auth-alert error" *ngIf="authError()">
+          <span>⚠️ {{ authError() }}</span>
+        </div>
+
+        <form class="auth-form" (ngSubmit)="handleVerifyOTPAndResetPassword()">
+          <div class="input-group">
+            <span class="input-icon">🔑</span>
+            <input type="text" placeholder="6-Digit OTP" [(ngModel)]="resetOtp" name="resetOtp" required />
+          </div>
+
+          <div class="input-group">
+            <span class="input-icon">🔒</span>
+            <input type="password" placeholder="New Password" [(ngModel)]="resetNewPassword" name="resetNewPassword" required />
+          </div>
+
+          <button type="submit" class="btn-primary-spider" [disabled]="authLoading()">
+            <span *ngIf="!authLoading()">Reset Password</span>
+            <span *ngIf="authLoading()" class="spinner"></span>
+          </button>
+
+          <button type="button" class="btn-secondary" (click)="authMode.set('login')">
+            Cancel
+          </button>
+        </form>
       </div>
-
-      <!-- 1. SIGN IN FORM -->
-      <form class="auth-form" *ngIf="authMode() === 'login'" (ngSubmit)="handleLogin()">
-        <div class="input-group">
-          <span class="input-icon">✉️</span>
-          <input type="email" placeholder="Email Address" [(ngModel)]="loginEmail" name="email" required autocomplete="email" />
-        </div>
-
-        <div class="input-group">
-          <span class="input-icon">🔒</span>
-          <input type="password" placeholder="Password" [(ngModel)]="loginPassword" name="password" required autocomplete="current-password" />
-        </div>
-
-        <div class="auth-row-extra">
-          <button type="button" class="btn-link" (click)="authMode.set('forgot')">Forgot Password?</button>
-        </div>
-
-        <button type="submit" class="btn-primary-spider" [disabled]="authLoading()">
-          <span *ngIf="!authLoading()">Sign In</span>
-          <span *ngIf="authLoading()" class="spinner"></span>
-        </button>
-      </form>
-
-      <!-- 2. CREATE ACCOUNT FORM -->
-      <form class="auth-form" *ngIf="authMode() === 'register'" (ngSubmit)="handleRegister()">
-        <div class="input-group">
-          <span class="input-icon">👤</span>
-          <input type="text" placeholder="Full Name" [(ngModel)]="registerName" name="name" required />
-        </div>
-
-        <div class="input-group">
-          <span class="input-icon">✉️</span>
-          <input type="email" placeholder="Email Address" [(ngModel)]="registerEmail" name="email" required />
-        </div>
-
-        <div class="input-group">
-          <span class="input-icon">🔒</span>
-          <input type="password" placeholder="Password (min. 6 characters)" [(ngModel)]="registerPassword" name="password" required />
-        </div>
-
-        <button type="submit" class="btn-primary-spider" [disabled]="authLoading()">
-          <span *ngIf="!authLoading()">Create Account</span>
-          <span *ngIf="authLoading()" class="spinner"></span>
-        </button>
-      </form>
-
-      <!-- 3. PASSCODE QUICK UNLOCK -->
-      <form class="auth-form" *ngIf="authMode() === 'passcode'" (ngSubmit)="handlePasscodeUnlock()">
-        <p class="passcode-hint">Enter your 10-digit authorization passcode to enter instantly.</p>
-        <div class="input-group">
-          <span class="input-icon">🔑</span>
-          <input type="password" placeholder="••••••••••" maxlength="10" [(ngModel)]="passcodeInput" name="passcode" required autofocus />
-        </div>
-
-        <button type="submit" class="btn-primary-spider">
-          <span>Unlock With Passcode</span>
-        </button>
-      </form>
-
-      <!-- 4. FORGOT PASSWORD -->
-      <form class="auth-form" *ngIf="authMode() === 'forgot'" (ngSubmit)="handleForgotPassword()">
-        <p class="passcode-hint">Enter your email to receive a password reset code.</p>
-        <div class="input-group">
-          <span class="input-icon">✉️</span>
-          <input type="email" placeholder="Email Address" [(ngModel)]="loginEmail" name="email" required />
-        </div>
-
-        <button type="submit" class="btn-primary-spider" [disabled]="authLoading()">
-          <span>Send Reset OTP</span>
-        </button>
-
-        <button type="button" class="btn-secondary" (click)="authMode.set('login')">Back to Sign In</button>
-      </form>
 
     </div>
   </div>
@@ -174,8 +226,8 @@
       <div class="user-avatar-wrap">
         <img [src]="auth.currentUser()?.profile_picture_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80'" alt="User Avatar" class="user-avatar" />
         <div class="user-info">
-          <div class="user-name">{{ auth.currentUser()?.name || 'Pavan Kumar' }}</div>
-          <div class="user-role">Online · Hi-Fi</div>
+          <div class="user-name">{{ auth.currentUser()?.name || auth.currentUser()?.email || 'User' }}</div>
+          <div class="user-role">Authenticated · Hi-Fi</div>
         </div>
       </div>
       <button class="btn-logout" (click)="handleLogout()" title="Sign Out">
@@ -187,7 +239,7 @@
   <!-- MAIN SCROLLABLE CONTENT -->
   <main class="main-content">
     
-    <!-- TOP HEADER: SEARCH & CATEGORY PILLS -->
+    <!-- TOP HEADER: SEARCH & PROFILE -->
     <header class="top-header">
       <div class="search-bar-wrap">
         <span class="search-icon">🔍</span>
@@ -212,7 +264,7 @@
       </div>
     </header>
 
-    <!-- CATEGORY PILLS ROW (TELUGU, ENGLISH, TAMIL, HINDI, POP, R&B, ETC.) -->
+    <!-- CATEGORY PILLS ROW (TELUGU, ENGLISH, TAMIL, HINDI, POP, R&B, ARTISTS, ALBUMS) -->
     <div class="category-pills-row" *ngIf="selectedTab() === 'home' && !isSearching()">
       <button class="cat-pill" *ngFor="let cat of categories" (click)="performSearch(cat.query)">
         <span>{{ cat.icon }}</span>
@@ -479,7 +531,7 @@
       </div>
     </div>
 
-    <!-- ARTIST DETAIL MODAL / VIEW -->
+    <!-- ARTIST DETAIL VIEW -->
     <div class="detail-overlay-view" *ngIf="selectedArtist()">
       <button class="btn-close-detail" (click)="selectedArtist.set(null)">✕ Close Artist</button>
       <div class="artist-header">
@@ -499,7 +551,7 @@
       </div>
     </div>
 
-    <!-- ALBUM DETAIL MODAL / VIEW -->
+    <!-- ALBUM DETAIL VIEW -->
     <div class="detail-overlay-view" *ngIf="selectedAlbum()">
       <button class="btn-close-detail" (click)="selectedAlbum.set(null)">✕ Close Album</button>
       <div class="artist-header">

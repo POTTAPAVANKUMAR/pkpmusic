@@ -20,17 +20,17 @@ export class AuthService {
   }
 
   loadCurrentUser() {
-    this.api.getMe().subscribe(user => {
-      if (user) {
-        this.userSignal.set(user);
-      } else {
-        // Fallback user if token is local session
-        this.userSignal.set({
-          id: 1,
-          email: 'admin@pottapk.win',
-          name: 'Pavan Kumar Potta',
-          profile_picture_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80'
-        });
+    this.api.getMe().subscribe({
+      next: (user) => {
+        if (user) {
+          this.userSignal.set(user);
+        } else {
+          // Token invalid or expired
+          this.logout();
+        }
+      },
+      error: () => {
+        this.logout();
       }
     });
   }
@@ -43,20 +43,6 @@ export class AuthService {
     } else {
       this.loadCurrentUser();
     }
-  }
-
-  loginWithPasscode(passcode: string): boolean {
-    if (passcode === '5139147720') {
-      const mockToken = 'pkp_passcode_session_' + Date.now();
-      this.setSession(mockToken, {
-        id: 1,
-        email: 'admin@pottapk.win',
-        name: 'Pavan Kumar Potta',
-        profile_picture_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80'
-      });
-      return true;
-    }
-    return false;
   }
 
   logout() {

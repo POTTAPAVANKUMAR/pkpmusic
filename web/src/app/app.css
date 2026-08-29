@@ -219,11 +219,58 @@
   cursor: pointer;
 }
 
-.passcode-hint {
+.btn-outline-spider {
+  background: transparent;
+  border: 2px solid var(--spider-neon-red);
+  color: var(--spider-neon-red);
+  border-radius: 14px;
+  padding: 13px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-outline-spider:hover {
+  background: rgba(255, 42, 42, 0.12);
+  transform: translateY(-2px);
+}
+
+.auth-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 1.5rem;
+}
+
+.btn-close-modal {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  color: #fff;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.modal-heading {
+  font-size: 24px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.auth-desc-hint {
   font-size: 13px;
   color: var(--text-muted);
-  text-align: center;
-  margin-bottom: 4px;
+  margin-bottom: 1.25rem;
 }
 
 /* --- MAIN APPLICATION LAYOUT --- */

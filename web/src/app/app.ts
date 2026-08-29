@@ -13,12 +13,11 @@ import {
   ArtistDetail, 
   AlbumDetail, 
   AlbumSearchResult, 
-  ArtistSearchResult,
-  CustomPlaylist, 
+  ArtistSearchResult, 
   ServerTelemetry 
 } from './models/music.model';
 
-type AppTab = 'home' | 'explore' | 'library' | 'history' | 'offline' | 'server' | 'api' | 'db' | 'logs';
+type AppTab = 'home' | 'explore' | 'library' | 'history' | 'offline' | 'server';
 type SearchType = 'songs' | 'albums' | 'artists';
 
 @Component({
@@ -29,20 +28,25 @@ type SearchType = 'songs' | 'albums' | 'artists';
   styleUrls: ['./app.css']
 })
 export class App implements OnInit {
-  // Auth & Tab State
+  // Tab State
   selectedTab = signal<AppTab>('home');
   
-  // Auth Form State
-  authMode = signal<'login' | 'register' | 'passcode' | 'forgot'>('login');
+  // Strict Mobile App Auth State (Matching LoginView, RegisterView, ForgotPasswordView)
+  authMode = signal<'login' | 'register' | 'forgot' | 'verifyOtp'>('login');
   loginEmail = signal<string>('');
   loginPassword = signal<string>('');
-  registerName = signal<string>('');
+  
+  registerUsername = signal<string>('');
   registerEmail = signal<string>('');
   registerPassword = signal<string>('');
-  passcodeInput = signal<string>('');
+  
+  resetEmail = signal<string>('');
+  resetOtp = signal<string>('');
+  resetNewPassword = signal<string>('');
+
   authError = signal<string | null>(null);
-  authLoading = signal<boolean>(false);
   authSuccessMsg = signal<string | null>(null);
+  authLoading = signal<boolean>(false);
 
   // Search State
   searchQuery = signal<string>('');
@@ -115,39 +119,50 @@ export class App implements OnInit {
     }
   }
 
-  // --- AUTH METHODS ---
+  // --- MOBILE APP AUTHENTICATION FLOWS (1:1 with iOS) ---
   handleLogin() {
-    if (!this.loginEmail() || !this.loginPassword()) {
-      this.authError.set('Please enter both email and password');
+    const email = this.loginEmail().trim().toLowerCase();
+    const password = this.loginPassword();
+
+    if (!email || !password) {
+      this.authError.set('Please enter email and password');
       return;
     }
+
     this.authLoading.set(true);
     this.authError.set(null);
+    this.authSuccessMsg.set(null);
 
-    this.api.login(this.loginEmail(), this.loginPassword()).subscribe({
+    this.api.login(email, password).subscribe({
       next: (res) => {
         this.auth.setSession(res.access_token);
         this.authLoading.set(false);
       },
       error: (err) => {
         this.authLoading.set(false);
-        this.authError.set(err.error?.detail || 'Invalid email or password');
+        this.authError.set(err.error?.detail || 'Invalid credentials');
       }
     });
   }
 
   handleRegister() {
-    if (!this.registerEmail() || !this.registerPassword()) {
-      this.authError.set('Please complete all fields');
+    const username = this.registerUsername().trim();
+    const email = this.registerEmail().trim().toLowerCase();
+    const password = this.registerPassword();
+
+    if (!username || !email || !password) {
+      this.authError.set('Please fill out all fields');
       return;
     }
+
     this.authLoading.set(true);
     this.authError.set(null);
+    this.authSuccessMsg.set(null);
 
-    this.api.register(this.registerName(), this.registerEmail(), this.registerPassword()).subscribe({
+    this.api.register(username, email, password).subscribe({
       next: () => {
-        // Auto-login after registration
-        this.api.login(this.registerEmail(), this.registerPassword()).subscribe({
+        // Automatically login the user after successful registration
+        this.api.login(email, password).subscribe({
           next: (res) => {
             this.auth.setSession(res.access_token);
             this.authLoading.set(false);
@@ -155,7 +170,7 @@ export class App implements OnInit {
           error: () => {
             this.authLoading.set(false);
             this.authMode.set('login');
-            this.authSuccessMsg.set('Account created! Please sign in.');
+            this.authSuccessMsg.set('Account created! Please sign in with your password.');
           }
         });
       },
@@ -166,30 +181,51 @@ export class App implements OnInit {
     });
   }
 
-  handlePasscodeUnlock() {
-    const success = this.auth.loginWithPasscode(this.passcodeInput());
-    if (success) {
-      this.authError.set(null);
-    } else {
-      this.authError.set('Incorrect passcode. Please try again.');
-      this.passcodeInput.set('');
-    }
-  }
-
-  handleForgotPassword() {
-    if (!this.loginEmail()) {
-      this.authError.set('Please enter your email first');
+  handleForgotPasswordSendOTP() {
+    const email = this.resetEmail().trim().toLowerCase();
+    if (!email) {
+      this.authError.set('Please enter your account email');
       return;
     }
+
     this.authLoading.set(true);
-    this.api.forgotPassword(this.loginEmail()).subscribe({
+    this.authError.set(null);
+
+    this.api.forgotPassword(email).subscribe({
       next: () => {
         this.authLoading.set(false);
-        this.authSuccessMsg.set('If registered, password reset instructions have been sent.');
+        this.authSuccessMsg.set('OTP sent to your email (or check server logs)');
+        this.authMode.set('verifyOtp');
       },
-      error: () => {
+      error: (err) => {
         this.authLoading.set(false);
-        this.authSuccessMsg.set('If registered, password reset instructions have been sent.');
+        this.authError.set(err.error?.detail || 'Failed to request reset OTP');
+      }
+    });
+  }
+
+  handleVerifyOTPAndResetPassword() {
+    const email = this.resetEmail().trim().toLowerCase();
+    const otp = this.resetOtp().trim();
+    const newPass = this.resetNewPassword();
+
+    if (!email || !otp || !newPass) {
+      this.authError.set('Please enter OTP and new password');
+      return;
+    }
+
+    this.authLoading.set(true);
+    this.authError.set(null);
+
+    this.api.verifyOtp(email, otp, newPass).subscribe({
+      next: () => {
+        this.authLoading.set(false);
+        this.authMode.set('login');
+        this.authSuccessMsg.set('Password reset successfully! You can now sign in.');
+      },
+      error: (err) => {
+        this.authLoading.set(false);
+        this.authError.set(err.error?.detail || 'Invalid or expired OTP');
       }
     });
   }
