@@ -3,25 +3,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Pavan Kumar Potta — Server Portal</title>
+  <title>Pavan Kumar Potta — Server Hub</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-base: #0a0c10;
-      --bg-card: rgba(22, 27, 34, 0.7);
-      --bg-card-hover: rgba(30, 38, 48, 0.9);
+      --bg-base: #090a0f;
+      --bg-card: rgba(18, 22, 32, 0.75);
+      --bg-card-hover: rgba(26, 32, 48, 0.9);
       --border: rgba(255, 255, 255, 0.08);
       --border-hover: rgba(255, 255, 255, 0.2);
-      --text-main: #f0f6fc;
-      --text-muted: #8b949e;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
       --accent-red: #ef4444;
-      --accent-blue: #38bdf8;
+      --accent-cyan: #06b6d4;
       --accent-purple: #a855f7;
       --accent-emerald: #10b981;
       --accent-amber: #f59e0b;
-      --glow-pkp: rgba(239, 68, 68, 0.15);
+      --accent-blue: #3b82f6;
     }
     
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -30,17 +30,17 @@
       font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
       background-color: var(--bg-base);
       background-image: 
-        radial-gradient(at 0% 0%, rgba(239, 68, 68, 0.08) 0px, transparent 50%),
-        radial-gradient(at 100% 0%, rgba(56, 189, 248, 0.08) 0px, transparent 50%),
-        radial-gradient(at 50% 100%, rgba(168, 85, 247, 0.05) 0px, transparent 50%);
+        radial-gradient(at 5% 5%, rgba(239, 68, 68, 0.12) 0px, transparent 45%),
+        radial-gradient(at 95% 5%, rgba(6, 182, 212, 0.12) 0px, transparent 45%),
+        radial-gradient(at 50% 95%, rgba(168, 85, 247, 0.08) 0px, transparent 50%);
       color: var(--text-main);
       min-height: 100vh;
-      padding: 3rem 1.5rem;
+      padding: 2.5rem 1.25rem;
       line-height: 1.5;
     }
     
     .container {
-      max-width: 1080px;
+      max-width: 1040px;
       margin: 0 auto;
     }
     
@@ -48,14 +48,14 @@
     .header {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 2.5rem;
+      align-items: center;
+      margin-bottom: 2rem;
       flex-wrap: wrap;
-      gap: 1.5rem;
+      gap: 1.25rem;
     }
     
-    .header-title-area h1 {
-      font-size: 32px;
+    .brand-title {
+      font-size: 28px;
       font-weight: 800;
       letter-spacing: -0.02em;
       background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
@@ -63,8 +63,8 @@
       -webkit-text-fill-color: transparent;
     }
     
-    .header-subtitle {
-      font-size: 14px;
+    .brand-subtitle {
+      font-size: 13px;
       color: var(--text-muted);
       margin-top: 4px;
       display: flex;
@@ -73,59 +73,144 @@
     }
     
     .pulse-dot {
-      width: 9px;
-      height: 9px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       background: var(--accent-emerald);
-      box-shadow: 0 0 12px var(--accent-emerald);
+      box-shadow: 0 0 10px var(--accent-emerald);
       animation: pulse 2s infinite ease-in-out;
     }
     
     @keyframes pulse {
       0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.6; transform: scale(0.85); }
+      50% { opacity: 0.5; transform: scale(0.85); }
     }
     
-    .server-badge {
-      background: rgba(255, 255, 255, 0.03);
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    
+    .ssh-btn {
+      background: rgba(255, 255, 255, 0.04);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 0.6rem 1rem;
+      border-radius: 10px;
+      padding: 0.5rem 0.9rem;
       font-family: 'JetBrains Mono', monospace;
       font-size: 12px;
       color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
       backdrop-filter: blur(10px);
+      transition: all 0.15s ease;
     }
     
-    .server-badge span {
+    .ssh-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--border-hover);
+      color: #fff;
+    }
+    
+    .ssh-btn.copied {
+      border-color: var(--accent-emerald);
       color: var(--accent-emerald);
-      font-weight: 600;
     }
     
-    /* Section Labels */
-    .section-label {
+    /* Live Telemetry HUD */
+    .telemetry-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 2.25rem;
+    }
+    
+    .telem-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.1rem 1.25rem;
+      backdrop-filter: blur(16px);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      position: relative;
+    }
+    
+    .telem-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .telem-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #64748b;
+    }
+    
+    .telem-icon {
+      font-size: 14px;
+    }
+    
+    .telem-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+    }
+    
+    .telem-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .progress-bar-bg {
+      width: 100%;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+    
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.4s ease;
+    }
+    
+    /* Section Divider */
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 1.1rem;
+    }
+    
+    .section-title {
       font-size: 12px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.12em;
-      color: #64748b;
-      margin-bottom: 1rem;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      color: #94a3b8;
     }
     
-    .section-label::after {
-      content: "";
+    .section-line {
       flex: 1;
       height: 1px;
-      background: rgba(255, 255, 255, 0.05);
+      background: rgba(255, 255, 255, 0.06);
     }
     
-    /* Cards Grid */
+    /* App Grid */
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
       gap: 16px;
       margin-bottom: 2.5rem;
     }
@@ -134,7 +219,7 @@
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: 16px;
-      padding: 1.5rem;
+      padding: 1.35rem;
       text-decoration: none;
       color: inherit;
       backdrop-filter: blur(16px);
@@ -149,7 +234,7 @@
       background: var(--bg-card-hover);
       border-color: var(--border-hover);
       transform: translateY(-2px);
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 14px 32px rgba(0, 0, 0, 0.45);
     }
     
     .card::before {
@@ -163,43 +248,48 @@
       transition: opacity 0.2s ease;
     }
     
-    .card-pkp:hover::before {
-      background: linear-gradient(90deg, #ef4444, #f97316);
-      opacity: 1;
-    }
+    .card-music:hover::before { background: linear-gradient(90deg, #ef4444, #f97316); opacity: 1; }
+    .card-logs:hover::before { background: linear-gradient(90deg, #f59e0b, #eab308); opacity: 1; }
+    .card-db:hover::before { background: linear-gradient(90deg, #06b6d4, #3b82f6); opacity: 1; }
+    .card-docker:hover::before { background: linear-gradient(90deg, #10b981, #06b6d4); opacity: 1; }
+    .card-os:hover::before { background: linear-gradient(90deg, #a855f7, #ec4899); opacity: 1; }
     
-    .card-cloud:hover::before {
-      background: linear-gradient(90deg, #38bdf8, #818cf8);
-      opacity: 1;
-    }
-    
-    .card-infra:hover::before {
-      background: linear-gradient(90deg, #10b981, #38bdf8);
-      opacity: 1;
-    }
-    
-    .card-header {
+    .card-top {
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      margin-bottom: 1rem;
+      align-items: flex-start;
+      margin-bottom: 0.9rem;
     }
     
-    .card-icon-wrap {
-      width: 44px;
-      height: 44px;
+    .card-icon {
+      width: 42px;
+      height: 42px;
       border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 20px;
+      font-size: 19px;
     }
+    
+    .badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 999px;
+    }
+    
+    .badge-red { background: rgba(239, 68, 68, 0.12); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
+    .badge-amber { background: rgba(245, 158, 11, 0.12); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.2); }
+    .badge-cyan { background: rgba(6, 182, 212, 0.12); color: #67e8f9; border: 1px solid rgba(6, 182, 212, 0.2); }
+    .badge-emerald { background: rgba(16, 185, 129, 0.12); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.2); }
+    .badge-purple { background: rgba(168, 85, 247, 0.12); color: #d8b4fe; border: 1px solid rgba(168, 85, 247, 0.2); }
     
     .card-title {
       font-size: 17px;
       font-weight: 700;
       color: #fff;
-      margin-bottom: 4px;
+      margin-bottom: 3px;
     }
     
     .card-domain {
@@ -213,94 +303,93 @@
       font-size: 13px;
       color: var(--text-muted);
       line-height: 1.5;
-      margin-bottom: 1.25rem;
+      margin-bottom: 1.1rem;
       flex-grow: 1;
     }
     
-    .card-footer {
+    .card-bottom {
       display: flex;
-      align-items: center;
       justify-content: space-between;
+      align-items: center;
       margin-top: auto;
-      padding-top: 0.8rem;
+      padding-top: 0.75rem;
       border-top: 1px solid rgba(255, 255, 255, 0.04);
     }
     
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      font-size: 11px;
-      font-weight: 600;
-      padding: 3px 10px;
-      border-radius: 999px;
+    .card-meta {
+      font-size: 12px;
+      color: #64748b;
       font-family: 'JetBrains Mono', monospace;
     }
     
-    .badge-red { background: rgba(239, 68, 68, 0.12); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
-    .badge-blue { background: rgba(56, 189, 248, 0.12); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.2); }
-    .badge-purple { background: rgba(168, 85, 247, 0.12); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.2); }
-    .badge-emerald { background: rgba(16, 185, 129, 0.12); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.2); }
-    .badge-amber { background: rgba(245, 158, 11, 0.12); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.2); }
-    
-    .btn-arrow {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.05);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    .arrow-icon {
+      font-size: 14px;
       color: #94a3b8;
-      font-size: 13px;
-      transition: all 0.2s;
+      transition: transform 0.2s ease, color 0.2s ease;
     }
     
-    .card:hover .btn-arrow {
-      background: #fff;
-      color: #000;
-      transform: translateX(3px);
+    .card:hover .arrow-icon {
+      color: #fff;
+      transform: translateX(4px);
     }
     
-    /* Stats Bar */
-    .stats-bar {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 12px;
+    /* Services Table / Reference */
+    .reference-box {
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: 16px;
-      padding: 1.25rem;
+      padding: 1.5rem;
+      backdrop-filter: blur(16px);
       margin-bottom: 2.5rem;
     }
     
-    .stat-item {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-    
-    .stat-label {
-      font-size: 11px;
-      font-weight: 600;
-      color: #64748b;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-    
-    .stat-val {
-      font-size: 16px;
-      font-weight: 700;
-      color: #fff;
-      font-family: 'JetBrains Mono', monospace;
-    }
-    
-    .footer {
-      text-align: center;
+    .ref-table {
+      width: 100%;
+      border-collapse: collapse;
       font-size: 13px;
+      text-align: left;
+    }
+    
+    .ref-table th {
+      padding: 8px 12px;
+      color: #64748b;
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    
+    .ref-table td {
+      padding: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      color: var(--text-muted);
+    }
+    
+    .ref-table tr:last-child td {
+      border-bottom: none;
+    }
+    
+    .ref-table code {
+      font-family: 'JetBrains Mono', monospace;
+      color: #38bdf8;
+      font-size: 12px;
+      background: rgba(56, 189, 248, 0.08);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    
+    /* Footer */
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
       color: #475569;
-      padding-top: 2rem;
+      padding-top: 1.5rem;
       border-top: 1px solid rgba(255, 255, 255, 0.04);
+      flex-wrap: wrap;
+      gap: 10px;
     }
   </style>
 </head>
@@ -309,137 +398,310 @@
 
     <!-- Header -->
     <header class="header">
-      <div class="header-title-area">
-        <h1>Pavan Kumar Potta</h1>
-        <div class="header-subtitle">
+      <div>
+        <h1 class="brand-title">Pavan Kumar Potta</h1>
+        <div class="brand-subtitle">
           <span class="pulse-dot"></span>
-          <span>Raspberry Pi Server Node</span>
-          <span>·</span>
-          <span>pottapk.win</span>
+          <span>Raspberry Pi Server · pottapk.win</span>
         </div>
       </div>
-      <div class="server-badge">
-        Server IP: <span>192.168.1.151</span> &nbsp;·&nbsp; Tunnel: <span>Zero-Trust</span>
+      <div class="header-actions">
+        <button class="ssh-btn" id="sshBtn" onclick="copySSH()">
+          <span id="sshIcon">📋</span>
+          <span id="sshText">ssh pavankumarpotta@192.168.1.151</span>
+        </button>
       </div>
     </header>
 
-    <!-- Telemetry Overview Bar -->
-    <div class="stats-bar">
-      <div class="stat-item">
-        <div class="stat-label">Architecture</div>
-        <div class="stat-val">ARM64 (aarch64)</div>
+    <!-- Live Telemetry HUD -->
+    <div class="telemetry-grid">
+      <!-- CPU Temp -->
+      <div class="telem-card">
+        <div class="telem-header">
+          <span class="telem-label">SoC Temp</span>
+          <span class="telem-icon">🌡️</span>
+        </div>
+        <div class="telem-value" id="tempVal">-- °C</div>
+        <div class="telem-sub">Thermal Target &lt; 70°C</div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="tempBar" style="width: 50%; background: var(--accent-emerald);"></div>
+        </div>
       </div>
-      <div class="stat-item">
-        <div class="stat-label">Active Containers</div>
-        <div class="stat-val">10 Running</div>
+
+      <!-- CPU Usage -->
+      <div class="telem-card">
+        <div class="telem-header">
+          <span class="telem-label">CPU Load</span>
+          <span class="telem-icon">⚡</span>
+        </div>
+        <div class="telem-value" id="cpuVal">-- %</div>
+        <div class="telem-sub" id="cpuCores">4 Cores · ARM64</div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="cpuBar" style="width: 15%; background: var(--accent-cyan);"></div>
+        </div>
       </div>
-      <div class="stat-item">
-        <div class="stat-label">Storage</div>
-        <div class="stat-val">19.3 GB / 937 GB (2%)</div>
+
+      <!-- RAM -->
+      <div class="telem-card">
+        <div class="telem-header">
+          <span class="telem-label">Memory</span>
+          <span class="telem-icon">💾</span>
+        </div>
+        <div class="telem-value" id="ramVal">-- GB</div>
+        <div class="telem-sub" id="ramPct">-- % Used of 7.9 GB</div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="ramBar" style="width: 25%; background: var(--accent-purple);"></div>
+        </div>
       </div>
-      <div class="stat-item">
-        <div class="stat-label">SSL & Security</div>
-        <div class="stat-val" style="color: #10b981;">Cloudflare TLS 1.3</div>
+
+      <!-- NVMe / Disk -->
+      <div class="telem-card">
+        <div class="telem-header">
+          <span class="telem-label">Storage</span>
+          <span class="telem-icon">💽</span>
+        </div>
+        <div class="telem-value" id="diskVal">19.3 GB</div>
+        <div class="telem-sub" id="diskPct">2.1% Used of 937 GB</div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="diskBar" style="width: 2.1%; background: var(--accent-emerald);"></div>
+        </div>
+      </div>
+
+      <!-- Uptime -->
+      <div class="telem-card">
+        <div class="telem-header">
+          <span class="telem-label">Uptime</span>
+          <span class="telem-icon">⏱️</span>
+        </div>
+        <div class="telem-value" id="uptimeVal">83d 3h</div>
+        <div class="telem-sub">Continuous Active</div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" style="width: 100%; background: var(--accent-emerald);"></div>
+        </div>
       </div>
     </div>
 
-    <!-- PKP Music Stack -->
-    <div class="section-label">🎵 PKP Music Ecosystem</div>
+    <!-- Active Server Services -->
+    <div class="section-header">
+      <span class="section-title">Core Services & Applications</span>
+      <div class="section-line"></div>
+    </div>
+
     <div class="grid">
-      <a class="card card-pkp" href="https://pkpmusic.pottapk.win/docs" target="_blank">
-        <div class="card-header">
-          <div class="card-icon-wrap" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">⚡</div>
-          <span class="badge badge-red">Core Backend</span>
+      <!-- PKP Music API -->
+      <a class="card card-music" href="https://pkpmusic.pottapk.win/docs" target="_blank">
+        <div class="card-top">
+          <div class="card-icon" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">🎵</div>
+          <span class="badge badge-red">API & Docs</span>
         </div>
-        <div class="card-title">PKP Music API & Docs</div>
+        <div class="card-title">PKP Music API</div>
         <div class="card-domain">pkpmusic.pottapk.win</div>
-        <div class="card-desc">High-performance FastAPI streaming backend with YouTube integration, ML song recommendations, and system telemetry endpoints.</div>
-        <div class="card-footer">
-          <span style="font-size: 12px; color: #64748b;">FastAPI · Python 3.9</span>
-          <div class="btn-arrow">→</div>
+        <div class="card-desc">FastAPI streaming backend, ML recommendation engine, YouTube audio engine, and server management API.</div>
+        <div class="card-bottom">
+          <span class="card-meta">Port 8000 · FastAPI</span>
+          <span class="arrow-icon">→</span>
         </div>
       </a>
 
-      <a class="card card-pkp" href="https://pkpmusiclogs.pottapk.win" target="_blank">
-        <div class="card-header">
-          <div class="card-icon-wrap" style="background: rgba(249, 115, 22, 0.15); color: #f97316;">📜</div>
+      <!-- Dozzle Live Logs -->
+      <a class="card card-logs" href="https://pkpmusiclogs.pottapk.win" target="_blank">
+        <div class="card-top">
+          <div class="card-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">📜</div>
           <span class="badge badge-amber">Live Console</span>
         </div>
-        <div class="card-title">Real-time Docker Logs</div>
+        <div class="card-title">Live Docker Logs</div>
         <div class="card-domain">pkpmusiclogs.pottapk.win</div>
-        <div class="card-desc">Live streaming console output across all server microservices and Docker containers via Dozzle.</div>
-        <div class="card-footer">
-          <span style="font-size: 12px; color: #64748b;">Dozzle · Port 8888</span>
-          <div class="btn-arrow">→</div>
+        <div class="card-desc">Real-time terminal stream of all container logs, stdout/stderr, and runtime events via Dozzle.</div>
+        <div class="card-bottom">
+          <span class="card-meta">Port 8888 · Dozzle</span>
+          <span class="arrow-icon">→</span>
         </div>
       </a>
 
-      <a class="card card-pkp" href="https://postgresql.pottapk.win" target="_blank">
-        <div class="card-header">
-          <div class="card-icon-wrap" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;">🗄️</div>
-          <span class="badge badge-blue">Database GUI</span>
+      <!-- pgAdmin -->
+      <a class="card card-db" href="https://postgresql.pottapk.win" target="_blank">
+        <div class="card-top">
+          <div class="card-icon" style="background: rgba(6, 182, 212, 0.15); color: #06b6d4;">🗄️</div>
+          <span class="badge badge-cyan">Database GUI</span>
         </div>
         <div class="card-title">PostgreSQL pgAdmin</div>
         <div class="card-domain">postgresql.pottapk.win</div>
-        <div class="card-desc">Web management interface for the PostgreSQL database, tables, user favorites, and history.</div>
-        <div class="card-footer">
-          <span style="font-size: 12px; color: #64748b;">pgAdmin 4 · Postgres 15</span>
-          <div class="btn-arrow">→</div>
+        <div class="card-desc">Visual database manager for PostgreSQL 15: manage user tables, playlists, songs, and database schemas.</div>
+        <div class="card-bottom">
+          <span class="card-meta">Port 5050 · pgAdmin 4</span>
+          <span class="arrow-icon">→</span>
         </div>
       </a>
-    </div>
 
-    <!-- Server & Cloud Management -->
-    <div class="section-label">🖥️ Server & Cloud Infrastructure</div>
-    <div class="grid">
-      <a class="card card-infra" href="https://cloud.pottapk.win" target="_blank">
-        <div class="card-header">
-          <div class="card-icon-wrap" style="background: rgba(168, 85, 247, 0.15); color: #a855f7;">🏠</div>
+      <!-- Portainer -->
+      <a class="card card-docker" href="https://portainer.pottapk.win" target="_blank">
+        <div class="card-top">
+          <div class="card-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">📦</div>
+          <span class="badge badge-emerald">Docker GUI</span>
+        </div>
+        <div class="card-title">Portainer CE</div>
+        <div class="card-domain">portainer.pottapk.win</div>
+        <div class="card-desc">Complete container management interface to restart, view stats, inspect images, and manage compose stacks.</div>
+        <div class="card-bottom">
+          <span class="card-meta">Port 9000 · Docker CE</span>
+          <span class="arrow-icon">→</span>
+        </div>
+      </a>
+
+      <!-- CasaOS -->
+      <a class="card card-os" href="https://cloud.pottapk.win" target="_blank">
+        <div class="card-top">
+          <div class="card-icon" style="background: rgba(168, 85, 247, 0.15); color: #a855f7;">🏠</div>
           <span class="badge badge-purple">Server OS</span>
         </div>
         <div class="card-title">CasaOS Dashboard</div>
         <div class="card-domain">cloud.pottapk.win</div>
-        <div class="card-desc">Central home cloud OS dashboard to monitor CPU, RAM, disk space, and installed server apps.</div>
-        <div class="card-footer">
-          <span style="font-size: 12px; color: #64748b;">CasaOS · Port 80</span>
-          <div class="btn-arrow">→</div>
-        </div>
-      </a>
-
-      <a class="card card-infra" href="https://portainer.pottapk.win" target="_blank">
-        <div class="card-header">
-          <div class="card-icon-wrap" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">📦</div>
-          <span class="badge badge-emerald">Containers</span>
-        </div>
-        <div class="card-title">Portainer CE</div>
-        <div class="card-domain">portainer.pottapk.win</div>
-        <div class="card-desc">Visual Docker container manager to start, stop, restart, inspect, and update services.</div>
-        <div class="card-footer">
-          <span style="font-size: 12px; color: #64748b;">Portainer · Port 9000</span>
-          <div class="btn-arrow">→</div>
-        </div>
-      </a>
-
-      <a class="card card-cloud" href="https://app.pottapk.win" target="_blank">
-        <div class="card-header">
-          <div class="card-icon-wrap" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;">☁️</div>
-          <span class="badge badge-blue">Cloud Drive</span>
-        </div>
-        <div class="card-title">PiCloud Portal</div>
-        <div class="card-domain">app.pottapk.win</div>
-        <div class="card-desc">Self-hosted cloud storage and photos drive accessible securely from anywhere.</div>
-        <div class="card-footer">
-          <span style="font-size: 12px; color: #64748b;">PiCloud · Port 8080</span>
-          <div class="btn-arrow">→</div>
+        <div class="card-desc">Visual home server cloud dashboard with disk storage monitoring, widget shortcuts, and server stats.</div>
+        <div class="card-bottom">
+          <span class="card-meta">Port 80 · CasaOS</span>
+          <span class="arrow-icon">→</span>
         </div>
       </a>
     </div>
 
+    <!-- Quick Reference Table -->
+    <div class="section-header">
+      <span class="section-title">Network & Ingress Routing</span>
+      <div class="section-line"></div>
+    </div>
+
+    <div class="reference-box">
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th>Service</th>
+            <th>Subdomain</th>
+            <th>Local Target</th>
+            <th>Type</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="color: #fff; font-weight: 600;">Landing Portal</td>
+            <td><code>pottapk.win</code></td>
+            <td><code>http://localhost:3000</code></td>
+            <td>Nginx Web Portal</td>
+          </tr>
+          <tr>
+            <td style="color: #fff; font-weight: 600;">PKP Music Core</td>
+            <td><code>pkpmusic.pottapk.win</code></td>
+            <td><code>http://localhost:8000</code></td>
+            <td>FastAPI Backend</td>
+          </tr>
+          <tr>
+            <td style="color: #fff; font-weight: 600;">Dozzle Logs</td>
+            <td><code>pkpmusiclogs.pottapk.win</code></td>
+            <td><code>http://localhost:8888</code></td>
+            <td>Realtime Docker Logs</td>
+          </tr>
+          <tr>
+            <td style="color: #fff; font-weight: 600;">pgAdmin DB GUI</td>
+            <td><code>postgresql.pottapk.win</code></td>
+            <td><code>http://localhost:5050</code></td>
+            <td>PostgreSQL Web GUI</td>
+          </tr>
+          <tr>
+            <td style="color: #fff; font-weight: 600;">Portainer CE</td>
+            <td><code>portainer.pottapk.win</code></td>
+            <td><code>http://localhost:9000</code></td>
+            <td>Container Operations</td>
+          </tr>
+          <tr>
+            <td style="color: #fff; font-weight: 600;">CasaOS Dashboard</td>
+            <td><code>cloud.pottapk.win</code></td>
+            <td><code>http://localhost:80</code></td>
+            <td>Home Server Dashboard</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
     <!-- Footer -->
     <footer class="footer">
-      pottapk.win · Raspberry Pi 5 · Cloudflare Tunnel Protected · 2026
+      <div>Host: <strong>pavankumarpotta</strong> (192.168.1.151)</div>
+      <div>Secured via Cloudflare Zero-Trust Tunnel</div>
     </footer>
 
   </div>
+
+  <script>
+    // Copy SSH Command
+    function copySSH() {
+      const text = "ssh pavankumarpotta@192.168.1.151";
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById("sshBtn");
+        const icon = document.getElementById("sshIcon");
+        const sshText = document.getElementById("sshText");
+        btn.classList.add("copied");
+        icon.textContent = "✓";
+        sshText.textContent = "Copied to clipboard!";
+        setTimeout(() => {
+          btn.classList.remove("copied");
+          icon.textContent = "📋";
+          sshText.textContent = text;
+        }, 2000);
+      });
+    }
+
+    // Dynamic Live Telemetry Fetch
+    async function fetchTelemetry() {
+      try {
+        const res = await fetch("https://pkpmusic.pottapk.win/admin/server/system");
+        if (!res.ok) return;
+        const data = await res.json();
+        
+        // Temperature
+        if (data.temperature_c) {
+          const temp = data.temperature_c.toFixed(1);
+          document.getElementById("tempVal").textContent = temp + " °C";
+          const tempBar = document.getElementById("tempBar");
+          const pct = Math.min(Math.max((data.temperature_c / 85) * 100, 10), 100);
+          tempBar.style.width = pct + "%";
+          if (data.temperature_c > 75) {
+            tempBar.style.background = "var(--accent-red)";
+          } else if (data.temperature_c > 65) {
+            tempBar.style.background = "var(--accent-amber)";
+          } else {
+            tempBar.style.background = "var(--accent-emerald)";
+          }
+        }
+        
+        // CPU
+        if (data.cpu_usage_pct !== undefined) {
+          document.getElementById("cpuVal").textContent = data.cpu_usage_pct.toFixed(1) + " %";
+          document.getElementById("cpuBar").style.width = Math.max(data.cpu_usage_pct, 5) + "%";
+        }
+        
+        // RAM
+        if (data.memory) {
+          document.getElementById("ramVal").textContent = data.memory.used_formatted;
+          document.getElementById("ramPct").textContent = data.memory.usage_pct.toFixed(1) + "% of " + data.memory.total_formatted;
+          document.getElementById("ramBar").style.width = data.memory.usage_pct + "%";
+        }
+        
+        // Disk
+        if (data.disk) {
+          document.getElementById("diskVal").textContent = data.disk.used_formatted;
+          document.getElementById("diskPct").textContent = data.disk.usage_pct.toFixed(1) + "% of " + data.disk.total_formatted;
+          document.getElementById("diskBar").style.width = Math.max(data.disk.usage_pct, 2) + "%";
+        }
+        
+        // Uptime
+        if (data.uptime_formatted) {
+          document.getElementById("uptimeVal").textContent = data.uptime_formatted;
+        }
+      } catch (e) {
+        console.log("Telemetry sync note:", e);
+      }
+    }
+
+    fetchTelemetry();
+    setInterval(fetchTelemetry, 6000);
+  </script>
 </body>
 </html>
