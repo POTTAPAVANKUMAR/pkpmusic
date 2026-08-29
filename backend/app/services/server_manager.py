@@ -319,7 +319,6 @@ MONITORED_SERVICES = [
     {"name": "CasaOS Cloud", "url": "https://cloud.pottapk.win", "service": "CasaOS Dashboard", "port": 80, "icon": "cloud.fill"},
     {"name": "PiCloud Web", "url": "https://app.pottapk.win", "service": "PiCloud Portal", "port": 8080, "icon": "internaldrive.fill"},
     {"name": "PiCloud API", "url": "https://api.pottapk.win", "service": "PiCloud API", "port": 5000, "icon": "network"},
-    {"name": "Maps Portal", "url": "https://maps.pottapk.win", "service": "Maps Service", "port": 6000, "icon": "map.fill"},
 ]
 
 async def check_service_health(service_info: Dict[str, Any]) -> Dict[str, Any]:
