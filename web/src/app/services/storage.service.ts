@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { Song, CustomPlaylist } from '../models/music.model';
 
 @Injectable({
@@ -9,8 +9,19 @@ export class StorageService {
   private dbVersion = 1;
   private db: IDBDatabase | null = null;
 
+  // Reactive signals for components
+  likedSongs = signal<Song[]>([]);
+  customPlaylists = signal<CustomPlaylist[]>([]);
+  history = signal<Song[]>([]);
+  downloads = signal<Song[]>([]);
+
   constructor() {
-    this.initDB();
+    this.initDB().then(() => {
+      this.refreshDownloads();
+    });
+    this.likedSongs.set(this.getFavorites());
+    this.customPlaylists.set(this.getPlaylists());
+    this.history.set(this.getHistory());
   }
 
   private initDB(): Promise<IDBDatabase> {
@@ -37,29 +48,26 @@ export class StorageService {
     });
   }
 
-  // --- FAVORITES ---
+  // --- FAVORITES / LIKED SONGS ---
   getFavorites(): Song[] {
     const data = localStorage.getItem('pkp_favorites');
     return data ? JSON.parse(data) : [];
   }
 
-  saveFavorite(song: Song): Song[] {
+  toggleLikedSong(song: Song): void {
     let favs = this.getFavorites();
-    if (!favs.some(f => f.id === song.id)) {
+    const idx = favs.findIndex(f => f.id === song.id);
+    if (idx >= 0) {
+      favs.splice(idx, 1);
+    } else {
       favs.unshift(song);
-      localStorage.setItem('pkp_favorites', JSON.stringify(favs));
     }
-    return favs;
-  }
-
-  removeFavorite(songId: string): Song[] {
-    let favs = this.getFavorites().filter(f => f.id !== songId);
     localStorage.setItem('pkp_favorites', JSON.stringify(favs));
-    return favs;
+    this.likedSongs.set(favs);
   }
 
-  isFavorite(songId: string): boolean {
-    return this.getFavorites().some(f => f.id === songId);
+  isSongLiked(songId: string): boolean {
+    return this.likedSongs().some(f => f.id === songId);
   }
 
   // --- CUSTOM PLAYLISTS ---
@@ -79,33 +87,14 @@ export class StorageService {
     };
     playlists.push(newPlaylist);
     localStorage.setItem('pkp_playlists', JSON.stringify(playlists));
+    this.customPlaylists.set(playlists);
     return newPlaylist;
   }
 
-  addTrackToPlaylist(playlistId: string, track: Song): CustomPlaylist | undefined {
-    const playlists = this.getPlaylists();
-    const pl = playlists.find(p => p.id === playlistId);
-    if (pl && !pl.tracks.some(t => t.id === track.id)) {
-      pl.tracks.push(track);
-      localStorage.setItem('pkp_playlists', JSON.stringify(playlists));
-    }
-    return pl;
-  }
-
-  removeTrackFromPlaylist(playlistId: string, songId: string): CustomPlaylist | undefined {
-    const playlists = this.getPlaylists();
-    const pl = playlists.find(p => p.id === playlistId);
-    if (pl) {
-      pl.tracks = pl.tracks.filter(t => t.id !== songId);
-      localStorage.setItem('pkp_playlists', JSON.stringify(playlists));
-    }
-    return pl;
-  }
-
-  deletePlaylist(playlistId: string): CustomPlaylist[] {
+  deletePlaylist(playlistId: string): void {
     const playlists = this.getPlaylists().filter(p => p.id !== playlistId);
     localStorage.setItem('pkp_playlists', JSON.stringify(playlists));
-    return playlists;
+    this.customPlaylists.set(playlists);
   }
 
   // --- HISTORY ---
@@ -119,29 +108,32 @@ export class StorageService {
     hist.unshift(song);
     if (hist.length > 100) hist.pop();
     localStorage.setItem('pkp_history', JSON.stringify(hist));
+    this.history.set(hist);
     return hist;
   }
 
-  // --- INDEXED DB OFFLINE AUDIO ---
+  // --- OFFLINE AUDIO (INDEXEDDB) ---
   async saveOfflineSong(song: Song, audioBlob: Blob): Promise<boolean> {
     const db = await this.initDB();
     return new Promise((resolve, reject) => {
       const tx = db.transaction(['offline_songs', 'audio_blobs'], 'readwrite');
       tx.objectStore('offline_songs').put({ ...song, downloaded: true });
       tx.objectStore('audio_blobs').put({ id: song.id, blob: audioBlob });
-      tx.oncomplete = () => resolve(true);
+      tx.oncomplete = () => {
+        this.refreshDownloads();
+        resolve(true);
+      };
       tx.onerror = (e) => reject(e);
     });
   }
 
-  async getOfflineSongs(): Promise<Song[]> {
+  async refreshDownloads(): Promise<void> {
     const db = await this.initDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction('offline_songs', 'readonly');
-      const req = tx.objectStore('offline_songs').getAll();
-      req.onsuccess = () => resolve(req.result || []);
-      req.onerror = (e) => reject(e);
-    });
+    const tx = db.transaction('offline_songs', 'readonly');
+    const req = tx.objectStore('offline_songs').getAll();
+    req.onsuccess = () => {
+      this.downloads.set(req.result || []);
+    };
   }
 
   async getOfflineAudioBlob(songId: string): Promise<Blob | null> {
@@ -154,29 +146,20 @@ export class StorageService {
     });
   }
 
-  async removeOfflineSong(songId: string): Promise<boolean> {
+  async removeDownload(songId: string): Promise<boolean> {
     const db = await this.initDB();
     return new Promise((resolve, reject) => {
       const tx = db.transaction(['offline_songs', 'audio_blobs'], 'readwrite');
       tx.objectStore('offline_songs').delete(songId);
       tx.objectStore('audio_blobs').delete(songId);
-      tx.oncomplete = () => resolve(true);
+      tx.oncomplete = () => {
+        this.refreshDownloads();
+        resolve(true);
+      };
       tx.onerror = (e) => reject(e);
     });
   }
 
-  async clearAllOffline(): Promise<boolean> {
-    const db = await this.initDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(['offline_songs', 'audio_blobs'], 'readwrite');
-      tx.objectStore('offline_songs').clear();
-      tx.objectStore('audio_blobs').clear();
-      tx.oncomplete = () => resolve(true);
-      tx.onerror = (e) => reject(e);
-    });
-  }
-
-  // --- AUDIO QUALITY PREF ---
   getAudioQuality(): string {
     return localStorage.getItem('pkp_audio_quality') || 'auto';
   }

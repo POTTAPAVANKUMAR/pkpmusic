@@ -1,13 +1,18 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { SyncedLyricLine } from '../models/music.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class LyricsService {
+  parsedLines = signal<SyncedLyricLine[]>([]);
+  activeLineIndex = signal<number>(-1);
 
   parseLRC(lrcText: string): SyncedLyricLine[] {
-    if (!lrcText) return [];
+    if (!lrcText) {
+      this.parsedLines.set([]);
+      return [];
+    }
     const lines = lrcText.split('\n');
     const result: SyncedLyricLine[] = [];
     const timeRegex = /\[(\d{2}):(\d{2})(?:\.(\d{2,3}))?\]/g;
@@ -35,8 +40,9 @@ export class LyricsService {
       }
     }
 
-    // Sort by timestamp
-    return result.sort((a, b) => a.time - b.time);
+    const sorted = result.sort((a, b) => a.time - b.time);
+    this.parsedLines.set(sorted);
+    return sorted;
   }
 
   getActiveLyricIndex(lyrics: SyncedLyricLine[], currentTimeSec: number): number {
@@ -49,6 +55,7 @@ export class LyricsService {
         break;
       }
     }
+    this.activeLineIndex.set(activeIdx);
     return activeIdx;
   }
 }

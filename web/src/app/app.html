@@ -1,757 +1,701 @@
-<div class="app-layout">
+<!-- ==========================================
+     AUTHENTICATION SCREEN (iOS LoginView / RegisterView)
+     ========================================== -->
+<div class="auth-root" *ngIf="!auth.isAuthenticated()">
+  <div class="ambient-glow"></div>
 
-  <!-- DESKTOP SIDEBAR -->
+  <div class="auth-container">
+    <div class="auth-card">
+      
+      <!-- App Header / Logo -->
+      <div class="auth-logo-wrap">
+        <div class="spider-logo-icon">🎵</div>
+        <h1 class="spider-glitch-title">PKP Music</h1>
+        <p class="auth-subtitle">High-Fidelity Streaming & Cloud Music Hub</p>
+      </div>
+
+      <!-- Auth Navigation Mode Switcher -->
+      <div class="auth-tabs">
+        <button class="auth-tab-btn" [class.active]="authMode() === 'login'" (click)="authMode.set('login'); authError.set(null)">Sign In</button>
+        <button class="auth-tab-btn" [class.active]="authMode() === 'register'" (click)="authMode.set('register'); authError.set(null)">Create Account</button>
+        <button class="auth-tab-btn" [class.active]="authMode() === 'passcode'" (click)="authMode.set('passcode'); authError.set(null)">Passcode</button>
+      </div>
+
+      <!-- Error / Success Alerts -->
+      <div class="auth-alert error" *ngIf="authError()">
+        <span>⚠️ {{ authError() }}</span>
+      </div>
+      <div class="auth-alert success" *ngIf="authSuccessMsg()">
+        <span>✓ {{ authSuccessMsg() }}</span>
+      </div>
+
+      <!-- 1. SIGN IN FORM -->
+      <form class="auth-form" *ngIf="authMode() === 'login'" (ngSubmit)="handleLogin()">
+        <div class="input-group">
+          <span class="input-icon">✉️</span>
+          <input type="email" placeholder="Email Address" [(ngModel)]="loginEmail" name="email" required autocomplete="email" />
+        </div>
+
+        <div class="input-group">
+          <span class="input-icon">🔒</span>
+          <input type="password" placeholder="Password" [(ngModel)]="loginPassword" name="password" required autocomplete="current-password" />
+        </div>
+
+        <div class="auth-row-extra">
+          <button type="button" class="btn-link" (click)="authMode.set('forgot')">Forgot Password?</button>
+        </div>
+
+        <button type="submit" class="btn-primary-spider" [disabled]="authLoading()">
+          <span *ngIf="!authLoading()">Sign In</span>
+          <span *ngIf="authLoading()" class="spinner"></span>
+        </button>
+      </form>
+
+      <!-- 2. CREATE ACCOUNT FORM -->
+      <form class="auth-form" *ngIf="authMode() === 'register'" (ngSubmit)="handleRegister()">
+        <div class="input-group">
+          <span class="input-icon">👤</span>
+          <input type="text" placeholder="Full Name" [(ngModel)]="registerName" name="name" required />
+        </div>
+
+        <div class="input-group">
+          <span class="input-icon">✉️</span>
+          <input type="email" placeholder="Email Address" [(ngModel)]="registerEmail" name="email" required />
+        </div>
+
+        <div class="input-group">
+          <span class="input-icon">🔒</span>
+          <input type="password" placeholder="Password (min. 6 characters)" [(ngModel)]="registerPassword" name="password" required />
+        </div>
+
+        <button type="submit" class="btn-primary-spider" [disabled]="authLoading()">
+          <span *ngIf="!authLoading()">Create Account</span>
+          <span *ngIf="authLoading()" class="spinner"></span>
+        </button>
+      </form>
+
+      <!-- 3. PASSCODE QUICK UNLOCK -->
+      <form class="auth-form" *ngIf="authMode() === 'passcode'" (ngSubmit)="handlePasscodeUnlock()">
+        <p class="passcode-hint">Enter your 10-digit authorization passcode to enter instantly.</p>
+        <div class="input-group">
+          <span class="input-icon">🔑</span>
+          <input type="password" placeholder="••••••••••" maxlength="10" [(ngModel)]="passcodeInput" name="passcode" required autofocus />
+        </div>
+
+        <button type="submit" class="btn-primary-spider">
+          <span>Unlock With Passcode</span>
+        </button>
+      </form>
+
+      <!-- 4. FORGOT PASSWORD -->
+      <form class="auth-form" *ngIf="authMode() === 'forgot'" (ngSubmit)="handleForgotPassword()">
+        <p class="passcode-hint">Enter your email to receive a password reset code.</p>
+        <div class="input-group">
+          <span class="input-icon">✉️</span>
+          <input type="email" placeholder="Email Address" [(ngModel)]="loginEmail" name="email" required />
+        </div>
+
+        <button type="submit" class="btn-primary-spider" [disabled]="authLoading()">
+          <span>Send Reset OTP</span>
+        </button>
+
+        <button type="button" class="btn-secondary" (click)="authMode.set('login')">Back to Sign In</button>
+      </form>
+
+    </div>
+  </div>
+</div>
+
+<!-- ==========================================
+     MAIN APPLICATION (AUTHENTICATED)
+     ========================================== -->
+<div class="app-layout" *ngIf="auth.isAuthenticated()">
+  <div class="ambient-glow"></div>
+
+  <!-- SIDEBAR NAVIGATION (Desktop) -->
   <aside class="sidebar">
     <div class="sidebar-brand">
-      <div class="brand-logo">🎵</div>
-      <div class="brand-text">
-        <span class="brand-name">PKP Music</span>
-        <span class="brand-tag">Hi-Fi Angular</span>
-      </div>
+      <span class="brand-icon">🎵</span>
+      <span class="brand-text">PKP Music</span>
     </div>
 
-    <nav class="sidebar-nav">
-      <div class="nav-section-title">DISCOVER</div>
-      <button class="nav-item" [class.active]="activeTab() === 'home'" (click)="switchView('home')">
+    <nav class="nav-links">
+      <button class="nav-item" [class.active]="selectedTab() === 'home'" (click)="setTab('home')">
         <span class="nav-icon">🏠</span>
-        <span class="nav-label">Home & For You</span>
-      </button>
-      <button class="nav-item" [class.active]="activeTab() === 'explore'" (click)="switchView('explore')">
-        <span class="nav-icon">✨</span>
-        <span class="nav-label">Explore & Moods</span>
-      </button>
-      <button class="nav-item" [class.active]="activeTab() === 'search'" (click)="switchView('search')">
-        <span class="nav-icon">🔍</span>
-        <span class="nav-label">Search</span>
+        <span class="nav-label">Home</span>
       </button>
 
-      <div class="nav-section-title">MY LIBRARY</div>
-      <button class="nav-item" [class.active]="activeTab() === 'favorites'" (click)="switchView('favorites')">
-        <span class="nav-icon">❤️</span>
-        <span class="nav-label">Liked Songs</span>
-        <span class="nav-badge">{{ favorites().length }}</span>
+      <button class="nav-item" [class.active]="selectedTab() === 'explore'" (click)="setTab('explore')">
+        <span class="nav-icon">🧭</span>
+        <span class="nav-label">Explore</span>
       </button>
-      <button class="nav-item" [class.active]="activeTab() === 'playlists'" (click)="switchView('playlists')">
-        <span class="nav-icon">📑</span>
-        <span class="nav-label">Playlists</span>
+
+      <button class="nav-item" [class.active]="selectedTab() === 'library'" (click)="setTab('library')">
+        <span class="nav-icon">📚</span>
+        <span class="nav-label">Library</span>
       </button>
-      <button class="nav-item" [class.active]="activeTab() === 'history'" (click)="switchView('history')">
+
+      <button class="nav-item" [class.active]="selectedTab() === 'history'" (click)="setTab('history')">
         <span class="nav-icon">⏱️</span>
-        <span class="nav-label">Recently Played</span>
-      </button>
-      <button class="nav-item" [class.active]="activeTab() === 'downloads'" (click)="switchView('downloads')">
-        <span class="nav-icon">📥</span>
-        <span class="nav-label">Offline Downloads</span>
-        <span class="nav-badge">{{ downloads().length }}</span>
+        <span class="nav-label">History</span>
       </button>
 
-      <div class="nav-section-title">SYSTEM</div>
-      <button class="nav-item" [class.active]="activeTab() === 'server'" (click)="switchView('server')">
-        <span class="nav-icon">🖥️</span>
-        <span class="nav-label">Server Telemetry</span>
-        <span class="live-dot-pulse"></span>
+      <button class="nav-item" [class.active]="selectedTab() === 'offline'" (click)="setTab('offline')">
+        <span class="nav-icon">📥</span>
+        <span class="nav-label">Offline</span>
       </button>
+
+      <div class="nav-divider"></div>
+      <div class="nav-section-title">Operations</div>
+
+      <button class="nav-item" [class.active]="selectedTab() === 'server'" (click)="setTab('server')">
+        <span class="nav-icon">🖥️</span>
+        <span class="nav-label">Server HUD</span>
+      </button>
+
+      <a class="nav-item external-link" href="https://pkpmusiclogs.pottapk.win" target="_blank">
+        <span class="nav-icon">📜</span>
+        <span class="nav-label">Live Logs</span>
+      </a>
+
+      <a class="nav-item external-link" href="https://postgresql.pottapk.win" target="_blank">
+        <span class="nav-icon">🗄️</span>
+        <span class="nav-label">Database</span>
+      </a>
+
+      <a class="nav-item external-link" href="https://pkpmusic.pottapk.win/docs" target="_blank">
+        <span class="nav-icon">🌐</span>
+        <span class="nav-label">API Docs</span>
+      </a>
     </nav>
 
-    <div class="sidebar-footer">
-      <button class="btn-create-playlist" (click)="openCreatePlaylist()">
-        <span>➕</span> New Playlist
+    <!-- User Profile & Logout -->
+    <div class="sidebar-user">
+      <div class="user-avatar-wrap">
+        <img [src]="auth.currentUser()?.profile_picture_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80'" alt="User Avatar" class="user-avatar" />
+        <div class="user-info">
+          <div class="user-name">{{ auth.currentUser()?.name || 'Pavan Kumar' }}</div>
+          <div class="user-role">Online · Hi-Fi</div>
+        </div>
+      </div>
+      <button class="btn-logout" (click)="handleLogout()" title="Sign Out">
+        <span>🚪</span>
       </button>
     </div>
   </aside>
 
-  <!-- MAIN CONTENT AREA -->
+  <!-- MAIN SCROLLABLE CONTENT -->
   <main class="main-content">
-
-    <!-- Top Bar -->
-    <header class="top-bar">
+    
+    <!-- TOP HEADER: SEARCH & CATEGORY PILLS -->
+    <header class="top-header">
       <div class="search-bar-wrap">
-        <span class="search-bar-icon">🔍</span>
-        <input type="search" 
-               [ngModel]="searchQuery()" 
-               (ngModelChange)="onSearchInput($event)" 
-               (keydown.enter)="executeSearch()"
-               placeholder="Search songs, artists, albums, or podcasts..." />
-        @if (showSuggestions() && searchSuggestions().length > 0) {
-          <div class="suggestions-dropdown">
-            @for (sugg of searchSuggestions(); track sugg) {
-              <div class="suggestion-item" (click)="selectSuggestion(sugg)">
-                <span>🔍</span>
-                <span>{{ sugg }}</span>
-              </div>
-            }
+        <span class="search-icon">🔍</span>
+        <input type="text" 
+               placeholder="Find music, playlists, albums, and artists..." 
+               [ngModel]="searchQuery()"
+               (input)="onSearchInput($any($event.target).value)"
+               (keyup.enter)="performSearch()" />
+        <button *ngIf="searchQuery()" class="btn-clear" (click)="clearSearch()">✕</button>
+
+        <!-- Auto Suggestions Dropdown -->
+        <div class="suggestions-box" *ngIf="showSuggestions() && searchSuggestions().length > 0">
+          <div class="suggestion-item" *ngFor="let sugg of searchSuggestions()" (click)="performSearch(sugg)">
+            <span class="sugg-icon">🔍</span>
+            <span>{{ sugg }}</span>
           </div>
-        }
+        </div>
       </div>
 
-      <div class="top-bar-actions">
-        <button class="btn-icon" title="Server Status" (click)="switchView('server')">
-          <span class="status-indicator"></span>
-          <span style="font-size: 12px; font-weight: 700; font-family: 'JetBrains Mono', monospace;">
-            {{ telemetry().temperature_c ? (telemetry().temperature_c! | number:'1.1-1') + '°C' : 'Pi Live' }}
-          </span>
-        </button>
-        <button class="btn-icon" title="Settings" (click)="toggleSettings()">⚙️</button>
+      <div class="header-profile-mobile">
+        <button class="btn-icon-mobile" (click)="handleLogout()" title="Sign Out">🚪</button>
       </div>
     </header>
 
-    <!-- VIEW: HOME / FOR YOU -->
-    @if (activeTab() === 'home') {
-      <section class="view-panel">
-        <div class="view-header">
-          <h1 class="view-title">Welcome Back</h1>
-          <p class="view-subtitle">High-fidelity personalized streaming, curated for you.</p>
-        </div>
+    <!-- CATEGORY PILLS ROW (TELUGU, ENGLISH, TAMIL, HINDI, POP, R&B, ETC.) -->
+    <div class="category-pills-row" *ngIf="selectedTab() === 'home' && !isSearching()">
+      <button class="cat-pill" *ngFor="let cat of categories" (click)="performSearch(cat.query)">
+        <span>{{ cat.icon }}</span>
+        <span>{{ cat.name }}</span>
+      </button>
+    </div>
 
-        @if (isLoadingExplore()) {
-          <div class="loading-spinner-wrap">
-            <div class="spinner"></div>
-            <p>Curating your recommendations...</p>
+    <!-- SEARCH VIEW -->
+    <div class="search-results-section" *ngIf="isSearching()">
+      <div class="search-header-row">
+        <h2 class="section-title">Search Results for "{{ searchQuery() }}"</h2>
+        <div class="segmented-picker">
+          <button [class.active]="searchType() === 'songs'" (click)="setSearchType('songs')">Songs</button>
+          <button [class.active]="searchType() === 'albums'" (click)="setSearchType('albums')">Albums</button>
+          <button [class.active]="searchType() === 'artists'" (click)="setSearchType('artists')">Artists</button>
+        </div>
+      </div>
+
+      <!-- Songs Results -->
+      <div class="track-list" *ngIf="searchType() === 'songs'">
+        <div class="track-item" *ngFor="let song of searchResults()" [class.active]="player.currentSong()?.id === song.id" (click)="playSongNow(song, searchResults())">
+          <img [src]="song.cover_art_url || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=120&auto=format&fit=crop&q=80'" class="track-img" />
+          <div class="track-details">
+            <div class="track-name">{{ song.title }}</div>
+            <div class="track-artist">{{ song.artist }}</div>
           </div>
-        } @else {
-          @for (section of exploreSections(); track section.title) {
-            <div class="section-scroll-container">
-              <div class="section-scroll-header">
-                <h2 class="section-scroll-title">{{ section.title }}</h2>
-              </div>
-              <div class="horizontal-scroll-cards">
-                @for (item of section.items; track item.id) {
-                  <div class="media-card" (click)="playItem(item)">
-                    <div class="media-card-img-wrap">
-                      <img class="media-card-img" [src]="item.image_url || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300'" alt="Cover" />
-                      <button class="media-card-play-btn">▶</button>
-                    </div>
-                    <div class="media-card-title">{{ item.title }}</div>
-                    <div class="media-card-sub">{{ item.subtitle || item.type }}</div>
-                  </div>
-                }
-              </div>
-            </div>
-          }
-        }
-      </section>
-    }
-
-    <!-- VIEW: EXPLORE & MOODS -->
-    @if (activeTab() === 'explore') {
-      <section class="view-panel">
-        <div class="view-header">
-          <h1 class="view-title">Explore & Moods</h1>
-          <p class="view-subtitle">Trending hits, community playlists, and mood categories.</p>
+          <button class="track-action-btn" (click)="$event.stopPropagation(); storage.toggleLikedSong(song)">
+            <span>{{ storage.isSongLiked(song.id) ? '❤️' : '🤍' }}</span>
+          </button>
+          <button class="track-action-btn" (click)="$event.stopPropagation(); player.addToQueue(song)">
+            <span>➕</span>
+          </button>
         </div>
-        @for (section of exploreSections(); track section.title) {
-          <div class="section-scroll-container">
-            <div class="section-scroll-header">
-              <h2 class="section-scroll-title">{{ section.title }}</h2>
-            </div>
-            <div class="horizontal-scroll-cards">
-              @for (item of section.items; track item.id) {
-                <div class="media-card" (click)="playItem(item)">
-                  <div class="media-card-img-wrap">
-                    <img class="media-card-img" [src]="item.image_url || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300'" alt="Cover" />
-                    <button class="media-card-play-btn">▶</button>
-                  </div>
-                  <div class="media-card-title">{{ item.title }}</div>
-                  <div class="media-card-sub">{{ item.subtitle || item.type }}</div>
-                </div>
-              }
-            </div>
-          </div>
-        }
-      </section>
-    }
+      </div>
 
-    <!-- VIEW: SEARCH RESULTS -->
-    @if (activeTab() === 'search') {
-      <section class="view-panel">
-        <div class="view-header">
-          <h1 class="view-title">Search Results</h1>
-          <div class="search-filter-pills">
-            <button class="filter-pill" [class.active]="searchFilter() === 'all'" (click)="setFilter('all')">All</button>
-            <button class="filter-pill" [class.active]="searchFilter() === 'songs'" (click)="setFilter('songs')">Songs ({{ searchSongsList().length }})</button>
-            <button class="filter-pill" [class.active]="searchFilter() === 'albums'" (click)="setFilter('albums')">Albums ({{ searchAlbumsList().length }})</button>
-            <button class="filter-pill" [class.active]="searchFilter() === 'artists'" (click)="setFilter('artists')">Artists ({{ searchArtistsList().length }})</button>
-          </div>
+      <!-- Albums Results -->
+      <div class="albums-grid" *ngIf="searchType() === 'albums'">
+        <div class="album-card" *ngFor="let alb of searchAlbumResults()" (click)="openAlbum(alb.id)">
+          <img [src]="alb.cover_art_url || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=300&auto=format&fit=crop&q=80'" class="album-img" />
+          <div class="album-name">{{ alb.title }}</div>
+          <div class="album-artist">{{ alb.artist }}</div>
         </div>
+      </div>
 
-        @if (isSearching()) {
-          <div class="loading-spinner-wrap"><div class="spinner"></div><p>Searching YouTube Music...</p></div>
-        } @else {
-          <!-- Songs Section -->
-          @if ((searchFilter() === 'all' || searchFilter() === 'songs') && searchSongsList().length > 0) {
-            <div class="view-section-header"><h2>Songs</h2></div>
-            <div class="track-list">
-              @for (song of searchSongsList(); track song.id; let idx = $index) {
-                <div class="track-row" [class.active]="player.currentSong()?.id === song.id" (click)="playSong(song, searchSongsList())">
-                  <span class="track-num">{{ idx + 1 }}</span>
-                  <img class="track-cover" [src]="song.cover_art_url || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=100'" alt="Cover" />
-                  <div class="track-info">
-                    <div class="track-title">{{ song.title }}</div>
-                    <div class="track-artist">{{ song.artist }}</div>
-                  </div>
-                  <div class="track-actions">
-                    <button class="btn-icon" (click)="toggleFav(song, $event)">{{ isFav(song.id) ? '❤️' : '🤍' }}</button>
-                    <button class="btn-icon" (click)="downloadSong(song, $event)" title="Save Offline">📥</button>
-                  </div>
-                </div>
-              }
-            </div>
-          }
-
-          <!-- Albums Section -->
-          @if ((searchFilter() === 'all' || searchFilter() === 'albums') && searchAlbumsList().length > 0) {
-            <div class="view-section-header" style="margin-top: 2rem;"><h2>Albums</h2></div>
-            <div class="grid-card-list">
-              @for (album of searchAlbumsList(); track album.browseId) {
-                <div class="media-card" (click)="openAlbum(album.browseId)">
-                  <div class="media-card-img-wrap">
-                    <img class="media-card-img" [src]="album.cover_art_url" alt="Cover" />
-                    <button class="media-card-play-btn">▶</button>
-                  </div>
-                  <div class="media-card-title">{{ album.title }}</div>
-                  <div class="media-card-sub">{{ album.artist }} · {{ album.year }}</div>
-                </div>
-              }
-            </div>
-          }
-
-          <!-- Artists Section -->
-          @if ((searchFilter() === 'all' || searchFilter() === 'artists') && searchArtistsList().length > 0) {
-            <div class="view-section-header" style="margin-top: 2rem;"><h2>Artists</h2></div>
-            <div class="grid-card-list">
-              @for (artist of searchArtistsList(); track artist.browseId) {
-                <div class="media-card" (click)="openArtist(artist.browseId)">
-                  <div class="media-card-img-wrap" style="border-radius: 50%;">
-                    <img class="media-card-img" [src]="artist.cover_art_url" alt="Artist" />
-                  </div>
-                  <div class="media-card-title" style="text-align: center;">{{ artist.artist }}</div>
-                </div>
-              }
-            </div>
-          }
-        }
-      </section>
-    }
-
-    <!-- VIEW: LIKED SONGS -->
-    @if (activeTab() === 'favorites') {
-      <section class="view-panel">
-        <div class="playlist-hero">
-          <div class="playlist-hero-cover hero-fav-cover">❤️</div>
-          <div class="playlist-hero-info">
-            <span class="playlist-hero-tag">FAVORITES</span>
-            <h1 class="playlist-hero-title">Liked Songs</h1>
-            <p class="playlist-hero-meta">{{ favorites().length }} tracks in your favorites</p>
-            <div class="playlist-hero-actions">
-              <button class="btn btn-primary" (click)="playAll(favorites())"><span class="btn-icon">▶</span> Play All</button>
-              <button class="btn" (click)="shuffleAll(favorites())"><span class="btn-icon">🔀</span> Shuffle</button>
-            </div>
-          </div>
+      <!-- Artists Results -->
+      <div class="artists-grid" *ngIf="searchType() === 'artists'">
+        <div class="artist-card" *ngFor="let art of searchArtistResults()" (click)="openArtist(art.id)">
+          <img [src]="art.cover_art_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80'" class="artist-img" />
+          <div class="artist-name">{{ art.artist }}</div>
         </div>
-        <div class="track-list">
-          @for (song of favorites(); track song.id; let idx = $index) {
-            <div class="track-row" [class.active]="player.currentSong()?.id === song.id" (click)="playSong(song, favorites())">
-              <span class="track-num">{{ idx + 1 }}</span>
-              <img class="track-cover" [src]="song.cover_art_url" alt="Cover" />
-              <div class="track-info">
-                <div class="track-title">{{ song.title }}</div>
-                <div class="track-artist">{{ song.artist }}</div>
-              </div>
-              <div class="track-actions">
-                <button class="btn-icon" (click)="toggleFav(song, $event)">❤️</button>
-                <button class="btn-icon" (click)="downloadSong(song, $event)" title="Save Offline">📥</button>
-              </div>
-            </div>
-          }
-        </div>
-      </section>
-    }
+      </div>
+    </div>
 
-    <!-- VIEW: PLAYLISTS -->
-    @if (activeTab() === 'playlists') {
-      <section class="view-panel">
-        <div class="view-header" style="display: flex; justify-content: space-between; align-items: center;">
-          <div>
-            <h1 class="view-title">Your Playlists</h1>
-            <p class="view-subtitle">Personal custom playlists created on this device.</p>
-          </div>
-          <button class="btn btn-primary" (click)="openCreatePlaylist()">+ Create Playlist</button>
-        </div>
+    <!-- TAB 0: HOME DASHBOARD -->
+    <div class="tab-view-container" *ngIf="selectedTab() === 'home' && !isSearching() && !selectedArtist() && !selectedAlbum() && !selectedMoodTitle()">
+      <div *ngIf="dashboardLoading()" class="loading-state">
+        <div class="spinner-large"></div>
+        <p>Loading your music universe...</p>
+      </div>
 
-        <div class="grid-card-list">
-          @for (pl of playlists(); track pl.id) {
-            <div class="media-card" (click)="openCustomPlaylist(pl)">
-              <div class="media-card-img-wrap" style="background: linear-gradient(135deg, #3b82f6, #06b6d4); display: flex; align-items: center; justify-content: center; font-size: 38px;">
-                📑
-                <button class="media-card-play-btn">▶</button>
-              </div>
-              <div class="media-card-title">{{ pl.name }}</div>
-              <div class="media-card-sub">{{ pl.tracks.length }} tracks</div>
-            </div>
-          }
-        </div>
-      </section>
-    }
-
-    <!-- VIEW: RECENTLY PLAYED HISTORY -->
-    @if (activeTab() === 'history') {
-      <section class="view-panel">
-        <div class="view-header">
-          <h1 class="view-title">Recently Played</h1>
-          <p class="view-subtitle">Your playback history across all sessions.</p>
-        </div>
-        <div class="track-list">
-          @for (song of history(); track song.id; let idx = $index) {
-            <div class="track-row" [class.active]="player.currentSong()?.id === song.id" (click)="playSong(song, history())">
-              <span class="track-num">{{ idx + 1 }}</span>
-              <img class="track-cover" [src]="song.cover_art_url" alt="Cover" />
-              <div class="track-info">
-                <div class="track-title">{{ song.title }}</div>
-                <div class="track-artist">{{ song.artist }}</div>
-              </div>
-              <div class="track-actions">
-                <button class="btn-icon" (click)="toggleFav(song, $event)">{{ isFav(song.id) ? '❤️' : '🤍' }}</button>
-                <button class="btn-icon" (click)="downloadSong(song, $event)" title="Save Offline">📥</button>
-              </div>
-            </div>
-          }
-        </div>
-      </section>
-    }
-
-    <!-- VIEW: OFFLINE DOWNLOADS -->
-    @if (activeTab() === 'downloads') {
-      <section class="view-panel">
-        <div class="view-header">
-          <h1 class="view-title">Offline Downloads</h1>
-          <p class="view-subtitle">Songs downloaded to IndexedDB storage for offline playback without internet.</p>
-        </div>
-        <div class="track-list">
-          @for (song of downloads(); track song.id; let idx = $index) {
-            <div class="track-row" [class.active]="player.currentSong()?.id === song.id" (click)="playSong(song, downloads())">
-              <span class="track-num">{{ idx + 1 }}</span>
-              <img class="track-cover" [src]="song.cover_art_url" alt="Cover" />
-              <div class="track-info">
-                <div class="track-title">{{ song.title }} <span style="font-size: 11px; color: #10b981; font-weight: 700;">(Offline Ready)</span></div>
-                <div class="track-artist">{{ song.artist }}</div>
-              </div>
-              <div class="track-actions">
-                <button class="btn-icon" (click)="deleteOfflineSong(song.id, $event)" title="Delete from Offline Storage">🗑️</button>
-              </div>
-            </div>
-          }
-        </div>
-      </section>
-    }
-
-    <!-- VIEW: ALBUM / DETAIL VIEW -->
-    @if (activeTab() === 'detail' && currentDetail()) {
-      <section class="view-panel">
-        <div class="playlist-hero">
-          <img class="playlist-hero-cover" [src]="currentDetail()?.thumbnails?.[0]?.url || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300'" alt="Cover" />
-          <div class="playlist-hero-info">
-            <span class="playlist-hero-tag">ALBUM</span>
-            <h1 class="playlist-hero-title">{{ currentDetail()?.title }}</h1>
-            <p class="playlist-hero-meta">{{ currentDetail()?.songs?.length }} Tracks</p>
-            <div class="playlist-hero-actions">
-              <button class="btn btn-primary" (click)="playAll(currentDetail()!.songs)"><span class="btn-icon">▶</span> Play All</button>
-              <button class="btn" (click)="shuffleAll(currentDetail()!.songs)"><span class="btn-icon">🔀</span> Shuffle</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="track-list">
-          @for (song of currentDetail()?.songs; track song.id; let idx = $index) {
-            <div class="track-row" [class.active]="player.currentSong()?.id === song.id" (click)="playSong(song, currentDetail()!.songs)">
-              <span class="track-num">{{ idx + 1 }}</span>
-              <img class="track-cover" [src]="song.cover_art_url" alt="Cover" />
-              <div class="track-info">
-                <div class="track-title">{{ song.title }}</div>
-                <div class="track-artist">{{ song.artist }}</div>
-              </div>
-              <div class="track-actions">
-                <button class="btn-icon" (click)="toggleFav(song, $event)">{{ isFav(song.id) ? '❤️' : '🤍' }}</button>
-                <button class="btn-icon" (click)="downloadSong(song, $event)" title="Save Offline">📥</button>
-              </div>
-            </div>
-          }
-        </div>
-      </section>
-    }
-
-    <!-- VIEW: ARTIST DETAIL -->
-    @if (activeTab() === 'artist' && currentArtist()) {
-      <section class="view-panel">
-        <div class="artist-hero">
-          <div class="artist-hero-backdrop" [style.background-image]="'url(' + (currentArtist()?.thumbnails?.[0]?.url || '') + ')'"></div>
-          <div class="artist-hero-content">
-            <img class="artist-hero-avatar" [src]="currentArtist()?.thumbnails?.[0]?.url" alt="Artist" />
-            <div>
-              <span class="playlist-hero-tag">ARTIST</span>
-              <h1 class="artist-hero-name">{{ currentArtist()?.name }}</h1>
-              <p class="artist-hero-meta">{{ currentArtist()?.subscribers }}</p>
-              <div class="playlist-hero-actions">
-                <button class="btn btn-primary" (click)="playAll(currentArtist()!.songs)"><span class="btn-icon">▶</span> Play Top Tracks</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="view-section-header"><h2>Top Songs</h2></div>
-        <div class="track-list">
-          @for (song of currentArtist()?.songs; track song.id; let idx = $index) {
-            <div class="track-row" [class.active]="player.currentSong()?.id === song.id" (click)="playSong(song, currentArtist()!.songs)">
-              <span class="track-num">{{ idx + 1 }}</span>
-              <img class="track-cover" [src]="song.cover_art_url" alt="Cover" />
-              <div class="track-info">
-                <div class="track-title">{{ song.title }}</div>
-                <div class="track-artist">{{ song.artist }}</div>
-              </div>
-              <div class="track-actions">
-                <button class="btn-icon" (click)="toggleFav(song, $event)">{{ isFav(song.id) ? '❤️' : '🤍' }}</button>
-                <button class="btn-icon" (click)="downloadSong(song, $event)">📥</button>
-              </div>
-            </div>
-          }
-        </div>
-      </section>
-    }
-
-    <!-- VIEW: SERVER TELEMETRY -->
-    @if (activeTab() === 'server') {
-      <section class="view-panel">
-        <div class="view-header">
-          <h1 class="view-title">Raspberry Pi Server Telemetry</h1>
-          <p class="view-subtitle">Live host metrics and service monitoring for pavankumarpotta (192.168.1.151).</p>
-        </div>
-
-        <div class="telemetry-hud-grid">
-          <div class="hud-card">
-            <div class="hud-card-top">
-              <span class="hud-label">CPU Temp</span>
-              <span class="hud-icon">🌡️</span>
-            </div>
-            <div class="hud-val">{{ telemetry().temperature_c ? (telemetry().temperature_c! | number:'1.1-1') + ' °C' : '-- °C' }}</div>
-            <div class="hud-sub">Thermal Target &lt; 70°C</div>
-            <div class="hud-progress">
-              <div class="hud-fill" [style.width.%]="telemetry().temperature_c ? (telemetry().temperature_c! / 85) * 100 : 40" style="background: #10b981;"></div>
-            </div>
+      <div class="dashboard-sections-wrap" *ngIf="!dashboardLoading()">
+        <section class="dash-section" *ngFor="let sec of dashboardSections()">
+          <div class="section-title-row">
+            <h2 class="section-title">{{ sec.title }}</h2>
+            <span *ngIf="sec.title.includes('AI Recommended')" class="badge-sparkles">✨ AI Recommended</span>
           </div>
 
-          <div class="hud-card">
-            <div class="hud-card-top">
-              <span class="hud-label">CPU Load</span>
-              <span class="hud-icon">⚡</span>
-            </div>
-            <div class="hud-val">{{ telemetry().cpu_usage_pct !== undefined ? (telemetry().cpu_usage_pct! | number:'1.1-1') + ' %' : '-- %' }}</div>
-            <div class="hud-sub">4 Cores · ARM64</div>
-            <div class="hud-progress">
-              <div class="hud-fill" [style.width.%]="telemetry().cpu_usage_pct || 15" style="background: #06b6d4;"></div>
+          <div class="horizontal-scroll-deck">
+            <div class="card-item-spider" *ngFor="let item of sec.items" (click)="handleDashboardItemClick(item)">
+              <div class="card-thumb-wrap">
+                <img [src]="item.image_url || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80'" class="card-thumb" />
+                <div class="card-play-overlay">▶</div>
+              </div>
+              <div class="card-title">{{ item.title }}</div>
+              <div class="card-subtitle" *ngIf="item.subtitle">{{ item.subtitle }}</div>
             </div>
           </div>
+        </section>
+      </div>
+    </div>
 
-          <div class="hud-card">
-            <div class="hud-card-top">
-              <span class="hud-label">Memory</span>
-              <span class="hud-icon">💾</span>
-            </div>
-            <div class="hud-val">{{ telemetry().memory?.used_formatted || '2.2 GB' }}</div>
-            <div class="hud-sub">{{ telemetry().memory?.usage_pct ? (telemetry().memory!.usage_pct | number:'1.0-0') + '% Used of ' + telemetry().memory?.total_formatted : '28% of 7.9 GB' }}</div>
-            <div class="hud-progress">
-              <div class="hud-fill" [style.width.%]="telemetry().memory?.usage_pct || 28" style="background: #a855f7;"></div>
-            </div>
-          </div>
+    <!-- TAB 1: EXPLORE -->
+    <div class="tab-view-container" *ngIf="selectedTab() === 'explore' && !selectedArtist() && !selectedAlbum() && !selectedMoodTitle()">
+      <div class="explore-hero-header">
+        <h1 class="page-title">Explore & Discover</h1>
+        <p class="page-desc">Trending hits, genres, and mood collections.</p>
+      </div>
 
-          <div class="hud-card">
-            <div class="hud-card-top">
-              <span class="hud-label">Disk Storage</span>
-              <span class="hud-icon">💽</span>
-            </div>
-            <div class="hud-val">{{ telemetry().disk?.used_formatted || '19.3 GB' }}</div>
-            <div class="hud-sub">{{ telemetry().disk?.usage_pct ? (telemetry().disk!.usage_pct | number:'1.1-1') + '% Used of ' + telemetry().disk?.total_formatted : '2.1% of 937 GB' }}</div>
-            <div class="hud-progress">
-              <div class="hud-fill" [style.width.%]="telemetry().disk?.usage_pct || 2.1" style="background: #10b981;"></div>
-            </div>
-          </div>
+      <div class="category-pills-row" style="margin-bottom: 2rem;">
+        <button class="cat-pill" *ngFor="let cat of categories" (click)="performSearch(cat.query)">
+          <span>{{ cat.icon }}</span>
+          <span>{{ cat.name }}</span>
+        </button>
+      </div>
 
-          <div class="hud-card">
-            <div class="hud-card-top">
-              <span class="hud-label">System Uptime</span>
-              <span class="hud-icon">⏱️</span>
+      <div class="dashboard-sections-wrap">
+        <section class="dash-section" *ngFor="let sec of dashboardSections()">
+          <h2 class="section-title">{{ sec.title }}</h2>
+          <div class="horizontal-scroll-deck">
+            <div class="card-item-spider" *ngFor="let item of sec.items" (click)="handleDashboardItemClick(item)">
+              <div class="card-thumb-wrap">
+                <img [src]="item.image_url || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80'" class="card-thumb" />
+                <div class="card-play-overlay">▶</div>
+              </div>
+              <div class="card-title">{{ item.title }}</div>
+              <div class="card-subtitle" *ngIf="item.subtitle">{{ item.subtitle }}</div>
             </div>
-            <div class="hud-val">{{ telemetry().uptime_formatted || '83d 3h' }}</div>
-            <div class="hud-sub">Continuous Active</div>
-            <div class="hud-progress"><div class="hud-fill" style="width: 100%; background: #10b981;"></div></div>
           </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- TAB 2: LIBRARY -->
+    <div class="tab-view-container" *ngIf="selectedTab() === 'library'">
+      <div class="library-header-row">
+        <div>
+          <h1 class="page-title">Your Library</h1>
+          <p class="page-desc">Liked songs, custom playlists, and downloads.</p>
+        </div>
+        <button class="btn-primary-spider" (click)="showNewPlaylistModal.set(true)">
+          <span>➕ New Playlist</span>
+        </button>
+      </div>
+
+      <!-- Liked Songs Banner -->
+      <div class="liked-songs-banner" (click)="playAllSongs(storage.likedSongs())">
+        <div class="heart-icon-large">❤️</div>
+        <div class="liked-info">
+          <h2>Liked Songs</h2>
+          <p>{{ storage.likedSongs().length }} favorite tracks · Instant Play</p>
+        </div>
+        <button class="btn-play-all">▶ Play All</button>
+      </div>
+
+      <!-- Liked Songs Tracklist -->
+      <div class="track-list" *ngIf="storage.likedSongs().length > 0">
+        <div class="track-item" *ngFor="let song of storage.likedSongs()" (click)="playSongNow(song, storage.likedSongs())">
+          <img [src]="song.cover_art_url || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=120&auto=format&fit=crop&q=80'" class="track-img" />
+          <div class="track-details">
+            <div class="track-name">{{ song.title }}</div>
+            <div class="track-artist">{{ song.artist }}</div>
+          </div>
+          <button class="track-action-btn" (click)="$event.stopPropagation(); storage.toggleLikedSong(song)">
+            <span>❤️</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Custom Playlists Grid -->
+      <h3 class="section-title" style="margin-top: 2rem;">Custom Playlists</h3>
+      <div class="playlists-grid">
+        <div class="playlist-card" *ngFor="let pl of storage.customPlaylists()" (click)="playAllSongs(pl.tracks)">
+          <div class="playlist-icon">📁</div>
+          <div class="playlist-name">{{ pl.name }}</div>
+          <div class="playlist-meta">{{ pl.tracks.length }} tracks</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: HISTORY -->
+    <div class="tab-view-container" *ngIf="selectedTab() === 'history'">
+      <h1 class="page-title">Listening History</h1>
+      <p class="page-desc">Recently played tracks across your sessions.</p>
+
+      <div class="track-list" *ngIf="storage.history().length > 0">
+        <div class="track-item" *ngFor="let song of storage.history()" (click)="playSongNow(song, storage.history())">
+          <img [src]="song.cover_art_url || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=120&auto=format&fit=crop&q=80'" class="track-img" />
+          <div class="track-details">
+            <div class="track-name">{{ song.title }}</div>
+            <div class="track-artist">{{ song.artist }}</div>
+          </div>
+          <button class="track-action-btn" (click)="$event.stopPropagation(); storage.toggleLikedSong(song)">
+            <span>{{ storage.isSongLiked(song.id) ? '❤️' : '🤍' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: OFFLINE DOWNLOADS -->
+    <div class="tab-view-container" *ngIf="selectedTab() === 'offline'">
+      <div class="library-header-row">
+        <div>
+          <h1 class="page-title">Offline Audio Downloads</h1>
+          <p class="page-desc">Audio blobs saved in browser IndexedDB for offline playback.</p>
+        </div>
+      </div>
+
+      <div class="track-list" *ngIf="storage.downloads().length > 0">
+        <div class="track-item" *ngFor="let song of storage.downloads()" (click)="playSongNow(song, storage.downloads())">
+          <img [src]="song.cover_art_url || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=120&auto=format&fit=crop&q=80'" class="track-img" />
+          <div class="track-details">
+            <div class="track-name">{{ song.title }}</div>
+            <div class="track-artist">{{ song.artist }}</div>
+          </div>
+          <button class="track-action-btn" (click)="$event.stopPropagation(); storage.removeDownload(song.id)">
+            <span>🗑️</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="empty-state" *ngIf="storage.downloads().length === 0">
+        <div class="empty-icon">📥</div>
+        <p>No offline downloads yet. Tap download on any track to listen offline.</p>
+      </div>
+    </div>
+
+    <!-- TAB 5: SERVER TELEMETRY HUD -->
+    <div class="tab-view-container" *ngIf="selectedTab() === 'server'">
+      <div class="library-header-row">
+        <div>
+          <h1 class="page-title">Raspberry Pi Server Command Deck</h1>
+          <p class="page-desc">Live system metrics, thermal sensors, and infrastructure telemetry.</p>
+        </div>
+        <button class="btn-secondary" (click)="copySSHCommand()">
+          <span>📋 Copy SSH</span>
+        </button>
+      </div>
+
+      <div class="telemetry-grid" *ngIf="telemetry()">
+        <div class="telem-card">
+          <div class="telem-header">
+            <span>SoC Temp</span>
+            <span>🌡️</span>
+          </div>
+          <div class="telem-val">{{ telemetry()?.temperature_c?.toFixed(1) || '--' }} °C</div>
+          <div class="telem-sub">Target &lt; 70°C</div>
         </div>
 
-        <div class="view-section-header" style="margin-top: 2rem;"><h2>Quick Server Shortcuts</h2></div>
-        <div class="server-shortcuts-grid">
-          <a class="shortcut-card" href="https://pottapk.win" target="_blank">
-            <div class="shortcut-icon">🏠</div>
-            <div class="shortcut-name">Landing Hub</div>
-            <div class="shortcut-host">pottapk.win</div>
-          </a>
-          <a class="shortcut-card" href="https://pkpmusiclogs.pottapk.win" target="_blank">
-            <div class="shortcut-icon">📜</div>
-            <div class="shortcut-name">Live Logs</div>
-            <div class="shortcut-host">pkpmusiclogs.pottapk.win</div>
-          </a>
-          <a class="shortcut-card" href="https://postgresql.pottapk.win" target="_blank">
-            <div class="shortcut-icon">🗄️</div>
-            <div class="shortcut-name">PostgreSQL</div>
-            <div class="shortcut-host">postgresql.pottapk.win</div>
-          </a>
-          <a class="shortcut-card" href="https://portainer.pottapk.win" target="_blank">
-            <div class="shortcut-icon">📦</div>
-            <div class="shortcut-name">Portainer</div>
-            <div class="shortcut-host">portainer.pottapk.win</div>
-          </a>
-          <a class="shortcut-card" href="https://cloud.pottapk.win" target="_blank">
-            <div class="shortcut-icon">☁️</div>
-            <div class="shortcut-name">CasaOS</div>
-            <div class="shortcut-host">cloud.pottapk.win</div>
-          </a>
+        <div class="telem-card">
+          <div class="telem-header">
+            <span>CPU Load</span>
+            <span>⚡</span>
+          </div>
+          <div class="telem-val">{{ telemetry()?.cpu_usage_pct?.toFixed(1) || '--' }} %</div>
+          <div class="telem-sub">ARM64 · 4 Cores</div>
         </div>
-      </section>
-    }
+
+        <div class="telem-card">
+          <div class="telem-header">
+            <span>Memory</span>
+            <span>💾</span>
+          </div>
+          <div class="telem-val">{{ telemetry()?.memory?.used_formatted || '--' }}</div>
+          <div class="telem-sub">{{ telemetry()?.memory?.usage_pct }}% of {{ telemetry()?.memory?.total_formatted }}</div>
+        </div>
+
+        <div class="telem-card">
+          <div class="telem-header">
+            <span>NVMe Disk</span>
+            <span>💽</span>
+          </div>
+          <div class="telem-val">{{ telemetry()?.disk?.used_formatted || '--' }}</div>
+          <div class="telem-sub">{{ telemetry()?.disk?.usage_pct }}% of {{ telemetry()?.disk?.total_formatted }}</div>
+        </div>
+
+        <div class="telem-card">
+          <div class="telem-header">
+            <span>Uptime</span>
+            <span>⏱️</span>
+          </div>
+          <div class="telem-val">{{ telemetry()?.uptime_formatted || '--' }}</div>
+          <div class="telem-sub">Continuous Active</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ARTIST DETAIL MODAL / VIEW -->
+    <div class="detail-overlay-view" *ngIf="selectedArtist()">
+      <button class="btn-close-detail" (click)="selectedArtist.set(null)">✕ Close Artist</button>
+      <div class="artist-header">
+        <h1 class="artist-hero-name">{{ selectedArtist()?.name }}</h1>
+        <p class="artist-hero-sub">{{ selectedArtist()?.subscribers }}</p>
+      </div>
+
+      <h3 class="section-title">Top Tracks</h3>
+      <div class="track-list">
+        <div class="track-item" *ngFor="let song of selectedArtist()?.songs" (click)="playSongNow(song, selectedArtist()?.songs)">
+          <img [src]="song.cover_art_url || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=120&auto=format&fit=crop&q=80'" class="track-img" />
+          <div class="track-details">
+            <div class="track-name">{{ song.title }}</div>
+            <div class="track-artist">{{ song.artist }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ALBUM DETAIL MODAL / VIEW -->
+    <div class="detail-overlay-view" *ngIf="selectedAlbum()">
+      <button class="btn-close-detail" (click)="selectedAlbum.set(null)">✕ Close Album</button>
+      <div class="artist-header">
+        <h1 class="artist-hero-name">{{ selectedAlbum()?.title }}</h1>
+        <p class="artist-hero-sub">{{ selectedAlbum()?.trackCount }} Tracks</p>
+      </div>
+
+      <div class="track-list">
+        <div class="track-item" *ngFor="let song of selectedAlbum()?.songs; let idx = index" (click)="playSongNow(song, selectedAlbum()?.songs)">
+          <span class="track-num">{{ idx + 1 }}</span>
+          <div class="track-details">
+            <div class="track-name">{{ song.title }}</div>
+            <div class="track-artist">{{ song.artist }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
 
   </main>
 
-  <!-- BOTTOM PERSISTENT PLAYER -->
-  <footer class="bottom-player">
-    <div class="player-left" (click)="toggleFullscreen()">
-      <img class="player-cover" [src]="player.currentSong()?.cover_art_url || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=100'" alt="Cover" />
-      <div class="player-track-meta">
-        <div class="player-track-title">{{ player.currentSong()?.title || 'No Song Playing' }}</div>
-        <div class="player-track-artist">{{ player.currentSong()?.artist || 'Select a song to start streaming' }}</div>
-      </div>
-      @if (player.currentSong()) {
-        <button class="btn-player-fav" (click)="$event.stopPropagation(); toggleCurrentFav()">
-          {{ isFav(player.currentSong()!.id) ? '❤️' : '🤍' }}
-        </button>
-      }
+  <!-- ==========================================
+       FLOATING MINI PLAYER PILL (iOS MiniPlayerView)
+       ========================================== -->
+  <div class="mini-player-pill" *ngIf="player.currentSong()" (click)="showFullScreenPlayer.set(true)">
+    <img [src]="player.currentSong()?.cover_art_url || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=120&auto=format&fit=crop&q=80'" class="mini-pill-art" [class.spinning]="player.isPlaying()" />
+
+    <div class="mini-pill-info">
+      <div class="mini-pill-title">{{ player.currentSong()?.title }}</div>
+      <div class="mini-pill-artist">{{ player.currentSong()?.artist }}</div>
     </div>
 
-    <div class="player-center">
-      <div class="player-controls">
-        <button class="btn-ctrl" [class.active]="player.shuffle()" (click)="player.toggleShuffle()" title="Shuffle">🔀</button>
-        <button class="btn-ctrl" (click)="player.previous()" title="Previous">⏮</button>
-        <button class="btn-play-pause" (click)="player.togglePlay()" title="Play / Pause">
-          {{ player.isPlaying() ? '⏸' : '▶' }}
-        </button>
-        <button class="btn-ctrl" (click)="player.next()" title="Next">⏭</button>
-        <button class="btn-ctrl" [class.active]="player.repeat() !== 'off'" (click)="player.toggleRepeat()" title="Repeat">
-          {{ player.repeat() === 'one' ? '🔂' : '🔁' }}
-        </button>
-      </div>
+    <button class="mini-pill-btn" (click)="$event.stopPropagation(); player.togglePlay()">
+      <span *ngIf="!player.isLoading()">{{ player.isPlaying() ? '⏸' : '▶' }}</span>
+      <span *ngIf="player.isLoading()" class="spinner-small"></span>
+    </button>
 
-      <div class="player-progress-bar-wrap">
-        <span class="player-time">{{ formatTime(player.currentTime()) }}</span>
-        <div class="seek-slider-container">
-          <div class="seek-slider-fill" [style.width.%]="player.progressPercent()"></div>
-          <input type="range" min="0" max="100" step="0.1" [value]="player.progressPercent()" (input)="onSeek($event)" />
-        </div>
-        <span class="player-time">{{ formatTime(player.duration()) }}</span>
-      </div>
-    </div>
+    <button class="mini-pill-btn" (click)="$event.stopPropagation(); player.playNext()">
+      <span>⏭</span>
+    </button>
+  </div>
 
-    <div class="player-right">
-      <button class="btn-ctrl-tool" [class.active]="isLyricsOpen()" (click)="toggleLyrics()" title="Lyrics">🎤</button>
-      <button class="btn-ctrl-tool" [class.active]="isQueueOpen()" (click)="toggleQueue()" title="Queue">📑</button>
-      @if (player.currentSong()) {
-        <button class="btn-ctrl-tool" (click)="downloadSong(player.currentSong()!)" title="Save Offline">📥</button>
-      }
-      <div class="volume-control-wrap">
-        <span class="volume-icon" (click)="player.toggleMute()">
-          {{ player.isMuted() || player.volume() === 0 ? '🔇' : '🔊' }}
-        </span>
-        <input type="range" min="0" max="1" step="0.01" [value]="player.volume()" (input)="onVolume($event)" />
-      </div>
-    </div>
-  </footer>
-
-  <!-- MOBILE BOTTOM NAVIGATION -->
-  <nav class="mobile-bottom-nav">
-    <button class="mobile-nav-item" [class.active]="activeTab() === 'home'" (click)="switchView('home')">
-      <span class="mob-icon">🏠</span>
-      <span class="mob-label">Home</span>
+  <!-- MOBILE BOTTOM TAB BAR -->
+  <nav class="mobile-tab-bar">
+    <button class="mobile-tab-btn" [class.active]="selectedTab() === 'home'" (click)="setTab('home')">
+      <span class="tab-icon">🏠</span>
+      <span class="tab-label">Home</span>
     </button>
-    <button class="mobile-nav-item" [class.active]="activeTab() === 'explore'" (click)="switchView('explore')">
-      <span class="mob-icon">✨</span>
-      <span class="mob-label">Explore</span>
+    <button class="mobile-tab-btn" [class.active]="selectedTab() === 'explore'" (click)="setTab('explore')">
+      <span class="tab-icon">🧭</span>
+      <span class="tab-label">Explore</span>
     </button>
-    <button class="mobile-nav-item" [class.active]="activeTab() === 'search'" (click)="switchView('search')">
-      <span class="mob-icon">🔍</span>
-      <span class="mob-label">Search</span>
+    <button class="mobile-tab-btn" [class.active]="selectedTab() === 'library'" (click)="setTab('library')">
+      <span class="tab-icon">📚</span>
+      <span class="tab-label">Library</span>
     </button>
-    <button class="mobile-nav-item" [class.active]="activeTab() === 'favorites'" (click)="switchView('favorites')">
-      <span class="mob-icon">❤️</span>
-      <span class="mob-label">Liked</span>
+    <button class="mobile-tab-btn" [class.active]="selectedTab() === 'history'" (click)="setTab('history')">
+      <span class="tab-icon">⏱️</span>
+      <span class="tab-label">History</span>
     </button>
-    <button class="mobile-nav-item" [class.active]="activeTab() === 'playlists'" (click)="switchView('playlists')">
-      <span class="mob-icon">📚</span>
-      <span class="mob-label">Library</span>
+    <button class="mobile-tab-btn" [class.active]="selectedTab() === 'server'" (click)="setTab('server')">
+      <span class="tab-icon">🖥️</span>
+      <span class="tab-label">Server</span>
     </button>
   </nav>
 
-  <!-- FULLSCREEN NOW PLAYING SHEET -->
-  <div class="fullscreen-player-modal" [class.active]="isFullscreenOpen()">
-    <div class="fs-backdrop-blur" [style.background-image]="'url(' + (player.currentSong()?.cover_art_url || '') + ')'"></div>
-    <div class="fs-content">
-      <header class="fs-header">
-        <button class="btn-icon" (click)="toggleFullscreen()">⌄</button>
-        <div class="fs-header-title">NOW PLAYING</div>
-        <button class="btn-icon" (click)="toggleLyrics()">🎤</button>
-      </header>
+</div>
 
-      <div class="fs-cover-wrap">
-        <img class="fs-cover" [src]="player.currentSong()?.cover_art_url || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500'" alt="Cover" />
+<!-- ==========================================
+     FULL-SCREEN EXPANDING PLAYER (iOS FullScreenPlayerView)
+     ========================================== -->
+<div class="fullscreen-player-modal" *ngIf="showFullScreenPlayer() && player.currentSong()">
+  <!-- Dynamic Cover Blur Backdrop -->
+  <div class="modal-bg-blur" [style.background-image]="'url(' + (player.currentSong()?.cover_art_url || '') + ')'"></div>
+  <div class="modal-overlay-tint"></div>
+
+  <div class="fullscreen-player-content">
+    
+    <!-- Top Header -->
+    <div class="player-top-bar">
+      <button class="btn-player-action" (click)="showFullScreenPlayer.set(false)">
+        <span>↓</span>
+      </button>
+
+      <div class="song-video-toggle-capsule">
+        <button class="capsule-btn active">Song</button>
+        <button class="capsule-btn">Video</button>
       </div>
 
-      <div class="fs-meta-row">
-        <div class="fs-track-info">
-          <div class="fs-title">{{ player.currentSong()?.title || 'Song Title' }}</div>
-          <div class="fs-artist">{{ player.currentSong()?.artist || 'Artist Name' }}</div>
-        </div>
-        @if (player.currentSong()) {
-          <button class="btn-icon fs-fav-btn" (click)="toggleCurrentFav()">
-            {{ isFav(player.currentSong()!.id) ? '❤️' : '🤍' }}
-          </button>
-        }
+      <button class="btn-player-action" (click)="toggleSheet('options')">
+        <span>•••</span>
+      </button>
+    </div>
+
+    <!-- Large Artwork -->
+    <div class="player-artwork-wrap">
+      <img [src]="player.currentSong()?.cover_art_url || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80'" class="player-artwork" [class.pulse-glow]="player.isPlaying()" />
+    </div>
+
+    <!-- Song Info & Utility Actions -->
+    <div class="player-info-row">
+      <div class="player-titles">
+        <h1 class="player-song-title">{{ player.currentSong()?.title }}</h1>
+        <h2 class="player-song-artist">{{ player.currentSong()?.artist }}</h2>
       </div>
 
-      <div class="fs-progress-wrap">
-        <div class="seek-slider-container">
-          <div class="seek-slider-fill" [style.width.%]="player.progressPercent()"></div>
-          <input type="range" min="0" max="100" step="0.1" [value]="player.progressPercent()" (input)="onSeek($event)" />
-        </div>
-        <div class="fs-time-labels">
-          <span>{{ formatTime(player.currentTime()) }}</span>
-          <span>{{ formatTime(player.duration()) }}</span>
-        </div>
-      </div>
-
-      <div class="fs-controls-wrap">
-        <button class="fs-btn-ctrl" [class.active]="player.shuffle()" (click)="player.toggleShuffle()">🔀</button>
-        <button class="fs-btn-ctrl" (click)="player.previous()">⏮</button>
-        <button class="fs-btn-play" (click)="player.togglePlay()">
-          {{ player.isPlaying() ? '⏸' : '▶' }}
+      <div class="player-utility-icons">
+        <button class="btn-utility" (click)="toggleSheet('queue')" title="Up Next Queue">
+          <span>📋</span>
         </button>
-        <button class="fs-btn-ctrl" (click)="player.next()">⏭</button>
-        <button class="fs-btn-ctrl" [class.active]="player.repeat() !== 'off'" (click)="player.toggleRepeat()">
-          {{ player.repeat() === 'one' ? '🔂' : '🔁' }}
+        <button class="btn-utility" (click)="toggleSheet('lyrics')" title="Synced Lyrics">
+          <span>💬</span>
+        </button>
+        <button class="btn-utility" (click)="storage.toggleLikedSong(player.currentSong()!)" title="Like">
+          <span>{{ storage.isSongLiked(player.currentSong()!.id) ? '❤️' : '🤍' }}</span>
         </button>
       </div>
+    </div>
 
-      <div class="fs-bottom-tools">
-        <button class="btn" (click)="toggleQueue()">📑 Up Next Queue</button>
-        @if (player.currentSong()) {
-          <button class="btn" (click)="downloadSong(player.currentSong()!)">📥 Save Offline</button>
-        }
+    <!-- Progress Scrubber -->
+    <div class="scrubber-container">
+      <input type="range" 
+             class="slider-scrub" 
+             min="0" 
+             [max]="player.duration() > 0 ? player.duration() : 1" 
+             [value]="player.currentTime()" 
+             (input)="player.seek($any($event.target).value)" />
+
+      <div class="scrubber-times">
+        <span>{{ formatTime(player.currentTime()) }}</span>
+        <span>{{ formatTime(player.duration()) }}</span>
       </div>
     </div>
+
+    <!-- Main Playback Controls -->
+    <div class="main-playback-controls">
+      <button class="btn-ctrl" [class.active]="player.shuffle()" (click)="player.toggleShuffle()">
+        <span>🔀</span>
+      </button>
+
+      <button class="btn-ctrl-large" (click)="player.playPrevious()">
+        <span>⏮</span>
+      </button>
+
+      <button class="btn-play-hero" (click)="player.togglePlay()">
+        <span *ngIf="!player.isLoading()">{{ player.isPlaying() ? '⏸' : '▶' }}</span>
+        <span *ngIf="player.isLoading()" class="spinner"></span>
+      </button>
+
+      <button class="btn-ctrl-large" (click)="player.playNext()">
+        <span>⏭</span>
+      </button>
+
+      <button class="btn-ctrl" [class.active]="player.repeatMode() !== 'off'" (click)="player.toggleRepeat()">
+        <span>{{ player.repeatMode() === 'one' ? '🔂' : '🔁' }}</span>
+      </button>
+    </div>
+
   </div>
 
-  <!-- SYNCHRONIZED LYRICS DRAWER -->
-  <div class="side-drawer" [class.active]="isLyricsOpen()">
+  <!-- SYNCED LYRICS DRAWER (iOS LyricsView) -->
+  <div class="sheet-drawer" *ngIf="activePlayerSheet() === 'lyrics'">
     <div class="drawer-header">
-      <div class="drawer-title">📜 Synchronized Lyrics</div>
-      <button class="drawer-close" (click)="toggleLyrics()">✕</button>
+      <span class="drawer-title">LYRICS</span>
+      <button class="btn-close-drawer" (click)="activePlayerSheet.set(null)">Done</button>
     </div>
-    <div class="drawer-body lyrics-body">
-      @if (player.isSyncedLyrics() && player.syncedLines().length > 0) {
-        @for (line of player.syncedLines(); track line.time; let idx = $index) {
-          <div class="lyrics-line" [class.active]="player.activeLyricIndex() === idx" (click)="player.seek(line.time)">
-            {{ line.text }}
-          </div>
-        }
-      } @else if (player.lyricsText()) {
-        <div style="white-space: pre-line; line-height: 1.8; color: #fff; font-size: 15px;">
-          {{ player.lyricsText() }}
-        </div>
-      } @else {
-        <div class="lyrics-placeholder">
-          Play a song to load synchronized lyrics...
-        </div>
-      }
+
+    <div class="lyrics-scroll-body" *ngIf="lyrics.parsedLines().length > 0">
+      <div class="lyric-line-item" 
+           *ngFor="let line of lyrics.parsedLines(); let idx = index"
+           [class.active]="lyrics.activeLineIndex() === idx"
+           (click)="player.seek(line.time)">
+        {{ line.text }}
+      </div>
     </div>
-    <div class="drawer-footer">
-      <span class="lyrics-source-tag">Source: {{ player.lyricsSource() }}</span>
+
+    <div class="lyrics-empty" *ngIf="lyrics.parsedLines().length === 0">
+      <p>No synced lyrics found for this song.</p>
     </div>
   </div>
 
-  <!-- UP NEXT QUEUE DRAWER -->
-  <div class="side-drawer" [class.active]="isQueueOpen()">
+  <!-- QUEUE DRAWER -->
+  <div class="sheet-drawer" *ngIf="activePlayerSheet() === 'queue'">
     <div class="drawer-header">
-      <div class="drawer-title">📑 Play Queue ({{ player.queue().length }})</div>
-      <div style="display: flex; gap: 8px;">
-        <button class="btn-small" (click)="player.clearQueue()">Clear</button>
-        <button class="drawer-close" (click)="toggleQueue()">✕</button>
-      </div>
+      <span class="drawer-title">UP NEXT QUEUE</span>
+      <button class="btn-close-drawer" (click)="activePlayerSheet.set(null)">Done</button>
     </div>
-    <div class="drawer-body">
-      <div class="track-list">
-        @for (song of player.queue(); track song.id; let idx = $index) {
-          <div class="track-row" [class.active]="player.currentIndex() === idx" (click)="player.playSong(song)">
-            <span class="track-num">{{ idx + 1 }}</span>
-            <img class="track-cover" [src]="song.cover_art_url" alt="Cover" />
-            <div class="track-info">
-              <div class="track-title">{{ song.title }}</div>
-              <div class="track-artist">{{ song.artist }}</div>
-            </div>
-            <div class="track-actions">
-              <button class="btn-icon" (click)="$event.stopPropagation(); player.removeFromQueue(idx)">✕</button>
-            </div>
-          </div>
-        }
-      </div>
-    </div>
-  </div>
 
-  <!-- CREATE PLAYLIST MODAL -->
-  <div class="modal-overlay" [class.active]="isCreatePlaylistOpen()">
-    <div class="modal-card">
-      <div class="modal-header">
-        <div class="modal-title">Create New Playlist</div>
-        <button class="modal-close" (click)="isCreatePlaylistOpen.set(false)">✕</button>
-      </div>
-      <form (submit)="$event.preventDefault(); handleCreatePlaylist()">
-        <input type="text" [ngModel]="newPlaylistName()" (ngModelChange)="newPlaylistName.set($event)" name="plName" class="input-field" placeholder="Playlist Name (e.g. Midnight Mix)" required />
-        <textarea [ngModel]="newPlaylistDesc()" (ngModelChange)="newPlaylistDesc.set($event)" name="plDesc" class="input-field" placeholder="Description (optional)" rows="3"></textarea>
-        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Create Playlist</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- SETTINGS MODAL -->
-  <div class="modal-overlay" [class.active]="isSettingsOpen()">
-    <div class="modal-card">
-      <div class="modal-header">
-        <div class="modal-title">⚙️ Audio & App Settings</div>
-        <button class="modal-close" (click)="isSettingsOpen.set(false)">✕</button>
-      </div>
-      <div class="settings-group">
-        <label class="settings-label">Streaming Audio Quality</label>
-        <select [ngModel]="audioQuality()" (ngModelChange)="saveAudioQuality($event)" class="input-field">
-          <option value="auto">Auto (Best Quality - High Fidelity)</option>
-          <option value="high">High (140 m4a / 256kbps)</option>
-          <option value="normal">Normal (128kbps)</option>
-          <option value="data_saver">Data Saver (64kbps)</option>
-        </select>
-      </div>
-      <div class="settings-group" style="margin-top: 1.25rem;">
-        <label class="settings-label">Clear Offline Storage</label>
-        <button class="btn" (click)="clearAllOffline()">🗑️ Purge Downloaded Songs</button>
+    <div class="queue-scroll-body">
+      <div class="track-item" *ngFor="let song of player.queue()" (click)="player.playSong(song)">
+        <img [src]="song.cover_art_url || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=120&auto=format&fit=crop&q=80'" class="track-img" />
+        <div class="track-details">
+          <div class="track-name">{{ song.title }}</div>
+          <div class="track-artist">{{ song.artist }}</div>
+        </div>
       </div>
     </div>
-  </div>
-
-  <!-- TOAST NOTIFICATIONS -->
-  <div class="toast-container">
-    @for (toast of toasts(); track toast.id) {
-      <div class="toast">{{ toast.message }}</div>
-    }
   </div>
 
 </div>

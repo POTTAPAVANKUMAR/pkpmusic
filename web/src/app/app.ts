@@ -2,103 +2,238 @@ import { Component, OnInit, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from './services/api.service';
-import { StorageService } from './services/storage.service';
 import { PlayerService } from './services/player.service';
-import { Song, DashboardSection, DashboardItem, ArtistDetail, AlbumDetail, CustomPlaylist, ServerTelemetry, SyncedLyricLine } from './models/music.model';
+import { StorageService } from './services/storage.service';
+import { LyricsService } from './services/lyrics.service';
+import { AuthService } from './services/auth.service';
+import { 
+  Song, 
+  DashboardSection, 
+  DashboardItem, 
+  ArtistDetail, 
+  AlbumDetail, 
+  AlbumSearchResult, 
+  ArtistSearchResult,
+  CustomPlaylist, 
+  ServerTelemetry 
+} from './models/music.model';
+
+type AppTab = 'home' | 'explore' | 'library' | 'history' | 'offline' | 'server' | 'api' | 'db' | 'logs';
+type SearchType = 'songs' | 'albums' | 'artists';
 
 @Component({
   selector: 'app-root',
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './app.html',
-  styleUrl: './app.css'
+  styleUrls: ['./app.css']
 })
 export class App implements OnInit {
-  // Navigation State
-  activeTab = signal<string>('home');
+  // Auth & Tab State
+  selectedTab = signal<AppTab>('home');
+  
+  // Auth Form State
+  authMode = signal<'login' | 'register' | 'passcode' | 'forgot'>('login');
+  loginEmail = signal<string>('');
+  loginPassword = signal<string>('');
+  registerName = signal<string>('');
+  registerEmail = signal<string>('');
+  registerPassword = signal<string>('');
+  passcodeInput = signal<string>('');
+  authError = signal<string | null>(null);
+  authLoading = signal<boolean>(false);
+  authSuccessMsg = signal<string | null>(null);
 
   // Search State
   searchQuery = signal<string>('');
+  isSearching = signal<boolean>(false);
+  searchType = signal<SearchType>('songs');
+  searchResults = signal<Song[]>([]);
+  searchAlbumResults = signal<AlbumSearchResult[]>([]);
+  searchArtistResults = signal<ArtistSearchResult[]>([]);
   searchSuggestions = signal<string[]>([]);
   showSuggestions = signal<boolean>(false);
-  searchFilter = signal<'all' | 'songs' | 'albums' | 'artists'>('all');
-  searchSongsList = signal<Song[]>([]);
-  searchAlbumsList = signal<any[]>([]);
-  searchArtistsList = signal<any[]>([]);
-  isSearching = signal<boolean>(false);
 
-  // Home & Explore Feed
-  exploreSections = signal<DashboardSection[]>([]);
-  isLoadingExplore = signal<boolean>(true);
+  // Dashboard & Navigation Data
+  dashboardSections = signal<DashboardSection[]>([]);
+  dashboardLoading = signal<boolean>(false);
+  dashboardError = signal<string | null>(null);
 
-  // Library State
-  favorites = signal<Song[]>([]);
-  playlists = signal<CustomPlaylist[]>([]);
-  history = signal<Song[]>([]);
-  downloads = signal<Song[]>([]);
+  // Category Pills
+  categories = [
+    { name: 'Telugu', icon: '🎵', query: 'telugu songs' },
+    { name: 'English', icon: '🎧', query: 'english songs' },
+    { name: 'Tamil', icon: '🎼', query: 'tamil songs' },
+    { name: 'Hindi', icon: '📻', query: 'hindi songs' },
+    { name: 'Pop', icon: '🎤', query: 'pop music' },
+    { name: 'R&B', icon: '🎶', query: 'r&b music' },
+    { name: 'Artists', icon: '👥', query: 'top artists' },
+    { name: 'Albums', icon: '💿', query: 'top albums' }
+  ];
 
-  // Details
-  currentDetail = signal<AlbumDetail | null>(null);
-  currentArtist = signal<ArtistDetail | null>(null);
+  // Details Views
+  selectedArtist = signal<ArtistDetail | null>(null);
+  selectedAlbum = signal<AlbumDetail | null>(null);
+  selectedMoodTitle = signal<string | null>(null);
+  moodPlaylists = signal<DashboardItem[]>([]);
+  detailLoading = signal<boolean>(false);
 
-  // Modals & Drawers
-  isFullscreenOpen = signal<boolean>(false);
-  isLyricsOpen = signal<boolean>(false);
-  isQueueOpen = signal<boolean>(false);
-  isCreatePlaylistOpen = signal<boolean>(false);
-  isSettingsOpen = signal<boolean>(false);
+  // Sheets & Drawers
+  showFullScreenPlayer = signal<boolean>(false);
+  activePlayerSheet = signal<'lyrics' | 'queue' | 'related' | 'options' | null>(null);
   newPlaylistName = signal<string>('');
-  newPlaylistDesc = signal<string>('');
-
-  // Settings
-  audioQuality = signal<string>('auto');
+  showNewPlaylistModal = signal<boolean>(false);
 
   // Server Telemetry
-  telemetry = signal<ServerTelemetry>({});
-
-  // Toast System
-  toasts = signal<{ id: number; message: string }[]>([]);
+  telemetry = signal<ServerTelemetry | null>(null);
 
   constructor(
+    public auth: AuthService,
     public player: PlayerService,
-    private api: ApiService,
-    private storage: StorageService
-  ) {}
-
-  ngOnInit(): void {
-    this.loadExploreFeed();
-    this.refreshLibrary();
-    this.fetchTelemetry();
-    this.audioQuality.set(this.storage.getAudioQuality());
-
-    // Poll telemetry periodically
-    setInterval(() => this.fetchTelemetry(), 6000);
+    public storage: StorageService,
+    public lyrics: LyricsService,
+    private api: ApiService
+  ) {
+    // Load dashboard when authenticated
+    effect(() => {
+      if (this.auth.isAuthenticated()) {
+        this.loadDashboard();
+        this.loadTelemetry();
+      }
+    });
   }
 
-  // --- NAVIGATION ---
-  switchView(tab: string): void {
-    this.activeTab.set(tab);
-    if (tab === 'favorites' || tab === 'playlists' || tab === 'history' || tab === 'downloads') {
-      this.refreshLibrary();
+  ngOnInit() {
+    if (this.auth.isAuthenticated()) {
+      this.loadDashboard();
+      this.loadTelemetry();
+      setInterval(() => {
+        if (this.selectedTab() === 'server') {
+          this.loadTelemetry();
+        }
+      }, 6000);
     }
   }
 
-  // --- EXPLORE & HOME ---
-  loadExploreFeed(): void {
-    this.isLoadingExplore.set(true);
-    this.api.getExplore().subscribe(sections => {
-      this.exploreSections.set(sections || []);
-      this.isLoadingExplore.set(false);
+  // --- AUTH METHODS ---
+  handleLogin() {
+    if (!this.loginEmail() || !this.loginPassword()) {
+      this.authError.set('Please enter both email and password');
+      return;
+    }
+    this.authLoading.set(true);
+    this.authError.set(null);
+
+    this.api.login(this.loginEmail(), this.loginPassword()).subscribe({
+      next: (res) => {
+        this.auth.setSession(res.access_token);
+        this.authLoading.set(false);
+      },
+      error: (err) => {
+        this.authLoading.set(false);
+        this.authError.set(err.error?.detail || 'Invalid email or password');
+      }
+    });
+  }
+
+  handleRegister() {
+    if (!this.registerEmail() || !this.registerPassword()) {
+      this.authError.set('Please complete all fields');
+      return;
+    }
+    this.authLoading.set(true);
+    this.authError.set(null);
+
+    this.api.register(this.registerName(), this.registerEmail(), this.registerPassword()).subscribe({
+      next: () => {
+        // Auto-login after registration
+        this.api.login(this.registerEmail(), this.registerPassword()).subscribe({
+          next: (res) => {
+            this.auth.setSession(res.access_token);
+            this.authLoading.set(false);
+          },
+          error: () => {
+            this.authLoading.set(false);
+            this.authMode.set('login');
+            this.authSuccessMsg.set('Account created! Please sign in.');
+          }
+        });
+      },
+      error: (err) => {
+        this.authLoading.set(false);
+        this.authError.set(err.error?.detail || 'Registration failed');
+      }
+    });
+  }
+
+  handlePasscodeUnlock() {
+    const success = this.auth.loginWithPasscode(this.passcodeInput());
+    if (success) {
+      this.authError.set(null);
+    } else {
+      this.authError.set('Incorrect passcode. Please try again.');
+      this.passcodeInput.set('');
+    }
+  }
+
+  handleForgotPassword() {
+    if (!this.loginEmail()) {
+      this.authError.set('Please enter your email first');
+      return;
+    }
+    this.authLoading.set(true);
+    this.api.forgotPassword(this.loginEmail()).subscribe({
+      next: () => {
+        this.authLoading.set(false);
+        this.authSuccessMsg.set('If registered, password reset instructions have been sent.');
+      },
+      error: () => {
+        this.authLoading.set(false);
+        this.authSuccessMsg.set('If registered, password reset instructions have been sent.');
+      }
+    });
+  }
+
+  handleLogout() {
+    this.auth.logout();
+    this.player.pause();
+  }
+
+  // --- NAVIGATION & TABS ---
+  setTab(tab: AppTab) {
+    this.selectedTab.set(tab);
+    this.selectedArtist.set(null);
+    this.selectedAlbum.set(null);
+    this.selectedMoodTitle.set(null);
+    if (tab === 'server') {
+      this.loadTelemetry();
+    }
+  }
+
+  // --- DASHBOARD ---
+  loadDashboard() {
+    this.dashboardLoading.set(true);
+    this.dashboardError.set(null);
+
+    this.api.getExplore().subscribe({
+      next: (sections) => {
+        this.dashboardSections.set(sections);
+        this.dashboardLoading.set(false);
+      },
+      error: (err) => {
+        this.dashboardError.set('Failed to load music dashboard.');
+        this.dashboardLoading.set(false);
+      }
     });
   }
 
   // --- SEARCH ---
-  onSearchInput(val: string): void {
-    this.searchQuery.set(val);
-    if (val.trim().length > 1) {
-      this.api.getSearchSuggestions(val.trim()).subscribe(suggs => {
-        this.searchSuggestions.set(suggs || []);
-        this.showSuggestions.set(suggs && suggs.length > 0);
+  onSearchInput(query: string) {
+    this.searchQuery.set(query);
+    if (query.trim().length > 1) {
+      this.api.getSearchSuggestions(query).subscribe(suggs => {
+        this.searchSuggestions.set(suggs.slice(0, 5));
+        this.showSuggestions.set(true);
       });
     } else {
       this.searchSuggestions.set([]);
@@ -106,269 +241,143 @@ export class App implements OnInit {
     }
   }
 
-  selectSuggestion(sugg: string): void {
-    this.searchQuery.set(sugg);
-    this.showSuggestions.set(false);
-    this.executeSearch();
-  }
-
-  executeSearch(): void {
-    const q = this.searchQuery().trim();
+  performSearch(query?: string) {
+    const q = (query !== undefined ? query : this.searchQuery()).trim();
     if (!q) return;
-    this.showSuggestions.set(false);
+
+    this.searchQuery.set(q);
     this.isSearching.set(true);
-    this.switchView('search');
+    this.showSuggestions.set(false);
 
-    this.api.searchSongs(q).subscribe(songs => {
-      this.searchSongsList.set(songs || []);
-      this.isSearching.set(false);
-    });
-
-    this.api.searchAlbums(q).subscribe(albums => {
-      this.searchAlbumsList.set(albums || []);
-    });
-
-    this.api.searchArtists(q).subscribe(artists => {
-      this.searchArtistsList.set(artists || []);
-    });
-  }
-
-  setFilter(filter: 'all' | 'songs' | 'albums' | 'artists'): void {
-    this.searchFilter.set(filter);
-  }
-
-  // --- ALBUM / ARTIST / PLAYLIST NAVIGATION ---
-  openAlbum(browseId: string): void {
-    this.api.getAlbum(browseId).subscribe(album => {
-      if (album) {
-        this.currentDetail.set(album);
-        this.switchView('detail');
-      }
-    });
-  }
-
-  openArtist(channelId: string): void {
-    this.api.getArtist(channelId).subscribe(artist => {
-      if (artist) {
-        this.currentArtist.set(artist);
-        this.switchView('artist');
-      }
-    });
-  }
-
-  openMoodPlaylists(params: string): void {
-    this.api.getMoodPlaylists(params).subscribe(items => {
-      if (items && items.length > 0) {
-        const formattedTracks: Song[] = items.filter(i => i.type === 'song').map(i => ({
-          id: i.id,
-          title: i.title,
-          artist: i.subtitle || 'Mood Mix',
-          cover_art_url: i.image_url
-        }));
-        this.currentDetail.set({
-          title: 'Mood Mix',
-          trackCount: formattedTracks.length,
-          thumbnails: [],
-          songs: formattedTracks
-        });
-        this.switchView('detail');
-      }
-    });
-  }
-
-  openCustomPlaylist(playlist: CustomPlaylist): void {
-    this.currentDetail.set({
-      title: playlist.name,
-      description: playlist.description,
-      trackCount: playlist.tracks.length,
-      thumbnails: [],
-      songs: playlist.tracks
-    });
-    this.switchView('detail');
-  }
-
-  // --- PLAYBACK TRIGGERS ---
-  playSong(song: Song, queue?: Song[]): void {
-    this.player.playSong(song, queue);
-  }
-
-  playAll(songs: Song[]): void {
-    if (songs && songs.length > 0) {
-      this.player.playSong(songs[0], songs);
+    if (this.searchType() === 'songs') {
+      this.api.searchSongs(q).subscribe(results => {
+        this.searchResults.set(results);
+      });
+    } else if (this.searchType() === 'albums') {
+      this.api.searchAlbums(q).subscribe(results => {
+        this.searchAlbumResults.set(results);
+      });
+    } else if (this.searchType() === 'artists') {
+      this.api.searchArtists(q).subscribe(results => {
+        this.searchArtistResults.set(results);
+      });
     }
   }
 
-  shuffleAll(songs: Song[]): void {
-    if (songs && songs.length > 0) {
-      const shuffled = [...songs].sort(() => Math.random() - 0.5);
-      this.player.playSong(shuffled[0], shuffled);
+  clearSearch() {
+    this.searchQuery.set('');
+    this.isSearching.set(false);
+    this.searchResults.set([]);
+    this.searchAlbumResults.set([]);
+    this.searchArtistResults.set([]);
+    this.showSuggestions.set(false);
+  }
+
+  setSearchType(type: SearchType) {
+    this.searchType.set(type);
+    if (this.isSearching() && this.searchQuery()) {
+      this.performSearch();
     }
   }
 
-  playItem(item: DashboardItem): void {
+  // --- ITEM INTERACTIONS ---
+  handleDashboardItemClick(item: DashboardItem) {
     if (item.type === 'song') {
-      this.playSong({
+      const song: Song = {
         id: item.id,
         title: item.title,
-        artist: item.subtitle || 'Unknown',
+        artist: item.subtitle || 'Unknown Artist',
         cover_art_url: item.image_url
-      });
-    } else if (item.type === 'album' || item.type === 'playlist') {
-      this.openAlbum(item.id);
+      };
+      this.player.playSong(song);
+      this.showFullScreenPlayer.set(true);
     } else if (item.type === 'artist') {
       this.openArtist(item.id);
+    } else if (item.type === 'album') {
+      this.openAlbum(item.id);
     } else if (item.type === 'mood') {
-      this.openMoodPlaylists(item.id);
+      this.openMood(item.id, item.title);
     }
   }
 
-  // --- FAVORITES & OFFLINE ---
-  isFav(songId: string): boolean {
-    return this.storage.isFavorite(songId);
+  openArtist(channelId: string) {
+    this.detailLoading.set(true);
+    this.selectedAlbum.set(null);
+    this.selectedMoodTitle.set(null);
+    this.api.getArtist(channelId).subscribe(artist => {
+      this.selectedArtist.set(artist);
+      this.detailLoading.set(false);
+    });
   }
 
-  toggleFav(song: Song, event?: Event): void {
-    if (event) event.stopPropagation();
-    if (this.isFav(song.id)) {
-      this.storage.removeFavorite(song.id);
-      this.showToast(`Removed "${song.title}" from Liked Songs`);
+  openAlbum(browseId: string) {
+    this.detailLoading.set(true);
+    this.selectedArtist.set(null);
+    this.selectedMoodTitle.set(null);
+    this.api.getAlbum(browseId).subscribe(album => {
+      this.selectedAlbum.set(album);
+      this.detailLoading.set(false);
+    });
+  }
+
+  openMood(params: string, title: string) {
+    this.detailLoading.set(true);
+    this.selectedArtist.set(null);
+    this.selectedAlbum.set(null);
+    this.selectedMoodTitle.set(title);
+    this.api.getMoodPlaylists(params).subscribe(items => {
+      this.moodPlaylists.set(items);
+      this.detailLoading.set(false);
+    });
+  }
+
+  // --- PLAYBACK HELPERS ---
+  playSongNow(song: Song, queueList?: Song[]) {
+    this.player.playSong(song, queueList);
+    this.showFullScreenPlayer.set(true);
+  }
+
+  playAllSongs(songs: Song[]) {
+    if (songs.length > 0) {
+      this.player.playSong(songs[0], songs);
+      this.showFullScreenPlayer.set(true);
+    }
+  }
+
+  toggleSheet(sheet: 'lyrics' | 'queue' | 'related' | 'options') {
+    if (this.activePlayerSheet() === sheet) {
+      this.activePlayerSheet.set(null);
     } else {
-      this.storage.saveFavorite(song);
-      this.showToast(`Added "${song.title}" to Liked Songs ❤️`);
-    }
-    this.refreshLibrary();
-  }
-
-  toggleCurrentFav(): void {
-    const cur = this.player.currentSong();
-    if (cur) this.toggleFav(cur);
-  }
-
-  async downloadSong(song: Song, event?: Event): Promise<void> {
-    if (event) event.stopPropagation();
-    this.showToast(`Downloading "${song.title}" for offline listening...`);
-    try {
-      this.api.downloadAudioBlob(song.id).subscribe(async blob => {
-        if (blob) {
-          await this.storage.saveOfflineSong(song, blob);
-          this.showToast(`Downloaded "${song.title}" offline 📥`);
-          this.refreshLibrary();
-        }
-      });
-    } catch (e) {
-      this.showToast(`Download error: ${e}`);
+      this.activePlayerSheet.set(sheet);
     }
   }
 
-  async deleteOfflineSong(songId: string, event?: Event): Promise<void> {
-    if (event) event.stopPropagation();
-    await this.storage.removeOfflineSong(songId);
-    this.showToast('Removed offline song');
-    this.refreshLibrary();
-  }
-
-  // --- PLAYLIST CREATION ---
-  openCreatePlaylist(): void {
-    this.newPlaylistName.set('');
-    this.newPlaylistDesc.set('');
-    this.isCreatePlaylistOpen.set(true);
-  }
-
-  handleCreatePlaylist(): void {
+  // --- CUSTOM PLAYLISTS ---
+  createPlaylist() {
     const name = this.newPlaylistName().trim();
-    if (!name) return;
-    this.storage.createPlaylist(name, this.newPlaylistDesc().trim());
-    this.isCreatePlaylistOpen.set(false);
-    this.refreshLibrary();
-    this.showToast(`Created playlist "${name}" ✨`);
-  }
-
-  deletePlaylist(playlistId: string, event?: Event): void {
-    if (event) event.stopPropagation();
-    this.storage.deletePlaylist(playlistId);
-    this.refreshLibrary();
-    this.showToast('Deleted playlist');
-  }
-
-  // --- LIBRARY REFRESH ---
-  async refreshLibrary(): Promise<void> {
-    this.favorites.set(this.storage.getFavorites());
-    this.playlists.set(this.storage.getPlaylists());
-    this.history.set(this.storage.getHistory());
-    const off = await this.storage.getOfflineSongs();
-    this.downloads.set(off);
-  }
-
-  // --- SERVER TELEMETRY ---
-  fetchTelemetry(): void {
-    this.api.getServerTelemetry().subscribe(telem => {
-      if (telem) this.telemetry.set(telem);
-    });
-  }
-
-  copySSH(): void {
-    navigator.clipboard.writeText('ssh pavankumarpotta@192.168.1.151').then(() => {
-      this.showToast('Copied SSH command to clipboard! 📋');
-    });
-  }
-
-  // --- SEEK & VOLUME ---
-  onSeek(event: any): void {
-    const val = parseFloat(event.target.value);
-    const dur = this.player.duration();
-    if (dur > 0) {
-      const targetSec = (val / 100) * dur;
-      this.player.seek(targetSec);
+    if (name) {
+      this.storage.createPlaylist(name);
+      this.newPlaylistName.set('');
+      this.showNewPlaylistModal.set(false);
     }
   }
 
-  onVolume(event: any): void {
-    const val = parseFloat(event.target.value);
-    this.player.setVolume(val);
+  // --- TELEMETRY ---
+  loadTelemetry() {
+    this.api.getServerTelemetry().subscribe(telem => {
+      this.telemetry.set(telem);
+    });
   }
 
-  // --- MODAL TOGGLES ---
-  toggleFullscreen(): void {
-    this.isFullscreenOpen.set(!this.isFullscreenOpen());
+  copySSHCommand() {
+    navigator.clipboard.writeText('ssh pavankumarpotta@192.168.1.151');
+    alert('SSH command copied to clipboard!');
   }
 
-  toggleLyrics(): void {
-    this.isLyricsOpen.set(!this.isLyricsOpen());
-  }
-
-  toggleQueue(): void {
-    this.isQueueOpen.set(!this.isQueueOpen());
-  }
-
-  toggleSettings(): void {
-    this.isSettingsOpen.set(!this.isSettingsOpen());
-  }
-
-  saveAudioQuality(quality: string): void {
-    this.audioQuality.set(quality);
-    this.storage.setAudioQuality(quality);
-    this.showToast(`Audio quality set to: ${quality}`);
-  }
-
-  async clearAllOffline(): Promise<void> {
-    await this.storage.clearAllOffline();
-    this.refreshLibrary();
-    this.showToast('Cleared all offline downloaded songs');
-  }
-
-  // --- HELPERS ---
   formatTime(seconds: number): string {
-    if (!seconds || isNaN(seconds)) return '0:00';
-    const m = Math.floor(seconds / 60);
-    const s = Math.floor(seconds % 60);
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
-  }
-
-  showToast(msg: string): void {
-    const id = Date.now();
-    this.toasts.set([...this.toasts(), { id, message: msg }]);
-    setTimeout(() => {
-      this.toasts.set(this.toasts().filter(t => t.id !== id));
-    }, 3000);
+    if (isNaN(seconds) || seconds < 0) return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   }
 }

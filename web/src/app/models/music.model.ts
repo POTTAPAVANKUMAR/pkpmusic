@@ -1,3 +1,16 @@
+export interface User {
+  id: number;
+  email: string;
+  name?: string;
+  profile_picture_url?: string;
+  is_active?: boolean;
+}
+
+export interface AuthResponse {
+  access_token: string;
+  token_type: string;
+}
+
 export interface Song {
   id: string;
   title: string;
@@ -7,6 +20,19 @@ export interface Song {
   duration_ms?: number;
   cover_art_url?: string | null;
   downloaded?: boolean;
+}
+
+export interface AlbumSearchResult {
+  id: string;
+  title: string;
+  artist: string;
+  cover_art_url?: string | null;
+}
+
+export interface ArtistSearchResult {
+  id: string;
+  artist: string;
+  cover_art_url?: string | null;
 }
 
 export interface DashboardItem {
@@ -46,7 +72,7 @@ export interface ArtistDetail {
 export interface AlbumDetail {
   title: string;
   description?: string;
-  trackCount: number;
+  trackCount?: number;
   thumbnails: any[];
   songs: Song[];
 }

@@ -15,6 +15,7 @@ export class PlayerService {
   // Signals for Reactive UI State
   currentSong = signal<Song | null>(null);
   isPlaying = signal<boolean>(false);
+  isLoading = signal<boolean>(false);
   currentTime = signal<number>(0);
   duration = signal<number>(0);
   queue = signal<Song[]>([]);
@@ -32,7 +33,8 @@ export class PlayerService {
   syncedLines = signal<SyncedLyricLine[]>([]);
   activeLyricIndex = signal<number>(-1);
 
-  // Computed Progress
+  // Computed Progress & Repeat
+  repeatMode = computed(() => this.repeat());
   progressPercent = computed(() => {
     const dur = this.duration();
     if (!dur) return 0;
@@ -51,7 +53,13 @@ export class PlayerService {
   }
 
   private setupAudioListeners(): void {
-    this.audio.addEventListener('play', () => this.isPlaying.set(true));
+    this.audio.addEventListener('loadstart', () => this.isLoading.set(true));
+    this.audio.addEventListener('canplay', () => this.isLoading.set(false));
+    this.audio.addEventListener('waiting', () => this.isLoading.set(true));
+    this.audio.addEventListener('playing', () => {
+      this.isPlaying.set(true);
+      this.isLoading.set(false);
+    });
     this.audio.addEventListener('pause', () => this.isPlaying.set(false));
     
     this.audio.addEventListener('timeupdate', () => {
@@ -76,6 +84,7 @@ export class PlayerService {
 
     this.audio.addEventListener('error', (e) => {
       console.warn('Audio playback error, trying next track:', e);
+      this.isLoading.set(false);
       this.next();
     });
   }
@@ -108,6 +117,7 @@ export class PlayerService {
   }
 
   async playSong(song: Song, newQueue?: Song[]): Promise<void> {
+    this.isLoading.set(true);
     if (newQueue) {
       this.queue.set([...newQueue]);
       const idx = newQueue.findIndex(s => s.id === song.id);
@@ -141,6 +151,8 @@ export class PlayerService {
       this.isPlaying.set(true);
     } catch (e) {
       console.warn('Playback autoplay prevented by browser policy:', e);
+    } finally {
+      this.isLoading.set(false);
     }
 
     // Load Lyrics
@@ -228,9 +240,12 @@ export class PlayerService {
       this.currentIndex.set(0);
       this.playSong(q[0]);
     } else if (this.autoplay() && this.currentSong()) {
-      // Trigger song radio to fetch next recommendations automatically
       this.fetchAndQueueSongRadio(this.currentSong()!.id);
     }
+  }
+
+  playNext(): void {
+    this.next();
   }
 
   previous(): void {
@@ -249,6 +264,10 @@ export class PlayerService {
     } else {
       this.seek(0);
     }
+  }
+
+  playPrevious(): void {
+    this.previous();
   }
 
   private handleSongEnded(): void {
