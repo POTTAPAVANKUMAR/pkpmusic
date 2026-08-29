@@ -537,6 +537,7 @@ def get_upnext(video_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/songs/{video_id}/related", response_model=dict)
 @router.get("/{video_id}/related", response_model=dict)
 def get_song_related(video_id: str):
     """
@@ -553,17 +554,20 @@ def get_song_related(video_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/songs/{video_id}/credits", response_model=dict)
 @router.get("/{video_id}/credits", response_model=dict)
-def get_song_credits(browse_id: str):
+def get_song_credits(video_id: str, browse_id: str = None):
     """
-    Get credits for a song using its credits browseId.
+    Get credits for a song using its credits browseId or video ID.
     """
     try:
-        credits_data = yt.get_song_credits(browse_id)
+        target_id = browse_id or video_id
+        credits_data = yt.get_song_credits(target_id)
         return {"credits": credits_data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/songs/artist/{channel_id}/albums", response_model=dict)
 @router.get("/artist/{channel_id}/albums", response_model=dict)
 def get_artist_albums_endpoint(channel_id: str, params: str = ""):
     """
