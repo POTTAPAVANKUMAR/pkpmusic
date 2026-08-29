@@ -99,6 +99,9 @@ class UserBase(BaseModel):
     username: str
     email: str
     profile_picture_url: Optional[str] = None
+    is_approved: Optional[bool] = False
+    role: Optional[str] = "user"
+    auth_provider: Optional[str] = "email"
 
 class UserCreate(UserBase):
     password: str
@@ -106,10 +109,56 @@ class UserCreate(UserBase):
 class User(UserBase):
     id: int
     is_active: bool
+    is_approved: bool = False
+    role: str = "user"
+    auth_provider: str = "email"
+    created_at: Optional[float] = None
     playlists: List[Playlist] = []
 
     class Config:
         from_attributes = True
+
+class GoogleAuthRequest(BaseModel):
+    credential: Optional[str] = None
+    id_token: Optional[str] = None
+    email: Optional[str] = None
+    name: Optional[str] = None
+    picture: Optional[str] = None
+
+class AuthResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: User
+
+class WhitelistEmailCreate(BaseModel):
+    email: str
+
+class WhitelistEmailResponse(BaseModel):
+    id: int
+    email: str
+    created_at: float
+    added_by: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class UserAdminView(BaseModel):
+    id: int
+    username: str
+    email: str
+    role: str
+    is_approved: bool
+    is_active: bool
+    auth_provider: str
+    profile_picture_url: Optional[str] = None
+    created_at: Optional[float] = None
+
+    class Config:
+        from_attributes = True
+
+class UserApprovalUpdate(BaseModel):
+    is_approved: bool
+    role: Optional[str] = None
 
 class DashboardItem(BaseModel):
     id: str # YouTube ID or category ID
