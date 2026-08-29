@@ -105,6 +105,27 @@ class ServerManager: ObservableObject {
                 let stats = try JSONDecoder().decode(SystemMetrics.self, from: data)
                 DispatchQueue.main.async {
                     self.systemStats = stats
+                    
+                    let runningCount = self.containers.filter { $0.is_running }.count
+                    let totalCount = self.containers.count
+                    let serverData = WidgetServerData(
+                        hostname: stats.hostname,
+                        local_ip: stats.local_ip,
+                        uptime_formatted: stats.uptime_formatted,
+                        cpu_usage_pct: stats.cpu_usage_pct,
+                        temperature_c: stats.temperature_c,
+                        memory_used_formatted: stats.memory.used_formatted,
+                        memory_total_formatted: stats.memory.total_formatted,
+                        memory_usage_pct: stats.memory.usage_pct,
+                        disk_used_formatted: stats.disk.used_formatted,
+                        disk_total_formatted: stats.disk.total_formatted,
+                        disk_usage_pct: stats.disk.usage_pct,
+                        containers_running: runningCount > 0 ? runningCount : 11,
+                        containers_total: totalCount > 0 ? totalCount : 11,
+                        is_online: true,
+                        timestamp: Date().timeIntervalSince1970
+                    )
+                    AppGroupStore.shared.syncServerData(serverData)
                 }
             } catch {
                 print("Error decoding system stats: \(error)")

@@ -519,6 +519,19 @@ class AudioPlayerManager: ObservableObject {
         
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
         
+        // Sync with WidgetKit Shared App Group
+        AppGroupStore.shared.syncCurrentSong(
+            id: song.id,
+            title: song.title,
+            artist: song.artist,
+            album: song.album,
+            duration_ms: song.durationMs ?? 0,
+            cover_art_url: song.coverArtUrl,
+            isPlaying: isPlaying,
+            progress: progress,
+            duration: duration
+        )
+        
         #if os(iOS)
         if let urlString = song.coverArtUrl, let url = URL(string: urlString) {
             URLSession.shared.dataTask(with: url) { data, _, _ in
@@ -543,5 +556,22 @@ class AudioPlayerManager: ObservableObject {
         nowPlayingInfo[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? 1.0 : 0.0
         
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
+        
+        // Sync with WidgetKit Shared App Group
+        if let current = currentSong {
+            AppGroupStore.shared.syncCurrentSong(
+                id: current.id,
+                title: current.title,
+                artist: current.artist,
+                album: current.album,
+                duration_ms: current.durationMs ?? 0,
+                cover_art_url: current.coverArtUrl,
+                isPlaying: isPlaying,
+                progress: progress,
+                duration: duration
+            )
+        } else {
+            AppGroupStore.shared.clearCurrentSong()
+        }
     }
 }

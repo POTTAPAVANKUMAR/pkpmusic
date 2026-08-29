@@ -54,6 +54,13 @@
 		F12000000000000000000002 /* ServerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11000000000000000000002 /* ServerManager.swift */; };
 		F12000000000000000000003 /* ServerHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11000000000000000000003 /* ServerHubView.swift */; };
 		F12000000000000000000004 /* ServerFileExplorerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11000000000000000000004 /* ServerFileExplorerView.swift */; };
+		F12000000000000000000005 /* AppGroupStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11000000000000000000005 /* AppGroupStore.swift */; };
+		F12000000000000000000006 /* MusicPlayerWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11000000000000000000006 /* MusicPlayerWidget.swift */; };
+		F12000000000000000000007 /* ServerMonitorWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11000000000000000000007 /* ServerMonitorWidget.swift */; };
+		F12000000000000000000008 /* QuickLauncherWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11000000000000000000008 /* QuickLauncherWidget.swift */; };
+		F12000000000000000000009 /* PKPMusicWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11000000000000000000009 /* PKPMusicWidgetBundle.swift */; };
+		F1200000000000000000000A /* AppGroupStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11000000000000000000005 /* AppGroupStore.swift */; };
+		F1200000000000000000000B /* PKPMusicWidgets.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = F1100000000000000000000B /* PKPMusicWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		C9588BD9EE02D21B31E883A3 /* DownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D0AEEDC7A99934EA163F6D /* DownloadManager.swift */; };
 		C9DB835A5A37197BE2053C40 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6A6EA2C632A277807DE3540 /* LibraryView.swift */; };
 		CA7DEE153890BA22F6D021E2 /* PodcastChannelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF5A1FEBB8682EDF6D2C2084 /* PodcastChannelView.swift */; };
@@ -115,6 +122,13 @@
 		F11000000000000000000002 /* ServerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerManager.swift; sourceTree = "<group>"; };
 		F11000000000000000000003 /* ServerHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerHubView.swift; sourceTree = "<group>"; };
 		F11000000000000000000004 /* ServerFileExplorerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerFileExplorerView.swift; sourceTree = "<group>"; };
+		F11000000000000000000005 /* AppGroupStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppGroupStore.swift; sourceTree = "<group>"; };
+		F11000000000000000000006 /* MusicPlayerWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicPlayerWidget.swift; sourceTree = "<group>"; };
+		F11000000000000000000007 /* ServerMonitorWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerMonitorWidget.swift; sourceTree = "<group>"; };
+		F11000000000000000000008 /* QuickLauncherWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickLauncherWidget.swift; sourceTree = "<group>"; };
+		F11000000000000000000009 /* PKPMusicWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PKPMusicWidgetBundle.swift; sourceTree = "<group>"; };
+		F1100000000000000000000A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		F1100000000000000000000B /* PKPMusicWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PKPMusicWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		B1E1F098B3B481507E599268 /* MoodPlaylistsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoodPlaylistsView.swift; sourceTree = "<group>"; };
 		B4767E61E9FFF8F3EB817E5E /* ArtistAlbumsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtistAlbumsView.swift; sourceTree = "<group>"; };
 		B48C3C4D51AAACFE413EA6FA /* ChatManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatManager.swift; sourceTree = "<group>"; };
@@ -199,8 +213,29 @@
 			children = (
 				704E89C315B54C726945A735 /* PKPMusic.app */,
 				2A7F21298454D691FDC1C475 /* PKPMusicWatch.app */,
+				F1100000000000000000000B /* PKPMusicWidgets.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		F13000000000000000000001 /* PKPMusicWidgets */ = {
+			isa = PBXGroup;
+			children = (
+				F1100000000000000000000A /* Info.plist */,
+				F11000000000000000000009 /* PKPMusicWidgetBundle.swift */,
+				F11000000000000000000006 /* MusicPlayerWidget.swift */,
+				F11000000000000000000007 /* ServerMonitorWidget.swift */,
+				F11000000000000000000008 /* QuickLauncherWidget.swift */,
+			);
+			path = PKPMusicWidgets;
+			sourceTree = "<group>";
+		};
+		F13000000000000000000002 /* Utils */ = {
+			isa = PBXGroup;
+			children = (
+				F11000000000000000000005 /* AppGroupStore.swift */,
+			);
+			path = Utils;
 			sourceTree = "<group>";
 		};
 		67A6F54B74FF1042173B3880 /* Auth */ = {
@@ -231,6 +266,7 @@
 				0EF10A45797BE1965B3FB188 /* Models */,
 				7D5769E7148C90224347B610 /* ViewModels */,
 				3EACDBCC8637F6EAD4076D10 /* Views */,
+				F13000000000000000000002 /* Utils */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -323,6 +359,7 @@
 			children = (
 				6CD5B993B14B7AA4B75F1F46 /* PKPMusic */,
 				49D4009DBF7290F7C76659A9 /* PKPMusicWatch */,
+				F13000000000000000000001 /* PKPMusicWidgets */,
 				780FB65D6962E3E05945B009 /* Services */,
 				5E45829FB4929B5B02B3D3B8 /* Products */,
 			);
@@ -349,10 +386,12 @@
 			buildPhases = (
 				EF8DEDCCA189C806B5E36B5B /* Sources */,
 				0AF272BD5E7173D76DC2D2F0 /* Resources */,
+				F19000000000000000000001 /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				F17000000000000000000001 /* PBXTargetDependency */,
 			);
 			name = PKPMusic;
 			packageProductDependencies = (
@@ -378,6 +417,23 @@
 			productReference = 2A7F21298454D691FDC1C475 /* PKPMusicWatch.app */;
 			productType = "com.apple.product-type.application";
 		};
+		F14000000000000000000001 /* PKPMusicWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F15000000000000000000001 /* Build configuration list for PBXNativeTarget "PKPMusicWidgets" */;
+			buildPhases = (
+				F16000000000000000000001 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PKPMusicWidgets;
+			packageProductDependencies = (
+			);
+			productName = PKPMusicWidgets;
+			productReference = F1100000000000000000000B /* PKPMusicWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -389,6 +445,9 @@
 				TargetAttributes = {
 					EC66B52A329E85300654C15D = {
 						DevelopmentTeam = "";
+					};
+					F14000000000000000000001 = {
+						DevelopmentTeam = AZ2B652A3Q;
 					};
 				};
 			};
@@ -408,9 +467,34 @@
 			targets = (
 				64E9246B460D2C4339C48875 /* PKPMusic */,
 				EC66B52A329E85300654C15D /* PKPMusicWatch */,
+				F14000000000000000000001 /* PKPMusicWidgets */,
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXContainerItemProxy section */
+		F18000000000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 37EB12EA0A565F3F3448476F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F14000000000000000000001;
+			remoteInfo = PKPMusicWidgets;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		F19000000000000000000001 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				F1200000000000000000000B /* PKPMusicWidgets.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXResourcesBuildPhase section */
 		0AF272BD5E7173D76DC2D2F0 /* Resources */ = {
@@ -477,6 +561,7 @@
 				F12000000000000000000002 /* ServerManager.swift in Sources */,
 				F12000000000000000000003 /* ServerHubView.swift in Sources */,
 				F12000000000000000000004 /* ServerFileExplorerView.swift in Sources */,
+				F12000000000000000000005 /* AppGroupStore.swift in Sources */,
 				DA92A2F1FF490CC7F8E7A881 /* MiniPlayerView.swift in Sources */,
 				90A37AD95A916A949FE428F6 /* MoodPlaylistsView.swift in Sources */,
 				3BBA410EC893C76C19AF8C5E /* NetworkManager.swift in Sources */,
@@ -501,7 +586,27 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F16000000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F1200000000000000000000A /* AppGroupStore.swift in Sources */,
+				F12000000000000000000006 /* MusicPlayerWidget.swift in Sources */,
+				F12000000000000000000007 /* ServerMonitorWidget.swift in Sources */,
+				F12000000000000000000008 /* QuickLauncherWidget.swift in Sources */,
+				F12000000000000000000009 /* PKPMusicWidgetBundle.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		F17000000000000000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F14000000000000000000001 /* PKPMusicWidgets */;
+			targetProxy = F18000000000000000000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		17C0E324A2ED3DDEB6CF6820 /* Debug */ = {
@@ -697,6 +802,50 @@
 			};
 			name = Release;
 		};
+		F1A000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = AZ2B652A3Q;
+				ENABLE_PREVIEWS = YES;
+				INFOPLIST_FILE = PKPMusicWidgets/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.pottapavankumar.PKPMusic.PKPMusicWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		F1A000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = AZ2B652A3Q;
+				ENABLE_PREVIEWS = YES;
+				INFOPLIST_FILE = PKPMusicWidgets/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.pottapavankumar.PKPMusic.PKPMusicWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -714,6 +863,15 @@
 			buildConfigurations = (
 				9B730304ACADDB975F8FB4F6 /* Debug */,
 				2C0C96B9F578F1FCD5E58A5E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		F15000000000000000000001 /* Build configuration list for PBXNativeTarget "PKPMusicWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F1A000000000000000000001 /* Debug */,
+				F1A000000000000000000002 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
